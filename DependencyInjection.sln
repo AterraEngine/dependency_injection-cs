@@ -8,11 +8,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{0402
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9947E0A4-4FB3-42C3-8251-45EBFEF1CF92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Generator", "src\AterraEngine.DependencyInjection.Generator\AterraEngine.DependencyInjection.Generator.csproj", "{9F7D1EBF-1DFC-4A0C-A702-157CFA2E2553}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Generators", "src\AterraEngine.DependencyInjection.Generators\AterraEngine.DependencyInjection.Generators.csproj", "{9F7D1EBF-1DFC-4A0C-A702-157CFA2E2553}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Generator.Sample", "src\AterraEngine.DependencyInjection.Generator.Sample\AterraEngine.DependencyInjection.Generator.Sample.csproj", "{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Generators.Sample", "src\AterraEngine.DependencyInjection.Generators.Sample\AterraEngine.DependencyInjection.Generators.Sample.csproj", "{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Generator.Tests", "tests\AterraEngine.DependencyInjection.Generator.Tests\AterraEngine.DependencyInjection.Generator.Tests.csproj", "{E8561A57-4154-49F6-AA57-4B30B9908BF1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.AterraEngine.DependencyInjection.Generators", "tests\Tests.AterraEngine.DependencyInjection.Generators\Tests.AterraEngine.DependencyInjection.Generators.csproj", "{E8561A57-4154-49F6-AA57-4B30B9908BF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

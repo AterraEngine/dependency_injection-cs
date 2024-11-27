@@ -6,7 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AterraEngine.DependencyInjection.Generator\AterraEngine.DependencyInjection.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\AterraEngine.DependencyInjection.Generators\AterraEngine.DependencyInjection.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\AterraEngine.DependencyInjection\AterraEngine.DependencyInjection.csproj" />
     </ItemGroup>
 
     <ItemGroup>

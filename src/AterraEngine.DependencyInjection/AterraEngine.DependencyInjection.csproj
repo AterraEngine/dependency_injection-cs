@@ -4,11 +4,30 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+
+        <IsPackable>true</IsPackable>
+        <PackageId>AterraEngine.DependencyInjection</PackageId> <!-- Main package name -->
+        <Version>0.1.0-alpha</Version> <!-- Package version -->
+        <Authors>Anna Sas</Authors>
+        <Description>A small package allowing easy collection of dependency injection services</Description>
+        <PackageProjectUrl>https://github.com/AterraEngine/dependency_injection-cs/</PackageProjectUrl>
+        <PackageTags>dependency injection;di</PackageTags>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <DebugType>embedded</DebugType>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+        <None Include="..\..\LICENSE" Pack="true" PackagePath=""/>
+        <None Include="..\..\README.md" Pack="true" PackagePath=""/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
     </ItemGroup>
 
 </Project>

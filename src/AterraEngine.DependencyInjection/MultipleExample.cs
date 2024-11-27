@@ -1,18 +1,16 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AterraEngine.DependencyInjection;
+namespace AterraEngine.DependencyInjection.Generators.Sample;
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-[AttributeUsage(AttributeTargets.Class, Inherited = false)]
-public class FactoryCreatedServiceAttribute<TFactory, TService>(ServiceLifetime lifetime) : Attribute
-    where TFactory : IFactoryService<TService> 
-{
-    [UsedImplicitly] public ServiceLifetime Lifetime { get; } = lifetime;
-    [UsedImplicitly] public Type ServiceType { get; } = typeof(TService);
-    [UsedImplicitly] public Type FactoryType { get; } = typeof(TFactory);
-}
+[InjectableService<IFirstDualExampleService>(ServiceLifetime.Singleton)]
+public class DualExampleService : IFirstDualExampleService, ISecondDualExampleService;
+
+
+public interface IFirstDualExampleService;
+public interface ISecondDualExampleService;
