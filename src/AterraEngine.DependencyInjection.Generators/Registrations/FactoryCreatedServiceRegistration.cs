@@ -13,5 +13,5 @@ public record struct FactoryCreatedServiceRegistration(
     INamedTypeSymbol FactoryTypeName,
     string LifeTime
 ) : IServiceRegistration {
-    public string TextFormat { get; set; } = $"services.Add{LifeTime}<{ServiceTypeName.ToDisplayString()}>((provider) => provider.GetRequiredService<{FactoryTypeName}>().Create());";
+    public string TextFormat { get; set; } = $"services.Add{LifeTime}<{ServiceTypeName.ToDisplayString()}>((provider) => provider.GetRequiredService<{FactoryTypeName.ToDisplayString()}>().Create());";
 }

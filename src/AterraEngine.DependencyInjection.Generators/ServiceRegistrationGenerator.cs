@@ -26,8 +26,10 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         IncrementalValueProvider<ImmutableArray<ClassDeclarationSyntax>> syntaxProvider = context.SyntaxProvider
-            .CreateSyntaxProvider(ProviderPredicate, ProviderTransform)
-            .Collect();
+            .CreateSyntaxProvider(
+                ProviderPredicate,
+                ProviderTransform
+            ).Collect();
 
         context.RegisterSourceOutput(context.CompilationProvider.Combine(syntaxProvider), GenerateSources);
     }
@@ -46,13 +48,16 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
             return;
         }
 
-        List<IServiceRegistration> registrations = GetRegistrations(context, compilation, classDeclarations);
+        IEnumerable<IServiceRegistration> registrations = GetRegistrations(context, compilation, classDeclarations)
+            .OrderBy(registration => registration.LifeTime)
+            .ThenBy(registration => registration.ServiceTypeName.ToDisplayString());
+        ;
 
         context.AddSource(
             GeneratedFileName,
             SourceText.From(GenerateSourceText(
                 context,
-                assemblyName,
+                assemblyName.Replace(".dll", ""),
                 registrations
             ), Encoding.UTF8)
         );
@@ -104,9 +109,14 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
         out InjectableServiceRegistration registration
     ) {
         registration = default;
+        
+        GenericNameSyntax? genericNameSyntax = attribute switch {
+            { Name: QualifiedNameSyntax { Right: GenericNameSyntax genericInQualifiedNameSyntax } } => genericInQualifiedNameSyntax,
+            { Name: GenericNameSyntax genericNameSyntaxByItself } => genericNameSyntaxByItself,
+            _ => null
+        };
 
-        if (attribute is not { Name: GenericNameSyntax genericNameSyntax }) return false;
-        if (genericNameSyntax.TypeArgumentList.Arguments.FirstOrDefault() is not {} serviceTypeSyntax) return false;
+        if (genericNameSyntax?.TypeArgumentList.Arguments.FirstOrDefault() is not {} serviceTypeSyntax) return false;
         if (model.GetSymbolInfo(serviceTypeSyntax).Symbol is not INamedTypeSymbol serviceNamedTypeSymbol) return false;
         if (attribute.ArgumentList?.Arguments.FirstOrDefault()?.Expression is not MemberAccessExpressionSyntax memberAccess) return false;
         if (!TryGetLifeTime(memberAccess, out string lifeTime)) return false;
@@ -127,9 +137,14 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
         out FactoryCreatedServiceRegistration registration
     ) {
         registration = default;
-
-        if (attribute is not { Name: GenericNameSyntax genericNameSyntax }) return false;
-        if (genericNameSyntax.TypeArgumentList.Arguments is not { Count: 2 } typeArgumentsList) return false;
+        
+        GenericNameSyntax? genericNameSyntax = attribute switch {
+            { Name: QualifiedNameSyntax { Right: GenericNameSyntax genericInQualifiedNameSyntax } } => genericInQualifiedNameSyntax,
+            { Name: GenericNameSyntax genericNameSyntaxByItself } => genericNameSyntaxByItself,
+            _ => null
+        };
+        
+        if (genericNameSyntax?.TypeArgumentList.Arguments is not { Count: 2 } typeArgumentsList) return false;
 
         // order depends on the way it is defined in the attribute
         if (typeArgumentsList.FirstOrDefault() is not {} factoryTypeSyntax) return false;

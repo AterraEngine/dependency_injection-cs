@@ -4,6 +4,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -37,7 +38,12 @@ public abstract class IncrementalGeneratorTest<TGenerator> where TGenerator : II
         );
 
         Compilation? compilation = await project.GetCompilationAsync();
+        
         Assert.NotNull(compilation);
+        ImmutableArray<Diagnostic> diagnostics = compilation.GetDiagnostics();
+        foreach (Diagnostic diagnostic in diagnostics) {
+            Console.WriteLine($"Error Diagnostic: {diagnostic.GetMessage()}");
+        }
         
         GeneratorDriverRunResult runResult = driver.RunGenerators(compilation).GetRunResult();
             
@@ -46,17 +52,17 @@ public abstract class IncrementalGeneratorTest<TGenerator> where TGenerator : II
             Console.WriteLine($"Error Diagnostic: {diagnostic.GetMessage()}");
         }
 
-        foreach (Diagnostic diagnostic in compilation.GetDiagnostics()) {
-            Console.WriteLine($"Error Diagnostic: {diagnostic.GetMessage()}");
-        }
-
         GeneratedSourceResult? generatedSource = runResult.Results
             .SelectMany(result => result.GeneratedSources)
             .SingleOrDefault(predicate);
 
         Assert.NotNull(generatedSource?.SourceText);
-        Assert.Equal(expectedOutput.Trim(), generatedSource.Value.SourceText.ToString().Trim(),
-            ignoreLineEndingDifferences: true, ignoreWhiteSpaceDifferences: true);
+        Assert.Equal(
+            expectedOutput.Trim(),
+            generatedSource.Value.SourceText.ToString().Trim(),
+            ignoreLineEndingDifferences: true,
+            ignoreWhiteSpaceDifferences: true
+        );
     }
 
 }

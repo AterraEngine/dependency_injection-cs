@@ -3,7 +3,7 @@
   "profiles": {
     "DebugRoslynSourceGenerator": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "../DependencyInjection.Generator.Sample/DependencyInjection.Generator.Sample.csproj"
+      "targetProject": "../AterraEngine.DependencyInjection.Generators.Sample/AterraEngine.DependencyInjection.Generators.Sample.csproj"
     }
   }
 }
