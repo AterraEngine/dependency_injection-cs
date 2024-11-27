@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection", "src\AterraEngine.DependencyInjection\AterraEngine.DependencyInjection.csproj", "{750AAA87-82AF-4751-A32A-DA7A59CDAF77}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{AB23EDEA-C8C1-4596-84B2-A718AC73998D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{0402FE55-92F8-446E-B85C-35A64201EEF7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9947E0A4-4FB3-42C3-8251-45EBFEF1CF92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Generator", "src\AterraEngine.DependencyInjection.Generator\AterraEngine.DependencyInjection.Generator.csproj", "{9F7D1EBF-1DFC-4A0C-A702-157CFA2E2553}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Generator.Sample", "src\AterraEngine.DependencyInjection.Generator.Sample\AterraEngine.DependencyInjection.Generator.Sample.csproj", "{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Generator.Tests", "tests\AterraEngine.DependencyInjection.Generator.Tests\AterraEngine.DependencyInjection.Generator.Tests.csproj", "{E8561A57-4154-49F6-AA57-4B30B9908BF1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{750AAA87-82AF-4751-A32A-DA7A59CDAF77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{750AAA87-82AF-4751-A32A-DA7A59CDAF77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{750AAA87-82AF-4751-A32A-DA7A59CDAF77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{750AAA87-82AF-4751-A32A-DA7A59CDAF77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F7D1EBF-1DFC-4A0C-A702-157CFA2E2553}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F7D1EBF-1DFC-4A0C-A702-157CFA2E2553}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F7D1EBF-1DFC-4A0C-A702-157CFA2E2553}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F7D1EBF-1DFC-4A0C-A702-157CFA2E2553}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8561A57-4154-49F6-AA57-4B30B9908BF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8561A57-4154-49F6-AA57-4B30B9908BF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8561A57-4154-49F6-AA57-4B30B9908BF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8561A57-4154-49F6-AA57-4B30B9908BF1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{750AAA87-82AF-4751-A32A-DA7A59CDAF77} = {AB23EDEA-C8C1-4596-84B2-A718AC73998D}
+		{E8561A57-4154-49F6-AA57-4B30B9908BF1} = {9947E0A4-4FB3-42C3-8251-45EBFEF1CF92}
+		{9F7D1EBF-1DFC-4A0C-A702-157CFA2E2553} = {AB23EDEA-C8C1-4596-84B2-A718AC73998D}
+		{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE} = {0402FE55-92F8-446E-B85C-35A64201EEF7}
+	EndGlobalSection
+EndGlobal
