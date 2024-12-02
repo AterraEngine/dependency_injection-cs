@@ -6,6 +6,7 @@
 // and updated to have the scope of the attributes be internal.
 
 // ReSharper disable once CheckNamespace
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace System.Diagnostics.CodeAnalysis;
 #if !NETCOREAPP
 
@@ -39,7 +40,7 @@ internal sealed class MaybeNullWhenAttribute : Attribute {
         ReturnValue = returnValue;
     }
 
-    /// <summary>Gets the return value condition.</summary>
+    /// <summary> Gets the return value condition.</summary>
     public bool ReturnValue { get; }
 }
 
@@ -112,7 +113,7 @@ internal sealed class MemberNotNullAttribute : Attribute {
     ///     The field or property member that is promised to be not-null.
     /// </param>
     public MemberNotNullAttribute(string member) {
-        Members = new[] { member };
+        Members = [member];
     }
 
     /// <summary>Initializes the attribute with the list of field and property members.</summary>

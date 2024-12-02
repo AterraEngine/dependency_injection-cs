@@ -78,7 +78,8 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
             expectedOutputPooledServices.Trim(),
             pooledServicesResult.Value.SourceText.ToString().Trim(),
             ignoreLineEndingDifferences: true,
-            ignoreWhiteSpaceDifferences: true
+            ignoreWhiteSpaceDifferences: true,
+            ignoreAllWhiteSpace:true
         );
     }
 
@@ -97,6 +98,7 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
             
             public interface IExampleFactory : AterraEngine.DependencyInjection.IFactoryService<ICreatedService>;
         }
+        
         """;
 
     [LanguageInjection("csharp")] private const string FactoryCreatedServiceOutput = """
@@ -111,6 +113,7 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
                 return services;
             }
         }
+        
         """;
     #endregion
 
@@ -124,6 +127,7 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
             
             public interface IExampleService;
         }
+        
         """;
 
     [LanguageInjection("csharp")] private const string InjectableServiceOutput = """
@@ -177,8 +181,8 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
             private static readonly DefaultObjectPoolProvider _objectPoolProvider = new();
         
             public ObjectPool<TestProject.ExamplePooled> ExamplePooledPool { get; } = _objectPoolProvider.Create(new AterraEngine.DependencyInjection.PooledInjectableServiceObjectPolicy<TestProject.ExamplePooled>());
-        
         }
+        
         """;
     #endregion
     

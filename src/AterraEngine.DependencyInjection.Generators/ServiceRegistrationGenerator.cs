@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using System.Threading;
 
 namespace AterraEngine.DependencyInjection.Generators;
 // ---------------------------------------------------------------------------------------------------------------------
@@ -19,8 +18,9 @@ namespace AterraEngine.DependencyInjection.Generators;
 // ---------------------------------------------------------------------------------------------------------------------
 [Generator(LanguageNames.CSharp)]
 public class ServiceRegistrationGenerator : IIncrementalGenerator {
-    public const string ServiceRegistrationFileName = "ServiceRegistration.g.cs";
-    public const string PooledServicesFileName = "PooledServices.g.cs";
+    private const string ServiceRegistrationFileName = "ServiceRegistration.g.cs";
+    private const string PooledServicesFileName = "PooledServices.g.cs";
+    
     private const string InjectableServiceAttributeMetadataName = "AterraEngine.DependencyInjection.InjectableServiceAttribute`1";
     private const string FactoryCreatedServiceAttributeMetadataName = "AterraEngine.DependencyInjection.FactoryCreatedServiceAttribute`2";
     private const string PooledInjectableServiceAttributeMetadataName = "AterraEngine.DependencyInjection.PooledInjectableServiceAttribute`2";
@@ -37,17 +37,12 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         IncrementalValueProvider<ImmutableArray<ClassDeclarationSyntax>> syntaxProvider = context.SyntaxProvider
             .CreateSyntaxProvider(
-                ProviderPredicate,
-                ProviderTransform
+                (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
+                (ctx, _) => (ClassDeclarationSyntax)ctx.Node
             ).Collect();
 
         context.RegisterSourceOutput(context.CompilationProvider.Combine(syntaxProvider), GenerateSources);
     }
-
-    #region ClassDeclarationsProvider
-    private static bool ProviderPredicate(SyntaxNode node, CancellationToken _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 };
-    private static ClassDeclarationSyntax ProviderTransform(GeneratorSyntaxContext ctx, CancellationToken _) => (ClassDeclarationSyntax)ctx.Node;
-    #endregion
 
     #region SourceGenerator
     private static void GenerateSources(SourceProductionContext context, (Compilation, ImmutableArray<ClassDeclarationSyntax>) source) {
@@ -59,10 +54,10 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
         }
 
         IServiceRegistration[] registrations = GetRegistrations(context, compilation, classDeclarations)
-                .OrderBy(registration => registration.LifeTime)
-                .ThenBy(registration => registration.ServiceTypeName.ToDisplayString())
-                .ToArray()
-            ;
+            .OrderBy(registration => registration.LifeTime)
+            .ThenBy(registration => registration.ServiceTypeName.ToDisplayString())
+            .ToArray()
+        ;
 
         string assemblyNameSanitized = assemblyName
             .Replace(".dll", "")
@@ -139,7 +134,7 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
             .AppendLine($"namespace {assemblyName};")
             .AppendLine()
             .AppendLine("public static class ServiceRegistration {")
-            .AppendLine($"    public static IServiceCollection RegisterServicesFrom{Sanitize(assemblyName)}(this IServiceCollection services) {{");
+            .IndentLine(1, $"public static IServiceCollection RegisterServicesFrom{Sanitize(assemblyName)}(this IServiceCollection services) {{");
 
         if (registrations.Any(r => r is InjectablePoolableServiceRegistration)) {
             sourceBuilder.IndentLine(2, $"services.AddSingleton<{assemblyName}.AutoPooledServices>();");
@@ -149,8 +144,8 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
             registration.FormatText(sourceBuilder, assemblyName);
         }
 
-        return sourceBuilder.AppendLine("        return services;")
-            .AppendLine("    }")
+        return sourceBuilder.IndentLine(2,"return services;")
+            .IndentLine(1,"}")
             .AppendLine("}")
             .ToString();
     }
@@ -170,7 +165,6 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
             if (serviceRegistration is not InjectablePoolableServiceRegistration poolable) continue;
 
             poolable.FormatPoolText(sourceBuilder);
-            sourceBuilder.AppendLine();// Add an empty line for ease of use
         }
 
         return sourceBuilder
