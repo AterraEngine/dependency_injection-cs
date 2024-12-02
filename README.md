@@ -34,19 +34,48 @@ dotnet add package AterraEngine.DependencyInjection.Generator
 
 You can use the provided attributes to define services:
 
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-namespace YourNamespace;
+- `InjectableService`: Simple attribute to register a class to the implementation which is inserted as a type generic.
+    ```csharp    
+    public interface IExampleService;
+    
+    [InjectableService<IExampleService>(ServiceLifetime.Singleton)]
+    public class ExampleService : IExampleService {
+        // ...
+    }
+    ```
 
-[InjectableService<IExampleService>(ServiceLifetime.Singleton)]
-public class ExampleService : IExampleService {
-    // ...
-}
 
-public interface IExampleService {
-    // ...
-}
-```
+- `FactoryCreatedService` : Marks the class as a service which creation depends on another injected service. 
+  - The factory service must implement `IFactoryService<>`
+  ```csharp
+  public interface ICreatedService;
+  
+  [FactoryCreatedService<IExampleFactory, ICreatedService>(ServiceLifetime.Transient)]
+  public class CreatedService : ICreatedService;
+  
+  // The above service is something that is created by the Factory service
+  
+  [InjectableService<IExampleFactory>(ServiceLifetime.Singleton)]
+  public class ExampleFactory : IExampleFactory {
+      public ICreatedService Create() => new CreatedService();
+  }
+  
+  public interface IExampleFactory : IFactoryService<ICreatedService>;
+  ```
+
+
+- `PooledInjectableService` : Marks the class as a poolable service. This library creates a class `AutoPoolableService` under which the class will be registered.
+  - It uses `PooledInjectableServiceObjectPolicy` to create a policy.
+  - The poolable service must implement `PooledInjectableServiceObjectPolicy`
+  ```csharp
+  public interface IExamplePooled : IManualPoolable; 
+  
+  [PooledInjectableService<IExamplePooled, ExamplePooled>]
+  public class ExamplePooled : IExamplePooled {
+      public bool Reset() => true;
+  }
+  ```
+
 
 #### Generate Service Registrations
 
