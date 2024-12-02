@@ -30,7 +30,7 @@ public record struct InjectableServiceRegistration(
     public static bool TryCreateFromModel(
         INamedTypeSymbol implementationTypeSymbol,
         AttributeSyntax attribute,
-        SemanticModel model,
+        ISymbolResolver resolver,
         out InjectableServiceRegistration registration
     ) {
         registration = default;
@@ -42,7 +42,7 @@ public record struct InjectableServiceRegistration(
         };
 
         if (genericNameSyntax?.TypeArgumentList.Arguments.FirstOrDefault() is not {} serviceTypeSyntax) return false;
-        if (model.GetSymbolInfo(serviceTypeSyntax).Symbol is not INamedTypeSymbol serviceNamedTypeSymbol) return false;
+        if (resolver.ResolveSymbol(serviceTypeSyntax) is not INamedTypeSymbol serviceNamedTypeSymbol) return false;
         if (attribute.ArgumentList?.Arguments.FirstOrDefault()?.Expression is not MemberAccessExpressionSyntax memberAccess) return false;
         if (!memberAccess.TryGetAsServiceLifetimeString(out string? lifeTime)) return false;
 

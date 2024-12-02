@@ -103,13 +103,13 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
                 if (model.GetTypeInfo(attribute).Type is not INamedTypeSymbol attributeTypeInfo) continue;
 
                 if (SymbolEqualityComparer.Default.Equals(attributeTypeInfo.ConstructedFrom, factoryCreateServiceAttributeType)
-                    && FactoryCreatedServiceRegistration.TryCreateFromModel(implementationTypeSymbol, attribute, model, out FactoryCreatedServiceRegistration factoryCreated)) {
+                    && FactoryCreatedServiceRegistration.TryCreateFromModel(implementationTypeSymbol, attribute, new SymbolResolver(model), out FactoryCreatedServiceRegistration factoryCreated)) {
                     registrations.Add(factoryCreated);
                     continue;
                 }
 
                 if (SymbolEqualityComparer.Default.Equals(attributeTypeInfo.ConstructedFrom, injectableServiceAttributeType)
-                    && InjectableServiceRegistration.TryCreateFromModel(implementationTypeSymbol, attribute, model, out InjectableServiceRegistration injectable)) {
+                    && InjectableServiceRegistration.TryCreateFromModel(implementationTypeSymbol, attribute, new SymbolResolver(model), out InjectableServiceRegistration injectable)) {
                     registrations.Add(injectable);
                     continue;
                 }
@@ -117,7 +117,7 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
                 // ReSharper disable once InvertIf
                 // ReSharper disable once RedundantJumpStatement
                 if (SymbolEqualityComparer.Default.Equals(attributeTypeInfo.ConstructedFrom, injectablePooledServiceAttributeType)
-                    && InjectablePoolableServiceRegistration.TryCreateFromModel(attribute, model, out InjectablePoolableServiceRegistration pooledInjectable)) {
+                    && InjectablePoolableServiceRegistration.TryCreateFromModel(attribute, new SymbolResolver(model), out InjectablePoolableServiceRegistration pooledInjectable)) {
                     registrations.Add(pooledInjectable);
                     continue;
                 }

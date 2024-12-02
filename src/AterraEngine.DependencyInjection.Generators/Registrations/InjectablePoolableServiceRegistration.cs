@@ -34,7 +34,7 @@ public record struct InjectablePoolableServiceRegistration(
     // -----------------------------------------------------------------------------------------------------------------
     public static bool TryCreateFromModel(
         AttributeSyntax attribute,
-        SemanticModel model,
+        ISymbolResolver resolver,
         out InjectablePoolableServiceRegistration registration
     ) {
         registration = default;
@@ -46,11 +46,14 @@ public record struct InjectablePoolableServiceRegistration(
         };
 
         if (genericNameSyntax?.TypeArgumentList.Arguments is not { Count: 2 } typeArgumentsList) return false;
-        if (typeArgumentsList.FirstOrDefault() is not {} serviceTypeSyntax) return false;
-        if (model.GetSymbolInfo(serviceTypeSyntax).Symbol is not INamedTypeSymbol serviceNamedTypeSymbol) return false;
 
-        if (typeArgumentsList.LastOrDefault() is not {} implementationTypeSyntax) return false;
-        if (model.GetSymbolInfo(implementationTypeSyntax).Symbol is not INamedTypeSymbol implementationTypeSymbol) return false;
+        var serviceTypeSyntax = typeArgumentsList[0];
+        var implementationTypeSyntax = typeArgumentsList[1];
+
+        var serviceNamedTypeSymbol = resolver.ResolveSymbol(serviceTypeSyntax) as INamedTypeSymbol;
+        var implementationTypeSymbol = resolver.ResolveSymbol(implementationTypeSyntax) as INamedTypeSymbol;
+
+        if (serviceNamedTypeSymbol is null || implementationTypeSymbol is null) return false;
 
         registration = new InjectablePoolableServiceRegistration(
             serviceNamedTypeSymbol,
@@ -59,6 +62,7 @@ public record struct InjectablePoolableServiceRegistration(
 
         return true;
     }
+
 
     public void FormatPoolText(StringBuilder builder) {
         builder.IndentLine(1, $"public ObjectPool<{ImplementationTypeName.ToDisplayString()}> {ImplementationTypeName.Name}Pool {{ get; }} = _objectPoolProvider")

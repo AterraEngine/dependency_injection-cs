@@ -37,7 +37,7 @@ public record struct FactoryCreatedServiceRegistration(
     public static bool TryCreateFromModel(
         INamedTypeSymbol implementationTypeSymbol,
         AttributeSyntax attribute,
-        SemanticModel model,
+        ISymbolResolver resolver,
         out FactoryCreatedServiceRegistration registration
     ) {
         registration = default;
@@ -52,10 +52,10 @@ public record struct FactoryCreatedServiceRegistration(
 
         // order depends on the way it is defined in the attribute
         if (typeArgumentsList.FirstOrDefault() is not {} factoryTypeSyntax) return false;
-        if (model.GetSymbolInfo(factoryTypeSyntax).Symbol is not INamedTypeSymbol factoryNamedTypeSymbol) return false;
+        if (resolver.ResolveSymbol(factoryTypeSyntax) is not INamedTypeSymbol factoryNamedTypeSymbol) return false;
 
         if (typeArgumentsList.LastOrDefault() is not {} serviceTypeSyntax) return false;
-        if (model.GetSymbolInfo(serviceTypeSyntax).Symbol is not INamedTypeSymbol serviceNamedTypeSymbol) return false;
+        if (resolver.ResolveSymbol(serviceTypeSyntax) is not INamedTypeSymbol serviceNamedTypeSymbol) return false;
 
         if (attribute.ArgumentList?.Arguments.FirstOrDefault()?.Expression is not MemberAccessExpressionSyntax memberAccess) return false;
         if (!memberAccess.TryGetAsServiceLifetimeString(out string? lifeTime)) return false;
