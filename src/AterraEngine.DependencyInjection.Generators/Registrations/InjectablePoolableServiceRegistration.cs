@@ -22,9 +22,11 @@ public record struct InjectablePoolableServiceRegistration(
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
     public void FormatText(StringBuilder builder, string assemblyName) {
-        builder.IndentLine(2, $"services.Add{LifeTime}<{ServiceTypeName.ToDisplayString()}>("
-            + $"provider => provider.GetRequiredService<{assemblyName}.AutoPooledServices>().{ImplementationTypeName.Name}Pool.Get()"
-            + $");");
+        builder
+            .IndentLine(2, $"services.Add{LifeTime}<{ServiceTypeName.ToDisplayString()}>(")
+            .IndentLine(3, $"(provider) => provider.GetRequiredService<{assemblyName}.AutoPooledServices>().{ImplementationTypeName.Name}Pool.Get()")
+            .IndentLine(2, ");")
+            ;
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -59,7 +61,7 @@ public record struct InjectablePoolableServiceRegistration(
     }
 
     public void FormatPoolText(StringBuilder builder) {
-        builder.IndentLine(1, $"public ObjectPool<{ImplementationTypeName.ToDisplayString()}> {ImplementationTypeName.Name}Pool {{ get; }} "
-            + $"= _objectPoolProvider.Create(new AterraEngine.DependencyInjection.PooledInjectableServiceObjectPolicy<{ImplementationTypeName.ToDisplayString()}>());");
+        builder.IndentLine(1, $"public ObjectPool<{ImplementationTypeName.ToDisplayString()}> {ImplementationTypeName.Name}Pool {{ get; }} = _objectPoolProvider")
+            .IndentLine(2, $".Create(new AterraEngine.DependencyInjection.PooledInjectableServiceObjectPolicy<{ImplementationTypeName.ToDisplayString()}>());");
     }
 }

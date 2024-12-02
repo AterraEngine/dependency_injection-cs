@@ -11,5 +11,3 @@ public class ExamplePooled : IExamplePooled {
 }
 
 public interface IExamplePooled : IManualPoolable;
-
-// FileID / FilePath  / Hash / Type (Enum) / MB Size

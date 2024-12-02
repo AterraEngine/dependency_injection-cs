@@ -24,7 +24,11 @@ public record struct FactoryCreatedServiceRegistration(
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
     public void FormatText(StringBuilder builder, string _) {
-        builder.IndentLine(2, $"services.Add{LifeTime}<{ServiceTypeName.ToDisplayString()}>((provider) => provider.GetRequiredService<{FactoryTypeName.ToDisplayString()}>().Create());");
+        builder
+            .IndentLine(2, $"services.Add{LifeTime}<{ServiceTypeName.ToDisplayString()}>(")
+            .IndentLine(3, $"(provider) => provider.GetRequiredService<{FactoryTypeName.ToDisplayString()}>().Create()")
+            .IndentLine(2, ");")
+        ;
     }
 
     // -----------------------------------------------------------------------------------------------------------------

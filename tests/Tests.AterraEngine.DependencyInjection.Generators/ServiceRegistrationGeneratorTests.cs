@@ -109,7 +109,9 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
         public static class ServiceRegistration {
             public static IServiceCollection RegisterServicesFromTestProject(this IServiceCollection services) {
                 services.AddSingleton<TestNamespace.IExampleFactory, TestNamespace.ExampleFactory>();
-                services.AddTransient<TestNamespace.ICreatedService>((provider) => provider.GetRequiredService<TestNamespace.IExampleFactory>().Create());
+                services.AddTransient<TestNamespace.ICreatedService>(
+                    (provider) => provider.GetRequiredService<TestNamespace.IExampleFactory>().Create()
+                );
                 return services;
             }
         }
@@ -165,7 +167,9 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
         public static class ServiceRegistration {
             public static IServiceCollection RegisterServicesFromTestProject(this IServiceCollection services) {
                 services.AddSingleton<TestProject.AutoPooledServices>();
-                services.AddTransient<TestProject.IExamplePooled>(provider => provider.GetRequiredService<TestProject.AutoPooledServices>().ExamplePooledPool.Get());
+                services.AddTransient<TestProject.IExamplePooled>(
+                    (provider) => provider.GetRequiredService<TestProject.AutoPooledServices>().ExamplePooledPool.Get()
+                );
                 return services;
             }
         }
@@ -180,7 +184,8 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
         public partial class AutoPooledServices {
             private static readonly DefaultObjectPoolProvider _objectPoolProvider = new();
         
-            public ObjectPool<TestProject.ExamplePooled> ExamplePooledPool { get; } = _objectPoolProvider.Create(new AterraEngine.DependencyInjection.PooledInjectableServiceObjectPolicy<TestProject.ExamplePooled>());
+            public ObjectPool<TestProject.ExamplePooled> ExamplePooledPool { get; } = _objectPoolProvider
+                .Create(new AterraEngine.DependencyInjection.PooledInjectableServiceObjectPolicy<TestProject.ExamplePooled>());
         }
         
         """;
