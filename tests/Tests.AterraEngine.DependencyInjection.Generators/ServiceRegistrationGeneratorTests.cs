@@ -35,7 +35,6 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
     [Theory]
     [InlineData(FactoryCreatedServiceInput, FactoryCreatedServiceOutput)]
     [InlineData(InjectableServiceInput, InjectableServiceOutput)]
-    // TODO make tests for the pooledInjectable generator option
     public async Task TestText(string inputText, string expectedOutput) {
         GeneratorDriverRunResult runResult = await RunGeneratorAsync(inputText);
         
@@ -74,6 +73,7 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
             ignoreLineEndingDifferences: true,
             ignoreWhiteSpaceDifferences: true
         );
+        
         Assert.Equal(
             expectedOutputPooledServices.Trim(),
             pooledServicesResult.Value.SourceText.ToString().Trim(),
