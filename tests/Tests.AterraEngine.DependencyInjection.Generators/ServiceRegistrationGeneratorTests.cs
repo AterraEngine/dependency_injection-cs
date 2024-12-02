@@ -63,7 +63,7 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
         
         GeneratedSourceResult? pooledServicesResult = runResult.Results
             .SelectMany(result => result.GeneratedSources)
-            .SingleOrDefault(result => result.HintName.EndsWith("PooledServices.g.cs"));
+            .SingleOrDefault(result => result.HintName.EndsWith("AutoPooledServices.g.cs"));
         
         Assert.NotNull(serviceRegistrationResult?.SourceText);
         Assert.NotNull(pooledServicesResult?.SourceText);

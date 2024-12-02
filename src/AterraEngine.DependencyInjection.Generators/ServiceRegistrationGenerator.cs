@@ -19,7 +19,7 @@ namespace AterraEngine.DependencyInjection.Generators;
 [Generator(LanguageNames.CSharp)]
 public class ServiceRegistrationGenerator : IIncrementalGenerator {
     private const string ServiceRegistrationFileName = "ServiceRegistration.g.cs";
-    private const string PooledServicesFileName = "PooledServices.g.cs";
+    private const string PooledServicesFileName = "AutoPooledServices.g.cs";
     
     private const string InjectableServiceAttributeMetadataName = "AterraEngine.DependencyInjection.InjectableServiceAttribute`1";
     private const string FactoryCreatedServiceAttributeMetadataName = "AterraEngine.DependencyInjection.FactoryCreatedServiceAttribute`2";
