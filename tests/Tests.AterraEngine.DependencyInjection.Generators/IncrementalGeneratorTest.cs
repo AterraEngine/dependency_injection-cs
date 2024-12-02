@@ -17,7 +17,7 @@ namespace Tests.AterraEngine.DependencyInjection.Generators;
 public abstract class IncrementalGeneratorTest<TGenerator> where TGenerator : IIncrementalGenerator, new() {
     protected abstract Assembly[] ReferenceAssemblies { get; }
 
-    protected async Task TestGeneratorAsync(string input, string expectedOutput, Func<GeneratedSourceResult, bool> predicate) {
+    protected async Task<GeneratorDriverRunResult> RunGeneratorAsync(string input) {
         using var workspace = new AdhocWorkspace();
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(new TGenerator())
@@ -37,12 +37,10 @@ public abstract class IncrementalGeneratorTest<TGenerator> where TGenerator : II
         );
 
         Compilation? compilation = await project.GetCompilationAsync();
-
         Assert.NotNull(compilation);
+
         ImmutableArray<Diagnostic> diagnostics = compilation.GetDiagnostics();
-        foreach (Diagnostic diagnostic in diagnostics) {
-            Console.WriteLine($"Error Diagnostic: {diagnostic.GetMessage()}");
-        }
+        Assert.Empty(diagnostics);
 
         GeneratorDriverRunResult runResult = driver.RunGenerators(compilation).GetRunResult();
 
@@ -51,16 +49,6 @@ public abstract class IncrementalGeneratorTest<TGenerator> where TGenerator : II
             Console.WriteLine($"Error Diagnostic: {diagnostic.GetMessage()}");
         }
 
-        GeneratedSourceResult? generatedSource = runResult.Results
-            .SelectMany(result => result.GeneratedSources)
-            .SingleOrDefault(predicate);
-
-        Assert.NotNull(generatedSource?.SourceText);
-        Assert.Equal(
-            expectedOutput.Trim(),
-            generatedSource.Value.SourceText.ToString().Trim(),
-            ignoreLineEndingDifferences: true,
-            ignoreWhiteSpaceDifferences: true
-        );
+        return runResult;
     }
 }

@@ -62,4 +62,4 @@ services.RegisterServicesFromYourAssemblyName();
 
 ## Contributing
 
-Contributions are welcome! Please fork this repository and submit a
+Contributions are welcome! Please fork this repository and submit a pull request.
