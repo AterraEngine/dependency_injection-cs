@@ -15,12 +15,15 @@ It includes source generators for automatic registration of services and attribu
 - .NET 9.0 or later
 
 ### Installation
+
 You can install `AterraEngine.DependencyInjection` via NuGet Package Manager:
+
 ```bash
 dotnet add package AterraEngine.DependencyInjection
 ```
 
 You can install `AterraEngine.DependencyInjection.Generator` via NuGet Package Manager:
+
 ```bash
 dotnet add package AterraEngine.DependencyInjection.Generator
 ```

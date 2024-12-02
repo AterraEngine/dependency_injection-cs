@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Tests.AterraEngine.DependencyInjection.Data;
 
 namespace Tests.AterraEngine.DependencyInjection;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------

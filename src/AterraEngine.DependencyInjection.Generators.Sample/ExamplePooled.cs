@@ -1,18 +1,15 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-
-using Microsoft.Extensions.DependencyInjection;
-
-namespace AterraEngine.DependencyInjection;
+namespace AterraEngine.DependencyInjection.Generators.Sample;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-[AttributeUsage(AttributeTargets.Class, Inherited = false)]
-public class FactoryCreatedServiceAttribute<TFactory, TService>(ServiceLifetime lifetime) : Attribute
-    where TFactory : IFactoryService<TService> 
-{
-    public ServiceLifetime Lifetime { get; } = lifetime;
-    public Type FactoryType { get; } = typeof(TFactory);
-    public Type ServiceType { get; } = typeof(TService);
+[PooledInjectableService<IExamplePooled, ExamplePooled>]
+public class ExamplePooled : IExamplePooled {
+    public bool Reset() => true;
 }
+
+public interface IExamplePooled : IManualPoolable;
+
+// FileID / FilePath  / Hash / Type (Enum) / MB Size

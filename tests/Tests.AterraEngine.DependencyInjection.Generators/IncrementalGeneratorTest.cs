@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace Tests.AterraEngine.DependencyInjection.Generators;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -20,10 +19,10 @@ public abstract class IncrementalGeneratorTest<TGenerator> where TGenerator : II
 
     protected async Task TestGeneratorAsync(string input, string expectedOutput, Func<GeneratedSourceResult, bool> predicate) {
         using var workspace = new AdhocWorkspace();
-        
+
         GeneratorDriver driver = CSharpGeneratorDriver.Create(new TGenerator())
             .WithUpdatedParseOptions(new CSharpParseOptions(LanguageVersion.Latest));
-        
+
         Project project = workspace.CurrentSolution
             .AddProject("TestProject", "TestProject.dll", "C#")
             .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
@@ -33,20 +32,20 @@ public abstract class IncrementalGeneratorTest<TGenerator> where TGenerator : II
 
         project = project.AddDocument("Test.cs", input).Project;
         project = ReferenceAssemblies.Aggregate(
-            project, 
-            (current, assembly) => current.AddMetadataReference(MetadataReference.CreateFromFile(assembly.Location))
+            project,
+            func: (current, assembly) => current.AddMetadataReference(MetadataReference.CreateFromFile(assembly.Location))
         );
 
         Compilation? compilation = await project.GetCompilationAsync();
-        
+
         Assert.NotNull(compilation);
         ImmutableArray<Diagnostic> diagnostics = compilation.GetDiagnostics();
         foreach (Diagnostic diagnostic in diagnostics) {
             Console.WriteLine($"Error Diagnostic: {diagnostic.GetMessage()}");
         }
-        
+
         GeneratorDriverRunResult runResult = driver.RunGenerators(compilation).GetRunResult();
-            
+
         Assert.NotEmpty(runResult.GeneratedTrees);
         foreach (Diagnostic diagnostic in runResult.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)) {
             Console.WriteLine($"Error Diagnostic: {diagnostic.GetMessage()}");
@@ -64,5 +63,4 @@ public abstract class IncrementalGeneratorTest<TGenerator> where TGenerator : II
             ignoreWhiteSpaceDifferences: true
         );
     }
-
 }

@@ -41,7 +41,7 @@ public class FactoryCreatedServiceAttributeTest {
     // Dummy class to test attribute application
     [FactoryCreatedService<MyServiceFactory, IMyService>(ServiceLifetime.Singleton)]
     private class SampleServiceWithAttribute;
-    
+
     public interface IMyService;
 
     public class MyService : IMyService;

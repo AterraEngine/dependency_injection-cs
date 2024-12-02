@@ -9,20 +9,20 @@ namespace AterraEngine.DependencyInjection.Generators;
 // ---------------------------------------------------------------------------------------------------------------------
 public static class Rules {
     public static readonly DiagnosticDescriptor NoAttributesFound = new(
-        id: "ATRDI001",
-        title: "InjectableServiceAttribute not found",
-        messageFormat: "InjectableServiceAttribute not found",
-        category: "InjectableServices",
-        defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true
+        "ATRDI001",
+        "InjectableServiceAttribute not found",
+        "InjectableServiceAttribute not found",
+        "InjectableServices",
+        DiagnosticSeverity.Info,
+        true
     );
 
     public static readonly DiagnosticDescriptor NoAssemblyNameFound = new(
-        id: "ATRDI002",
-        title: "No assembly name was found",
-        messageFormat: "No assembly name was found",
-        category: "SourceGenerator",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        "ATRDI002",
+        "No assembly name was found",
+        "No assembly name was found",
+        "SourceGenerator",
+        DiagnosticSeverity.Error,
+        true
     );
 }

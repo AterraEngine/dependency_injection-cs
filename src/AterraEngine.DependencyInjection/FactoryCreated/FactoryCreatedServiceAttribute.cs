@@ -1,20 +1,17 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AterraEngine.DependencyInjection.Generators.Sample;
+namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-[FactoryCreatedService<IExampleFactory, ICreatedService>(ServiceLifetime.Transient)]
-public class CreatedService : ICreatedService;
-
-public interface ICreatedService;
-
-[InjectableService<IExampleFactory>(ServiceLifetime.Singleton)]
-public class ExampleFactory : IExampleFactory {
-    public ICreatedService Create() => new CreatedService();
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
+public class FactoryCreatedServiceAttribute<TFactory, TService>(ServiceLifetime lifetime) : Attribute
+    where TFactory : IFactoryService<TService> {
+    public ServiceLifetime Lifetime { get; } = lifetime;
+    public Type FactoryType { get; } = typeof(TFactory);
+    public Type ServiceType { get; } = typeof(TService);
 }
-
-public interface IExampleFactory : IFactoryService<ICreatedService>;

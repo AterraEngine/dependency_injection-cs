@@ -4,12 +4,10 @@
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests.AterraEngine.DependencyInjection.Data;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceProviderFixture : IDisposable {
-    public ServiceProvider ServiceProvider { get; }
 
     // -----------------------------------------------------------------------------------------------------------------
     // Constructors
@@ -19,6 +17,7 @@ public class ServiceProviderFixture : IDisposable {
         services.RegisterServicesFromTestsAterraEngineDependencyInjection();
         ServiceProvider = services.BuildServiceProvider();
     }
+    public ServiceProvider ServiceProvider { get; }
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods

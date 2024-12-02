@@ -1,13 +1,13 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.ObjectPool;
 
-namespace AterraEngine.DependencyInjection.Generators.Sample;
+namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-[InjectableService<IExampleService>(ServiceLifetime.Singleton)]
-public class ExampleService : IExampleService;
-
-public interface IExampleService;
+public class PooledInjectableServiceObjectPolicy<T> : PooledObjectPolicy<T> where T : IManualPoolable, new() {
+    public override T Create() => new();
+    public override bool Return(T obj) => obj.Reset();
+}

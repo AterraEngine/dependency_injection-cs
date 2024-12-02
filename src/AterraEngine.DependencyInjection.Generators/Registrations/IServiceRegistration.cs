@@ -2,6 +2,7 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using Microsoft.CodeAnalysis;
+using System.Text;
 
 namespace AterraEngine.DependencyInjection.Generators.Registrations;
 // ---------------------------------------------------------------------------------------------------------------------
@@ -12,5 +13,5 @@ public interface IServiceRegistration {
     public INamedTypeSymbol ImplementationTypeName { get; }
     public string LifeTime { get; }
 
-    public string TextFormat { get; set; }
+    public void FormatText(StringBuilder builder, string assemblyName);
 }

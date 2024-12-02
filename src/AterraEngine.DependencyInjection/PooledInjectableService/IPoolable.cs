@@ -1,13 +1,13 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using Microsoft.Extensions.DependencyInjection;
-
-namespace AterraEngine.DependencyInjection.Generators.Sample;
+namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-[InjectableService<IExampleService>(ServiceLifetime.Singleton)]
-public class ExampleService : IExampleService;
+public interface IManualPoolable {
+    public bool Reset();
+}
 
-public interface IExampleService;
+public interface IDisposedPoolable : IManualPoolable, IDisposable {
+}

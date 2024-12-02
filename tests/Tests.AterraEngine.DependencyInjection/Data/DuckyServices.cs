@@ -5,7 +5,6 @@ using AterraEngine.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests.AterraEngine.DependencyInjection.Data;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -14,6 +13,7 @@ public interface IDucky {
 }
 
 public interface IDuckyFactory : IFactoryService<IDucky>;
+
 public interface IDuckyService {
     string Quack(IDucky ducky);
 }
@@ -32,4 +32,3 @@ public class DuckyFactory : IDuckyFactory {
 public class Ducky : IDucky {
     public string QuackingNoise { get; } = "Quack Quack";
 }
-
