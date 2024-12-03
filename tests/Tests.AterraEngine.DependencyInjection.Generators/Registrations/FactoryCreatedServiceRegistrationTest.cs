@@ -45,6 +45,6 @@ public class FactoryCreatedServiceRegistrationTests {
                         (provider) => provider.GetRequiredService<MyNamespace.MyServiceFactory>().Create()
                     );
             """.TrimStart();
-        Assert.Equal(expected, builder.ToString().Trim());
+        Assert.Equal(expected, builder.ToString().Trim(), ignoreLineEndingDifferences:true);
     }
 }

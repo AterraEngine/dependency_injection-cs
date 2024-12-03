@@ -42,6 +42,6 @@ public class InjectableServiceRegistrationTest {
 
         // Assert
         var expected = "services.AddScoped<IMyService, MyNamespace.MyServiceImplementation>();";
-        Assert.Equal(expected, builder.ToString().Trim());
+        Assert.Equal(expected, builder.ToString().Trim(), ignoreLineEndingDifferences:true);
     }
 }

@@ -44,7 +44,7 @@ public class InjectablePoolableServiceRegistrationTests {
                         (provider) => provider.GetRequiredService<TestAssembly.AutoPooledServices>().MyServiceImplementationPool.Get()
                     );
             """.TrimStart();
-        Assert.Equal(expected, builder.ToString().Trim());
+        Assert.Equal(expected, builder.ToString().Trim(), ignoreLineEndingDifferences:true);
     }
 
     [Fact]
@@ -72,6 +72,6 @@ public class InjectablePoolableServiceRegistrationTests {
 
         string actual = builder.ToString().Trim();
 
-        Assert.Equal(expected, actual);
+        Assert.Equal(expected, actual, ignoreLineEndingDifferences:true);
     }
 }
