@@ -12,7 +12,7 @@
 
         <IsPackable>true</IsPackable>
         <PackageId>AterraEngine.DependencyInjection.Generators</PackageId> <!-- Main package name -->
-        <Version>1.3.1</Version> <!-- Package version -->
+        <Version>1.3.2</Version> <!-- Package version -->
         <Authors>Anna Sas</Authors>
         <Description>A small package allowing easy collection of dependency injection services</Description>
         <PackageProjectUrl>https://github.com/AterraEngine/dependency_injection-cs/</PackageProjectUrl>
