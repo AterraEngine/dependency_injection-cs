@@ -20,7 +20,7 @@ jobs:
           dotnet-version: '9.x'
 
       - name: Restore dependencies
-        run: dotnet restore AterraEngine.DependencyInjection.sln
+        run: dotnet restore DependencyInjection.sln
 
       - name: Build
         run: dotnet build AterraEngine.DependencyInjection.sln --configuration Release --no-restore
