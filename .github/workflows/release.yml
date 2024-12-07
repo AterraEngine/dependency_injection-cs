@@ -48,11 +48,11 @@ jobs:
         run: dotnet restore DependencyInjection.sln
 
       - name: Build
-        run: dotnet build AterraEngine.DependencyInjection.sln --configuration Release --no-restore
+        run: dotnet build DependencyInjection.sln --configuration Release --no-restore
 
       - name: Publish to NuGet
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          dotnet nuget push src/AterraEngine.AterraEngine.DependencyInjection/bin/Release/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
-          dotnet nuget push src/AterraEngine.AterraEngine.DependencyInjection.Generators/bin/Release/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+          dotnet nuget push src/AterraEngine.DependencyInjection/bin/Release/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+          dotnet nuget push src/AterraEngine.DependencyInjection.Generators/bin/Release/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
