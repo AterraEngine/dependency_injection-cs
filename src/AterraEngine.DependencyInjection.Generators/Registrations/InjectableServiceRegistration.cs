@@ -11,7 +11,6 @@ namespace AterraEngine.DependencyInjection.Generators.Registrations;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 // ReSharper disable once StructCanBeMadeReadOnly
-// Yes in a NET9 world this would be a record struct, this is a generator and in netstandard2 this isn't worth it.
 public record struct InjectableServiceRegistration(
     INamedTypeSymbol ServiceTypeName,
     INamedTypeSymbol ImplementationTypeName,

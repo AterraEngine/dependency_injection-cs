@@ -56,6 +56,7 @@ public class ServiceRegistrationGenerator : IIncrementalGenerator {
         IServiceRegistration[] registrations = GetRegistrations(context, compilation, classDeclarations)
             .OrderBy(registration => registration.LifeTime)
             .ThenBy(registration => registration.ServiceTypeName.ToDisplayString())
+            .ThenBy(registration => registration.ImplementationTypeName.ToDisplayString())
             .ToArray()
         ;
 
