@@ -1,30 +1,34 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using CliArgsParser;
-using Microsoft.Extensions.DependencyInjection;
-using Tools.AterraEngine.DependencyInjection.Commands;
+
+using CodeOfChaos.CliArgsParser;
+using CodeOfChaos.CliArgsParser.Library;
 
 namespace Tools.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-internal static class Program {
-    public async static Task Main(string[] args) {
-        IServiceCollection serviceCollection = new ServiceCollection();
+public static class Program {
+    public static async Task Main(string[] args) {
+        // Register & Build the parser
+        //      Don't forget to add the current assembly if you built more tools for the current project
+        CliArgsParser parser = CliArgsBuilder.CreateFromConfig(
+            config => {
+                config.AddCommandsFromAssemblyEntrypoint<IAssemblyEntry>();
+            }
+        ).Build();
 
-        serviceCollection.AddCliArgsParser(configuration =>
-            configuration
-                .SetConfig(new CliArgsParserConfig {
-                    Overridable = true,
-                    GenerateShortNames = true
-                })
-                .AddFromType<VersionBumpCommands>()
+        // We are doing this here because else the launchSettings.json file becomes a humongous issue to deal with.
+        //      Sometimes CLI params is not the answer.
+        //      Code is the true saviour
+        string projects = string.Join(";",
+            "AterraEngine.DependencyInjection",
+            "AterraEngine.DependencyInjection.Generators"
         );
+        string oneLineArgs = InputHelper.ToOneLine(args).Replace("%PROJECTS%", projects);
 
-        ServiceProvider provider = serviceCollection.BuildServiceProvider();
-
-        var argsParser = provider.GetRequiredService<IArgsParser>();
-        await argsParser.ParseAsyncLinear(args);
+        // Finally start executing
+        await parser.ParseAsync(oneLineArgs);
     }
 }
