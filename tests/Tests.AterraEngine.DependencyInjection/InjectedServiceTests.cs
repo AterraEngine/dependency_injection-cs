@@ -8,13 +8,22 @@ namespace Tests.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class InjectedServicesTest(ServiceProviderFixture fixture) : IClassFixture<ServiceProviderFixture> {
-    [Fact]
-    public void Test_DuckyService() {
-        ServiceProvider provider = fixture.ServiceProvider;
+public class InjectedServicesTest {
+    [Test]
+    public async Task Test_DuckyService() {
+        // Arrange
+        var services = new ServiceCollection();
+        services.RegisterServicesFromTestsAterraEngineDependencyInjection();
+        ServiceProvider provider = services.BuildServiceProvider();
+        
+        // Act
+        var duckyService = provider.GetService<IDuckyService>();
+        var duckyFactory = provider.GetService<IDuckyFactory>();
+        var ducky = provider.GetService<IDucky>();
 
-        Assert.IsType<Ducky>(provider.GetRequiredService<IDucky>());
-        Assert.IsType<DuckyFactory>(provider.GetRequiredService<IDuckyFactory>());
-        Assert.IsType<DuckyService>(provider.GetRequiredService<IDuckyService>());
+        // Assert
+        await Assert.That(duckyService).IsNotNull().And.IsTypeOf<DuckyService>();
+        await Assert.That(duckyFactory).IsNotNull().And.IsTypeOf<DuckyFactory>();
+        await Assert.That(ducky).IsNotNull().And.IsTypeOf<Ducky>();
     }
 }

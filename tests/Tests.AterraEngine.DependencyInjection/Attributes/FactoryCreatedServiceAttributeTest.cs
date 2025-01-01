@@ -11,8 +11,8 @@ namespace Tests.AterraEngine.DependencyInjection.Attributes;
 // ---------------------------------------------------------------------------------------------------------------------
 [TestSubject(typeof(FactoryCreatedServiceAttribute<,>))]
 public class FactoryCreatedServiceAttributeTest {
-    [Fact]
-    public void FactoryCreatedServiceAttribute_PropertiesAreSetCorrectly() {
+    [Test]
+    public async Task FactoryCreatedServiceAttribute_PropertiesAreSetCorrectly() {
         // Arrange
         var attribute = new FactoryCreatedServiceAttribute<MyServiceFactory, IMyService>(ServiceLifetime.Scoped);
 
@@ -22,20 +22,21 @@ public class FactoryCreatedServiceAttributeTest {
         Type serviceType = attribute.ServiceType;
 
         // Assert
-        Assert.Equal(ServiceLifetime.Scoped, lifetime);
-        Assert.Equal(typeof(MyServiceFactory), factoryType);
-        Assert.Equal(typeof(IMyService), serviceType);
+        await Assert.That(lifetime).IsEqualTo(ServiceLifetime.Scoped);
+        await Assert.That(factoryType).IsEqualTo(typeof(MyServiceFactory));
+        await Assert.That(serviceType).IsEqualTo(typeof(IMyService));
     }
 
-    [Fact]
-    public void FactoryCreatedServiceAttribute_CanBeAppliedToClass() {
+    [Test]
+    public async Task FactoryCreatedServiceAttribute_CanBeAppliedToClass() {
         // Act
         object[] attributes = typeof(SampleServiceWithAttribute).GetCustomAttributes(typeof(FactoryCreatedServiceAttribute<MyServiceFactory, IMyService>), false);
-
+        var attribute = attributes.FirstOrDefault() as FactoryCreatedServiceAttribute<MyServiceFactory, IMyService>;
+        
         // Assert
-        Assert.Single(attributes);
-        var attribute = (FactoryCreatedServiceAttribute<MyServiceFactory, IMyService>)attributes.First();
-        Assert.Equal(ServiceLifetime.Singleton, attribute.Lifetime);
+        await Assert.That(attributes).IsNotEmpty().And.HasSingleItem();
+        await Assert.That(attribute).IsNotNull();
+        await Assert.That(attribute?.Lifetime).IsEqualTo(ServiceLifetime.Singleton);
     }
 
     // Dummy class to test attribute application

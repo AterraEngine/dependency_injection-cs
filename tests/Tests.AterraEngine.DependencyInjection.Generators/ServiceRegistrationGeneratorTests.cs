@@ -9,54 +9,55 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.ObjectPool;
 using System;
 using System.Linq;
-using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Xunit;
 
 namespace Tests.AterraEngine.DependencyInjection.Generators;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<ServiceRegistrationGenerator> {
-    protected override Assembly[] ReferenceAssemblies { get; } = [
+public partial class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<ServiceRegistrationGenerator> {
+    protected override System.Reflection.Assembly[] ReferenceAssemblies { get; } = [
         typeof(object).Assembly,
         typeof(FactoryCreatedServiceAttribute<,>).Assembly,
         typeof(IFactoryService<>).Assembly,
         typeof(InjectableServiceAttribute<>).Assembly,
-        typeof(ValueTuple).Assembly,// For tuples
+        typeof(ValueTuple).Assembly, // For tuples
         typeof(Attribute).Assembly,
         typeof(Console).Assembly,
         typeof(ServiceLifetime).Assembly,
         typeof(PooledObjectPolicy<>).Assembly,
         typeof(DefaultObjectPoolProvider).Assembly,
-        Assembly.Load("System.Runtime")
+        System.Reflection.Assembly.Load("System.Runtime")
     ];
 
-    [Theory]
-    [InlineData(FactoryCreatedServiceInput, FactoryCreatedServiceOutput)]
-    [InlineData(InjectableServiceInput, InjectableServiceOutput)]
+    [Test]
+    [Arguments(FactoryCreatedServiceInput, FactoryCreatedServiceOutput)]
+    [Arguments(InjectableServiceInput, InjectableServiceOutput)]
     public async Task TestText(string inputText, string expectedOutput) {
+        // Arrange
         GeneratorDriverRunResult runResult = await RunGeneratorAsync(inputText);
         
+        // Act
         GeneratedSourceResult? generatedSource = runResult.Results
             .SelectMany(result => result.GeneratedSources)
             .SingleOrDefault(result => result.HintName.EndsWith("ServiceRegistration.g.cs"));
 
-        Assert.NotNull(generatedSource?.SourceText);
-        Assert.Equal(
-            expectedOutput.Trim(),
-            generatedSource.Value.SourceText.ToString().Trim(),
-            ignoreLineEndingDifferences: true,
-            ignoreWhiteSpaceDifferences: true
-        );
+        // Assert
+        await Assert.That(generatedSource?.SourceText).IsNotNull();
+        await Assert
+            .That(generatedSource?.SourceText.ToString())
+            .IsEqualTo(expectedOutput).IgnoringWhitespace().WithTrimming();
         
     }
     
-    [Theory]
-    [InlineData(PooledInjectableServiceInput, PooledInjectableServiceOutput, PooledInjectableServiceOutputPooledServices)]
+    [Test]
+    [Arguments(PooledInjectableServiceInput, PooledInjectableServiceOutput, PooledInjectableServiceOutputPooledServices)]
     public async Task TestPooledInjectableServiceOutput(string inputText, string expectedOutput, string expectedOutputPooledServices) {
+        // Arrange
         GeneratorDriverRunResult runResult = await RunGeneratorAsync(inputText);
         
+        // Act
         GeneratedSourceResult? serviceRegistrationResult = runResult.Results
             .SelectMany(result => result.GeneratedSources)
             .SingleOrDefault(result => result.HintName.EndsWith("ServiceRegistration.g.cs"));
@@ -64,23 +65,18 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
         GeneratedSourceResult? pooledServicesResult = runResult.Results
             .SelectMany(result => result.GeneratedSources)
             .SingleOrDefault(result => result.HintName.EndsWith("AutoPooledServices.g.cs"));
+
+        // Assert
+        await Assert.That(serviceRegistrationResult?.SourceText).IsNotNull();
+        await Assert
+            .That(serviceRegistrationResult?.SourceText.ToString())
+            .IsEqualTo(expectedOutput).IgnoringWhitespace().WithTrimming();
         
-        Assert.NotNull(serviceRegistrationResult?.SourceText);
-        Assert.NotNull(pooledServicesResult?.SourceText);
-        Assert.Equal(
-            expectedOutput.Trim(),
-            serviceRegistrationResult.Value.SourceText.ToString().Trim(),
-            ignoreLineEndingDifferences: true,
-            ignoreWhiteSpaceDifferences: true
-        );
+        await Assert.That(pooledServicesResult?.SourceText).IsNotNull();
+        await Assert
+            .That(pooledServicesResult?.SourceText.ToString())
+            .IsEqualTo(expectedOutputPooledServices).IgnoringWhitespace().WithTrimming();
         
-        Assert.Equal(
-            expectedOutputPooledServices.Trim(),
-            pooledServicesResult.Value.SourceText.ToString().Trim(),
-            ignoreLineEndingDifferences: true,
-            ignoreWhiteSpaceDifferences: true,
-            ignoreAllWhiteSpace:true
-        );
     }
 
     #region FactoryCreatedService Test
@@ -190,5 +186,4 @@ public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<Servic
         
         """;
     #endregion
-    
 }

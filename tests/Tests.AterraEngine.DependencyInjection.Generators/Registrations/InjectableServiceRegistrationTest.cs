@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Moq;
 using System.Text;
-using Xunit;
+using System.Threading.Tasks;
 
 namespace Tests.AterraEngine.DependencyInjection.Generators.Registrations;
 
@@ -15,8 +15,8 @@ namespace Tests.AterraEngine.DependencyInjection.Generators.Registrations;
 // ---------------------------------------------------------------------------------------------------------------------
 [TestSubject(typeof(InjectableServiceRegistration))]
 public class InjectableServiceRegistrationTest {
-    [Fact]
-    public void FormatText_ValidInput_GeneratesCorrectFormattedText()
+    [Test]
+    public async Task FormatText_ValidInput_GeneratesCorrectFormattedText()
     {
         // Arrange
         var serviceTypeMock = new Mock<INamedTypeSymbol>();
@@ -41,7 +41,7 @@ public class InjectableServiceRegistrationTest {
         registration.FormatText(builder, string.Empty);  // The second parameter is unused
 
         // Assert
-        var expected = "services.AddScoped<IMyService, MyNamespace.MyServiceImplementation>();";
-        Assert.Equal(expected, builder.ToString().Trim(), ignoreLineEndingDifferences:true);
+        string expected = "services.AddScoped<IMyService, MyNamespace.MyServiceImplementation>();";
+        await Assert.That(builder.ToString().Trim()).IsEqualTo(expected);
     }
 }

@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Moq;
 using System.Text;
-using Xunit;
+using System.Threading.Tasks;
 
 namespace Tests.AterraEngine.DependencyInjection.Generators.Registrations;
 
@@ -15,8 +15,8 @@ namespace Tests.AterraEngine.DependencyInjection.Generators.Registrations;
 // ---------------------------------------------------------------------------------------------------------------------
 [TestSubject(typeof(InjectablePoolableServiceRegistration))]
 public class InjectablePoolableServiceRegistrationTests {
-    [Fact]
-    public void FormatText_GeneratesCorrectOutput() {
+    [Test]
+    public async Task FormatText_GeneratesCorrectOutput() {
         // Arrange
         var mockServiceTypeSymbol = new Mock<INamedTypeSymbol>();
         var mockImplementationTypeSymbol = new Mock<INamedTypeSymbol>();
@@ -44,11 +44,11 @@ public class InjectablePoolableServiceRegistrationTests {
                         (provider) => provider.GetRequiredService<TestAssembly.AutoPooledServices>().MyServiceImplementationPool.Get()
                     );
             """.TrimStart();
-        Assert.Equal(expected, builder.ToString().Trim(), ignoreLineEndingDifferences:true);
+        await Assert.That(builder.ToString()).IsEqualTo(expected).IgnoringWhitespace();
     }
 
-    [Fact]
-    public void FormatPoolText_GeneratesCorrectOutput() {
+    [Test]
+    public async Task FormatPoolText_GeneratesCorrectOutput() {
         // Arrange
         var mockImplementationTypeSymbol = new Mock<INamedTypeSymbol>();
         mockImplementationTypeSymbol.Setup(x => x.Name).Returns("MyServiceImplementation");
@@ -70,8 +70,6 @@ public class InjectablePoolableServiceRegistrationTests {
                     .Create(new AterraEngine.DependencyInjection.PooledInjectableServiceObjectPolicy<MyNamespace.MyServiceImplementation>());
             """.Trim();
 
-        string actual = builder.ToString().Trim();
-
-        Assert.Equal(expected, actual, ignoreLineEndingDifferences:true);
+        await Assert.That(builder.ToString()).IsEqualTo(expected).IgnoringWhitespace();
     }
 }

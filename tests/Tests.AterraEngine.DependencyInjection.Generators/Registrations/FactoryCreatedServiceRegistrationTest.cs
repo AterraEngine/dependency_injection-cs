@@ -6,7 +6,8 @@ using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Moq;
 using System.Text;
-using Xunit;
+using System.Threading.Tasks;
+
 namespace Tests.AterraEngine.DependencyInjection.Generators.Registrations;
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -14,8 +15,8 @@ namespace Tests.AterraEngine.DependencyInjection.Generators.Registrations;
 // ---------------------------------------------------------------------------------------------------------------------
 [TestSubject(typeof(FactoryCreatedServiceRegistration))]
 public class FactoryCreatedServiceRegistrationTests {
-    [Fact]
-    public void FormatText_GeneratesCorrectOutput() {
+    [Test]
+    public async Task FormatText_GeneratesCorrectOutput() {
         // Arrange
         var mockServiceTypeSymbol = new Mock<INamedTypeSymbol>();
         var mockImplementationTypeSymbol = new Mock<INamedTypeSymbol>();
@@ -45,6 +46,7 @@ public class FactoryCreatedServiceRegistrationTests {
                         (provider) => provider.GetRequiredService<MyNamespace.MyServiceFactory>().Create()
                     );
             """.TrimStart();
-        Assert.Equal(expected, builder.ToString().Trim(), ignoreLineEndingDifferences:true);
+        
+        await Assert.That(builder.ToString()).IsEqualTo(expected).IgnoringWhitespace();
     }
 }

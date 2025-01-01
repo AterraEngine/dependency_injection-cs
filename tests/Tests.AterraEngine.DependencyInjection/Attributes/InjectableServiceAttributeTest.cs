@@ -4,6 +4,7 @@
 using AterraEngine.DependencyInjection;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using System.Runtime.InteropServices;
 
 namespace Tests.AterraEngine.DependencyInjection.Attributes;
 // ---------------------------------------------------------------------------------------------------------------------
@@ -11,8 +12,8 @@ namespace Tests.AterraEngine.DependencyInjection.Attributes;
 // ---------------------------------------------------------------------------------------------------------------------
 [TestSubject(typeof(InjectableServiceAttribute<>))]
 public class InjectableServiceAttributeTests {
-    [Fact]
-    public void InjectableServiceAttribute_PropertiesAreSetCorrectly() {
+    [Test]
+    public async Task InjectableServiceAttribute_PropertiesAreSetCorrectly() {
         // Arrange
         var attribute = new InjectableServiceAttribute<IMyService>(ServiceLifetime.Scoped);
 
@@ -21,19 +22,21 @@ public class InjectableServiceAttributeTests {
         Type serviceType = attribute.ServiceType;
 
         // Assert
-        Assert.Equal(ServiceLifetime.Scoped, lifetime);
-        Assert.Equal(typeof(IMyService), serviceType);
+        await Assert.That(lifetime).IsEqualTo(ServiceLifetime.Scoped);
+        await Assert.That(serviceType).IsEqualTo(typeof(IMyService));
     }
 
-    [Fact]
-    public void InjectableServiceAttribute_CanBeAppliedToClass() {
+    [Test]
+    public async Task InjectableServiceAttribute_CanBeAppliedToClass() {
         // Act
         object[] attributes = typeof(SampleServiceWithAttribute).GetCustomAttributes(typeof(InjectableServiceAttribute<IMyService>), false);
-
+    
+        var attribute = attributes.FirstOrDefault() as InjectableServiceAttribute<IMyService>;
+        
         // Assert
-        Assert.Single(attributes);
-        var attribute = (InjectableServiceAttribute<IMyService>)attributes.First();
-        Assert.Equal(ServiceLifetime.Singleton, attribute.Lifetime);
+        await Assert.That(attributes).IsNotEmpty().And.HasSingleItem();
+        await Assert.That(attribute).IsNotNull();
+        await Assert.That(attribute?.Lifetime).IsEqualTo(ServiceLifetime.Singleton);
     }
 
     // Dummy class to test attribute application
