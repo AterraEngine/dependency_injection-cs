@@ -9,14 +9,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.ObjectPool;
 using System;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Tests.AterraEngine.DependencyInjection.Generators;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public partial class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<ServiceRegistrationGenerator> {
+public class ServiceRegistrationGeneratorTests : IncrementalGeneratorTest<ServiceRegistrationGenerator> {
     protected override System.Reflection.Assembly[] ReferenceAssemblies { get; } = [
         typeof(object).Assembly,
         typeof(FactoryCreatedServiceAttribute<,>).Assembly,
