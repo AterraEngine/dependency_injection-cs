@@ -41,10 +41,10 @@ public static class Program {
     public enum ServiceLifetime {
         Transient = -1,
         Singleton = 0,
-        EngineScope,
-        GameScope,
-        WorldScope,
-        LevelScope,
+        EngineScope = 1,
+        GameScope = 2,
+        WorldScope = 3,
+        LevelScope = 4,
     }
 
 

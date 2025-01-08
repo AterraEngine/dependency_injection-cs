@@ -24,6 +24,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.AterraEngine.Depend
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Contracts", "src\AterraEngine.DependencyInjection.Contracts\AterraEngine.DependencyInjection.Contracts.csproj", "{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks.AterraEngine.DependencyInjection", "Benchmarks.AterraEngine.DependencyInjection\Benchmarks.AterraEngine.DependencyInjection.csproj", "{C14A5DC1-E537-4D0E-B429-AB98CEEDC9E2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -62,6 +64,10 @@ Global
 		{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C14A5DC1-E537-4D0E-B429-AB98CEEDC9E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C14A5DC1-E537-4D0E-B429-AB98CEEDC9E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C14A5DC1-E537-4D0E-B429-AB98CEEDC9E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C14A5DC1-E537-4D0E-B429-AB98CEEDC9E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{750AAA87-82AF-4751-A32A-DA7A59CDAF77} = {AB23EDEA-C8C1-4596-84B2-A718AC73998D}
@@ -72,5 +78,6 @@ Global
 		{0A34C7E8-7D1C-4EC1-8965-D344D61F7248} = {48079CF6-967F-44E5-9E9D-E42AD4386072}
 		{7900D381-15AC-42A9-9ECA-C1F90B832BBC} = {0402FE55-92F8-446E-B85C-35A64201EEF7}
 		{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01} = {AB23EDEA-C8C1-4596-84B2-A718AC73998D}
+		{C14A5DC1-E537-4D0E-B429-AB98CEEDC9E2} = {9947E0A4-4FB3-42C3-8251-45EBFEF1CF92}
 	EndGlobalSection
 EndGlobal

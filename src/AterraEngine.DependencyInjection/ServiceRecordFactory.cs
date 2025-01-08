@@ -41,6 +41,7 @@ public static class ServiceRecordFactory {
         //     );
         // }
         
+        // Lambda generation
         ParameterExpression parameterExpression = Expression.Parameter(typeof(IServiceProvider), "provider");
         MethodInfo methodInfo = typeof(IServiceProvider).GetMethod(nameof(IServiceProvider.GetRequiredService), BindingFlags.Instance | BindingFlags.Public)!;
         
@@ -52,6 +53,7 @@ public static class ServiceRecordFactory {
         NewExpression constructorCall = Expression.New(constructor, arguments);
         Expression<Func<IServiceProvider, TService>> lambda = Expression.Lambda<Func<IServiceProvider, TService>>(constructorCall, parameterExpression);
 
+        // Actually store the record
         return new ServiceRecord<TService, TImplementation>(
             typeof(TService),
             typeof(TImplementation),
