@@ -24,7 +24,8 @@ public static class Program {
         //      Code is the true saviour
         string projects = string.Join(";",
             "AterraEngine.DependencyInjection",
-            "AterraEngine.DependencyInjection.Generators"
+            "AterraEngine.DependencyInjection.Generators",
+            "AterraEngine.DependencyInjection.Contracts"
         );
         string oneLineArgs = InputHelper.ToOneLine(args).Replace("%PROJECTS%", projects);
 

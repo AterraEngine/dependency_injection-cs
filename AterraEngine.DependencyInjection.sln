@@ -4,13 +4,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInje
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{AB23EDEA-C8C1-4596-84B2-A718AC73998D}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{0402FE55-92F8-446E-B85C-35A64201EEF7}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{0402FE55-92F8-446E-B85C-35A64201EEF7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9947E0A4-4FB3-42C3-8251-45EBFEF1CF92}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Generators", "src\AterraEngine.DependencyInjection.Generators\AterraEngine.DependencyInjection.Generators.csproj", "{9F7D1EBF-1DFC-4A0C-A702-157CFA2E2553}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Generators.Sample", "src\AterraEngine.DependencyInjection.Generators.Sample\AterraEngine.DependencyInjection.Generators.Sample.csproj", "{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.AterraEngine.DependencyInjection.Generators", "src\Example.AterraEngine.DependencyInjection.Generators\Example.AterraEngine.DependencyInjection.Generators.csproj", "{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.AterraEngine.DependencyInjection.Generators", "tests\Tests.AterraEngine.DependencyInjection.Generators\Tests.AterraEngine.DependencyInjection.Generators.csproj", "{E8561A57-4154-49F6-AA57-4B30B9908BF1}"
 EndProject
@@ -19,6 +19,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{48079CF6-967F-44E5-9E9D-E42AD4386072}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tools.AterraEngine.DependencyInjection", "tools\Tools.AterraEngine.DependencyInjection\Tools.AterraEngine.DependencyInjection.csproj", "{0A34C7E8-7D1C-4EC1-8965-D344D61F7248}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.AterraEngine.DependencyInjection", "src\Example.AterraEngine.DependencyInjection\Example.AterraEngine.DependencyInjection.csproj", "{7900D381-15AC-42A9-9ECA-C1F90B832BBC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AterraEngine.DependencyInjection.Contracts", "src\AterraEngine.DependencyInjection.Contracts\AterraEngine.DependencyInjection.Contracts.csproj", "{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +54,14 @@ Global
 		{0A34C7E8-7D1C-4EC1-8965-D344D61F7248}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A34C7E8-7D1C-4EC1-8965-D344D61F7248}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A34C7E8-7D1C-4EC1-8965-D344D61F7248}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7900D381-15AC-42A9-9ECA-C1F90B832BBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7900D381-15AC-42A9-9ECA-C1F90B832BBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7900D381-15AC-42A9-9ECA-C1F90B832BBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7900D381-15AC-42A9-9ECA-C1F90B832BBC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{750AAA87-82AF-4751-A32A-DA7A59CDAF77} = {AB23EDEA-C8C1-4596-84B2-A718AC73998D}
@@ -58,5 +70,7 @@ Global
 		{4465C5DC-D496-4D36-9B0A-45B9A0DC93EE} = {0402FE55-92F8-446E-B85C-35A64201EEF7}
 		{860110CA-02FF-46FE-8F6C-988EC8D635F8} = {9947E0A4-4FB3-42C3-8251-45EBFEF1CF92}
 		{0A34C7E8-7D1C-4EC1-8965-D344D61F7248} = {48079CF6-967F-44E5-9E9D-E42AD4386072}
+		{7900D381-15AC-42A9-9ECA-C1F90B832BBC} = {0402FE55-92F8-446E-B85C-35A64201EEF7}
+		{FE1B1585-A4C5-4F5F-8B08-BA3B7D274B01} = {AB23EDEA-C8C1-4596-84B2-A718AC73998D}
 	EndGlobalSection
 EndGlobal
