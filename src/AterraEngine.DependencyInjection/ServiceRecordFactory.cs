@@ -12,9 +12,9 @@ namespace AterraEngine.DependencyInjection;
 public static class ServiceRecordFactory {
     public static ServiceRecord<TService, TImplementation> CreateWithFactory<TService, TImplementation>(int lifetime) where TImplementation : class, TService {
         Type type = typeof(TImplementation);
-        if (type.GetConstructors() is { Length: 0 }) {
-            throw new Exception("No constructors");
-        }
+        if (type.GetConstructors() is { Length: 0 }) throw new Exception("No constructors");
+        
+        // Special case for empty constructor
         if (type.GetConstructor([]) is {} emptyConstructor) return new ServiceRecord<TService, TImplementation>(
             typeof(TService),
             typeof(TImplementation),

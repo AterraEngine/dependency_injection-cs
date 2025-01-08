@@ -2,7 +2,10 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using CodeOfChaos.Types;
+using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.Reflection;
 
 namespace AterraEngine.DependencyInjection;
 
@@ -44,7 +47,19 @@ public class ServiceProvider : IServiceProvider {
             default: throw new Exception($"Required scope level {record.Lifetime} is higher than the current scope level of {ScopeLevel}");
         }
     }
+
+    #region GetService by Type argument
+    private readonly ConcurrentDictionary<Type, MethodInfo> _getServiceMethodCache = new();
+    private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ServiceProvider)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
     
+    public object? GetService(Type service) =>
+        _getServiceMethodCache
+            .GetOrAdd(service, _ => _getServiceMethod.Value.MakeGenericMethod(service)) // get or store to cache
+            .Invoke(this, null);
+    #endregion
+
     private TService? CreateInstanceFromFactory<TService>(IServiceRecord record) where TService : class {
         record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? factory);
         if (factory?.Invoke(this) is not {} newInstance) return null;
@@ -60,4 +75,12 @@ public class ServiceProvider : IServiceProvider {
         ParentScope = this,
         ScopeLevel = ScopeLevel + 1
     };
+    
+    #region IEnumerable<IServiceRecord>
+    public IEnumerator<IServiceRecord> GetEnumerator() => Records.Values.ToBuilder().GetEnumerator();
+    
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public int Count => Records.Count;
+    #endregion
 }

@@ -6,7 +6,9 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public interface IServiceProvider {
-    TImplementation? GetService<TImplementation>() where TImplementation : class;
+public interface IServiceProvider : IReadOnlyCollection<IServiceRecord> {
+    TService? GetService<TService>() where TService : class;
+    object? GetService(Type service);
+    
     TService GetRequiredService<TService>() where TService : class;
 }
