@@ -8,7 +8,7 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public record struct ServiceRecord<TService, TImplementation>(
+public readonly record struct ServiceRecord<TService, TImplementation>(
     Type ServiceType,
     Type ImplementationType,
     Func<IServiceProvider, TService>? ImplementationFactory,

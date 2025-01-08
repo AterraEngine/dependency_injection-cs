@@ -12,7 +12,7 @@ namespace AterraEngine.DependencyInjection;
 public class ServiceProvider : IServiceProvider {
     public FrozenDictionary<Type, IServiceRecord> Records { get; internal init; } = FrozenDictionary<Type, IServiceRecord>.Empty;
 
-    private ServiceProvider? Parent { get; init; }
+    private ServiceProvider? ParentScope { get; init; }
     private int ScopeLevel { get; init; }
     private TypedValueStore<Type> Instances { get; } = new();
     // public TypedValueStore<Type> TransientsInstances { get; internal init; } = new();
@@ -30,7 +30,7 @@ public class ServiceProvider : IServiceProvider {
                 return factory?.Invoke(this);
             
             // Singleton, but we have a parent, so we should ask it because it could exist there;
-            case 0 when Parent is not null: return Parent.GetService<TService>();
+            case 0 when ParentScope is not null: return ParentScope.GetService<TService>();
             
             // Singleton, but we are the top of the chain and we already have the instance
             case 0 when Instances.TryGetValue(record.ServiceType, out TService? instance): return instance;
@@ -38,9 +38,10 @@ public class ServiceProvider : IServiceProvider {
             // Singleton, or anything that requires us to create the instance
             case 0:
             case var level when level == ScopeLevel: return CreateInstanceFromFactory<TService>(record); // EngineScope
-            case var level when level < ScopeLevel: return Parent?.GetService<TService>(); // EngineScope
+            case var level when level < ScopeLevel: return ParentScope?.GetService<TService>(); // EngineScope
             
-            default: throw new Exception("Scope level is higher than the current scope level");
+            // TODO actually go up the ParentScope Tree and create the instance at the correct level
+            default: throw new Exception($"Required scope level {record.Lifetime} is higher than the current scope level of {ScopeLevel}");
         }
     }
     
@@ -56,7 +57,7 @@ public class ServiceProvider : IServiceProvider {
     }
 
     public IServiceProvider CreateScope() => new ServiceProvider {
-        Parent = this,
+        ParentScope = this,
         ScopeLevel = ScopeLevel + 1
     };
 }
