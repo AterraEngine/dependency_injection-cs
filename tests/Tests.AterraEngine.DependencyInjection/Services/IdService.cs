@@ -6,10 +6,10 @@ namespace Tests.AterraEngine.DependencyInjection.Services;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class EmptyService : IEmptyService {
+public class IdService : IIdService {
     public Guid Id { get; } = Guid.NewGuid();
 }
 
-public interface IEmptyService {
-    public Guid Id { get; }
+public interface IIdService {
+    Guid Id { get; }
 }

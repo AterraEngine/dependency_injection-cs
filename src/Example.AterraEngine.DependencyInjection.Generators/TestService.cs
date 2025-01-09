@@ -1,15 +1,14 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-namespace Tests.AterraEngine.DependencyInjection.Services;
+using AterraEngine.DependencyInjection.Attributes;
+
+namespace Example.AterraEngine.DependencyInjection.Generators;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class EmptyService : IEmptyService {
-    public Guid Id { get; } = Guid.NewGuid();
-}
+[Service(typeof(ITestService), 0)]
+public class TestService;
 
-public interface IEmptyService {
-    public Guid Id { get; }
-}
+public interface ITestService;

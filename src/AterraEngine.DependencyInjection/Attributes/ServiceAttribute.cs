@@ -1,15 +1,15 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-namespace Tests.AterraEngine.DependencyInjection.Services;
+namespace AterraEngine.DependencyInjection.Attributes;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class EmptyService : IEmptyService {
-    public Guid Id { get; } = Guid.NewGuid();
+[AttributeUsage(AttributeTargets.Class)]
+public class ServiceAttribute(Type serviceType, int scopeLevel) : Attribute {
+    public Type ServiceType { get; } = serviceType;
+    public int ScopeLevel { get; } = scopeLevel;
 }
 
-public interface IEmptyService {
-    public Guid Id { get; }
-}
+public class ServiceAttribute<TService>(int scopeLevel) : ServiceAttribute(typeof(TService), scopeLevel);

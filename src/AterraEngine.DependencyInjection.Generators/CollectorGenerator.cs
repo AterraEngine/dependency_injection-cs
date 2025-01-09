@@ -1,15 +1,17 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-namespace Tests.AterraEngine.DependencyInjection.Services;
+using Microsoft.CodeAnalysis;
+
+namespace AterraEngine.DependencyInjection.Generators;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class EmptyService : IEmptyService {
-    public Guid Id { get; } = Guid.NewGuid();
-}
+[Generator(LanguageNames.CSharp)]
+public class CollectorGenerator : IIncrementalGenerator {
 
-public interface IEmptyService {
-    public Guid Id { get; }
+    public void Initialize(IncrementalGeneratorInitializationContext context) {
+        
+    }
 }

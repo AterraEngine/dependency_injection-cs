@@ -73,7 +73,8 @@ public class ServiceProvider : IServiceProvider {
 
     public IServiceProvider CreateScope() => new ServiceProvider {
         ParentScope = this,
-        ScopeLevel = ScopeLevel + 1
+        ScopeLevel = ScopeLevel + 1,
+        Records = Records
     };
     
     #region IEnumerable<IServiceRecord>

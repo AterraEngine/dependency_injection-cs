@@ -11,4 +11,6 @@ public interface IServiceProvider : IReadOnlyCollection<IServiceRecord> {
     object? GetService(Type service);
     
     TService GetRequiredService<TService>() where TService : class;
+
+    IServiceProvider CreateScope();
 }

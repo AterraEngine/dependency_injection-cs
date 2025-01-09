@@ -78,6 +78,56 @@ public class ServiceCollectionTests {
             .IsTypeOf<ServiceProviderRequiredService>()
             .And.HasMember(p => p!.ServiceProvider).EqualTo(provider);
     }
+
+    [Test]
+    public async Task Collection_Should_Throw_ServicesWithGenerics() {
+        // Arrange
+        var collection = new ServiceCollection();
+        
+        // Act & Assert
+        await Assert.ThrowsAsync(() => Task.FromResult(collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics))));
+        // TODO find a way to make services with generics be auto created through a factory system?
+    }
+
+    [Test]
+    public async Task Collection_Should_Handle_Scopes() {
+        // Arrange
+        var collection = new ServiceCollection();
+        collection.AddSingleton<IEmptyService, EmptyService>();
+        collection.AddService<IIdService, IdService>(scopeLevel:1);
+        IServiceProvider globalProvider = collection.Build();
+        
+        // Act
+        var singletonService = globalProvider.GetService<IEmptyService>();
+        IServiceProvider scope0 = globalProvider.CreateScope();
+        var scope0Service = scope0.GetService<IIdService>();
+        var scope0SingletonService = scope0.GetService<IEmptyService>();
+        
+        IServiceProvider scope1 = globalProvider.CreateScope();
+        var scope1Service = scope1.GetService<IIdService>();
+        var scope1SingletonService = scope0.GetService<IEmptyService>();
+        
+        // Assert
+        await Assert.That(singletonService).IsNotNull()
+            .And.IsEqualTo(scope0SingletonService)
+            .And.IsEqualTo(scope1SingletonService);
+
+        await Assert.That(scope0Service).IsNotNull()
+            .And.IsNotEqualTo(scope1Service)
+            .And.HasMember(s => s!.Id).NotEqualTo(scope1Service!.Id);
+        
+        await Assert.That(scope0SingletonService).IsNotNull()
+            .And.IsEqualTo(singletonService)
+            .And.IsEqualTo(scope1SingletonService);
+        
+        await Assert.That(scope1Service).IsNotNull()
+            .And!.IsNotEqualTo(scope0Service)
+            .And.HasMember(s => s!.Id).NotEqualTo(scope0Service!.Id);
+        
+        await Assert.That(scope1SingletonService).IsNotNull()
+            .And.IsEqualTo(scope0SingletonService)
+            .And.IsEqualTo(singletonService);
+    }
     
     [Test]
     public async Task Collection_Should_Handle_Multiple_Services() {
