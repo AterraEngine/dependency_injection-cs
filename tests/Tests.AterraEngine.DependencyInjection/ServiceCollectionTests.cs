@@ -30,6 +30,54 @@ public class ServiceCollectionTests {
         await Assert.That(service)
             .IsNotNull();
     }
+
+    [Test]
+    public async Task Collection_Should_Return_Service_Provider_With_Multiple_Services()
+    {
+        // Arrange
+        var collection = new ServiceCollection();
+            
+        // Add multiple services
+        collection.AddSingleton<IEmptyService, EmptyService>();
+        collection.AddSingleton<ISampleService, SampleService>();
+
+        // Act
+        var provider = collection.Build();
+
+        var emptyService = provider.GetService<IEmptyService>();
+        var sampleService = provider.GetService<ISampleService>();
+
+        // Assert
+        await Assert.That(provider)
+            .IsNotNull()
+            .And.HasCount().EqualTo(2); // Expecting two services registered
+
+        await Assert.That(emptyService)
+            .IsNotNull();
+
+        await Assert.That(sampleService)
+            .IsNotNull();
+    }
+
+    [Test]
+    public async Task Collection_Should_Handle_ServiceProvider_Service() {
+        // Arrange
+        var collection = new ServiceCollection();
+        collection.AddSingleton<IServiceProviderRequiredService, ServiceProviderRequiredService>();
+        
+        // Act
+        var provider = collection.Build();
+        var service = provider.GetService<IServiceProviderRequiredService>();
+        
+        // Assert
+        await Assert.That(provider)
+            .IsNotNull()
+            .And.HasCount().EqualTo(1);
+
+        await Assert.That(service)
+            .IsTypeOf<ServiceProviderRequiredService>()
+            .And.HasMember(p => p!.ServiceProvider).EqualTo(provider);
+    }
     
     [Test]
     public async Task Collection_Should_Handle_Multiple_Services() {

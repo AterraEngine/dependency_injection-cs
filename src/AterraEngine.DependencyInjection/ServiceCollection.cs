@@ -20,8 +20,8 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService {
         Records.AddOrUpdate(
             typeof(TService),
-            addValueFactory: _ => ServiceRecordFactory.CreateWithFactory<TService, TImplementation>(scopeLevel),
-            updateValueFactory: (_, _) => ServiceRecordFactory.CreateWithFactory<TService, TImplementation>(scopeLevel)
+            addValueFactory: _ => ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel),
+            updateValueFactory: (_, _) => ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel)
         );
         return this;
     }

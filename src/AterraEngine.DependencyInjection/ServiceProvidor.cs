@@ -18,12 +18,12 @@ public class ServiceProvider : IServiceProvider {
     private ServiceProvider? ParentScope { get; init; }
     private int ScopeLevel { get; init; }
     private TypedValueStore<Type> Instances { get; } = new();
-    // public TypedValueStore<Type> TransientsInstances { get; internal init; } = new();
      
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
     public TService? GetService<TService>() where TService : class {
+        if (typeof(TService) == typeof(IServiceProvider)) return (TService) (object) this; // workaround to make sure we can inject the service provider
         if (!Records.TryGetValue(typeof(TService), out IServiceRecord? record)) return null;
 
         switch (record.Lifetime) {
@@ -43,7 +43,7 @@ public class ServiceProvider : IServiceProvider {
             case var level when level == ScopeLevel: return CreateInstanceFromFactory<TService>(record); // EngineScope
             case var level when level < ScopeLevel: return ParentScope?.GetService<TService>(); // EngineScope
             
-            // TODO actually go up the ParentScope Tree and create the instance at the correct level
+            // Level could not be determined, or scope was deeper than the current scope, and thus cannot be resolved
             default: throw new Exception($"Required scope level {record.Lifetime} is higher than the current scope level of {ScopeLevel}");
         }
     }
