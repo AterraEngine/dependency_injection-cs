@@ -6,11 +6,15 @@
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
 
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild> <!-- Generates a package at build -->
+        <IncludeBuildOutput>false</IncludeBuildOutput> <!-- Do not include the generator as a lib dependency -->
+        <IsDeveloperDependency>true</IsDeveloperDependency>
         <DevelopmentDependency>true</DevelopmentDependency>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
+        <NoWarn>NU5128</NoWarn>
 
-        <IsPackable>true</IsPackable>
+        <!-- Package metadata -->
         <PackageId>AterraEngine.DependencyInjection.Generators</PackageId> <!-- Main package name -->
         <Version>2.0.0-preview.1</Version> <!-- Package version -->
         <Authors>Anna Sas</Authors>
@@ -38,7 +42,7 @@
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
         <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.12.0" PrivateAssets="all" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" PrivateAssets="all" />
-        <PackageReference Include="CodeOfChaos.GeneratorTools" Version="0.6.0" PrivateAssets="all" GeneratePathProperty="true" />
+        <PackageReference Include="CodeOfChaos.GeneratorTools" Version="1.2.2" PrivateAssets="all" GeneratePathProperty="true" />
     </ItemGroup>
 
     <ItemGroup>

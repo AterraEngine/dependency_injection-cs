@@ -6,10 +6,7 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-[AttributeUsage(AttributeTargets.Class, Inherited = true)]
-public class ServiceAttribute(Type serviceType, int scopeLevel) : Attribute {
-    public Type ServiceType { get; } = serviceType;
-    public int ScopeLevel { get; } = scopeLevel;
-}
+[AttributeUsage(AttributeTargets.Class)]
+public class SingletonServiceAttribute(Type serviceType) : ServiceAttribute(serviceType, 0);
 
-public class ServiceAttribute<TService>(int scopeLevel) : ServiceAttribute(typeof(TService), scopeLevel);
+public class SingletonServiceAttribute<TService>() : SingletonServiceAttribute(typeof(TService));
