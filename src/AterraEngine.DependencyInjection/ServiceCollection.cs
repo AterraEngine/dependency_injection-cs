@@ -61,10 +61,8 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddTransient(Type implementation) => AddService(implementation, -1);
     public IServiceCollection AddTransient(Type service, Type implementation) => AddService(service, implementation, -1);
     #endregion
-    
-    public IServiceProvider Build() => new ServiceProvider {
-        Records = Records.ToFrozenDictionary()
-    };
+
+    public IServiceProvider Build() => new ServiceProvider(ServiceContainer.FromCollection(Records));
 
     #region ICollection<IServiceRecord>
     public IEnumerator<IServiceRecord> GetEnumerator() => Records.Values.GetEnumerator();

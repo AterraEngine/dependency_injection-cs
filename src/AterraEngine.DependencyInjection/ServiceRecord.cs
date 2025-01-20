@@ -16,6 +16,8 @@ public readonly record struct ServiceRecord<TService, TImplementation>(
 ) : IServiceRecord
     where TImplementation : class, TService {
 
+    public bool IsSingleton { get; } = Lifetime == 0;
+    public bool IsTransient { get; } = Lifetime == -1;
 
     // -----------------------------------------------------------------------------------------------------------------
     // Constructors
@@ -30,6 +32,7 @@ public readonly record struct ServiceRecord<TService, TImplementation>(
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
+
     public bool TryGetFactory<T>([NotNullWhen(true)]  out Func<IServiceProvider, T>? factory) {
         factory = null;
         if (typeof(T) != typeof(TService)) return false;

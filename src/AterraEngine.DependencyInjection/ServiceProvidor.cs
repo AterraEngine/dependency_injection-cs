@@ -4,7 +4,6 @@
 using CodeOfChaos.Types;
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Frozen;
 using System.Reflection;
 
 namespace AterraEngine.DependencyInjection;
@@ -12,9 +11,7 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class ServiceProvider : IServiceProvider {
-    public FrozenDictionary<Type, IServiceRecord> Records { get; internal init; } = FrozenDictionary<Type, IServiceRecord>.Empty;
-
+public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvider {
     private ServiceProvider? ParentScope { get; init; }
     private int ScopeLevel { get; init; }
     private TypedValueStore<Type> Instances { get; } = new();
@@ -24,24 +21,24 @@ public class ServiceProvider : IServiceProvider {
     // -----------------------------------------------------------------------------------------------------------------
     public TService? GetService<TService>() where TService : class {
         if (typeof(TService) == typeof(IServiceProvider)) return (TService) (object) this; // workaround to make sure we can inject the service provider
-        if (!Records.TryGetValue(typeof(TService), out IServiceRecord? record)) return null;
+        if (!serviceContainer.Records.TryGetValue(typeof(TService), out IServiceRecord? record)) return null;
 
-        switch (record.Lifetime) {
+        switch (record) {
             // check if it is a transient
-            case -1:
+            case {IsTransient: true}:
                 record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? factory);
                 return factory?.Invoke(this);
             
             // Singleton, but we have a parent, so we should ask it because it could exist there;
-            case 0 when ParentScope is not null: return ParentScope.GetService<TService>();
+            case {IsSingleton: true} when ParentScope is not null: return ParentScope.GetService<TService>();
             
             // Singleton, but we are the top of the chain and we already have the instance
-            case 0 when Instances.TryGetValue(record.ServiceType, out TService? instance): return instance;
+            case {IsSingleton: true} when Instances.TryGetValue(record.ServiceType, out TService? instance): return instance;
             
             // Singleton, or anything that requires us to create the instance
-            case 0:
-            case var level when level == ScopeLevel: return CreateInstanceFromFactory<TService>(record); // EngineScope
-            case var level when level < ScopeLevel: return ParentScope?.GetService<TService>(); // EngineScope
+            case {IsSingleton: true}:
+            case {Lifetime: var level} when level == ScopeLevel: return CreateInstanceFromFactory<TService>(record); // EngineScope
+            case {Lifetime: var level} when level < ScopeLevel: return ParentScope?.GetService<TService>(); // EngineScope
             
             // Level could not be determined, or scope was deeper than the current scope, and thus cannot be resolved
             default: throw new Exception($"Required scope level {record.Lifetime} is higher than the current scope level of {ScopeLevel}");
@@ -71,17 +68,16 @@ public class ServiceProvider : IServiceProvider {
         return GetService<TService>() ?? throw new InvalidOperationException($"The required service of type '{typeof(TService)}' could not be resolved.");
     }
 
-    public IServiceProvider CreateScope() => new ServiceProvider {
+    public IServiceProvider CreateScope() => new ServiceProvider(serviceContainer) {
         ParentScope = this,
-        ScopeLevel = ScopeLevel + 1,
-        Records = Records
+        ScopeLevel = ScopeLevel + 1
     };
     
     #region IEnumerable<IServiceRecord>
-    public IEnumerator<IServiceRecord> GetEnumerator() => Records.Values.ToBuilder().GetEnumerator();
+    public IEnumerator<IServiceRecord> GetEnumerator() => serviceContainer.Records.Values.ToBuilder().GetEnumerator();
     
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public int Count => Records.Count;
+    public int Count => serviceContainer.Records.Count;
     #endregion
 }

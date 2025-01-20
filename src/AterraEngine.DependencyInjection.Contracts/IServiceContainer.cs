@@ -1,20 +1,13 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Frozen;
 
 namespace AterraEngine.DependencyInjection;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public interface IServiceRecord {
-    Type ServiceType { get; }
-    Type ImplementationType { get; }
-    int Lifetime { get; }
-    
-    bool IsSingleton { get; }
-    bool IsTransient { get; }
-
-    bool TryGetFactory<TService>([NotNullWhen(true)] out Func<IServiceProvider, TService>? factory);
+public interface IServiceContainer {
+    FrozenDictionary<Type, IServiceRecord> Records { get; }
 }
