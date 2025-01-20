@@ -10,7 +10,8 @@ namespace Benchmarks.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 public static class Program {
     public static void Main(string[] args) {
-        BenchmarkRunner.Run<ServiceCollectionBenchmarks>();
+        BenchmarkRunner.Run<RepeatedServiceCollectionBenchmarks>();
+        // BenchmarkRunner.Run<ServiceCollectionBenchmarks>();
         // BenchmarkRunner.Run<LargeServiceCollectionBenchmarks>();
     }
 }

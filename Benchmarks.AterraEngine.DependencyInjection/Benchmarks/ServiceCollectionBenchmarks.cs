@@ -35,8 +35,8 @@ public class ServiceCollectionBenchmarks {
         
         return provider.GetRequiredService<IService>();
     }
+    
+    public interface IService {}
+    public class Service : IService {}
 }
 
-
-public interface IService {}
-public class Service : IService {}
