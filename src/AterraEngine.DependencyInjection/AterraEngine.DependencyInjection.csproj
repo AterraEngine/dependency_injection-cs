@@ -9,9 +9,9 @@
         <PackageId>AterraEngine.DependencyInjection</PackageId> <!-- Main package name -->
         <Version>2.0.0-preview.1</Version> <!-- Package version -->
         <Authors>Anna Sas</Authors>
-        <Description>A small package allowing easy collection of dependency injection services</Description>
+        <Description>A custom built Dependency Container system for AterraEngine</Description>
         <PackageProjectUrl>https://github.com/AterraEngine/dependency_injection-cs/</PackageProjectUrl>
-        <PackageTags>dependency injection;di</PackageTags>
+        <PackageTags>dependency-injection di</PackageTags>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>

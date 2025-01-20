@@ -9,7 +9,7 @@ namespace Example.AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public static class Program {
-    public static async Task Main(string[] args) {
+    public static Task Main(string[] args) {
         var collection = new ServiceCollection();
         
         collection.AddSingleton<IService, Service>(); 
@@ -34,6 +34,8 @@ public static class Program {
         
         var transient = provider.GetRequiredService<ITransient>();
         Console.WriteLine(transient.Name);
+        
+        return Task.CompletedTask;
 
         // var serviceRez2 = provider.GetRequiredService<ServiceReze2>();
     }

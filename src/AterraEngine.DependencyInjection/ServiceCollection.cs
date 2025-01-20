@@ -96,7 +96,7 @@ public class ServiceCollection : IServiceCollection {
         if (!Records.TryGetValue(item.ServiceType, out IServiceRecord? record)) return false;
         if (record != item) return false;
 
-        return !Records.TryRemove(item.ServiceType, out IServiceRecord _);
+        return !Records.TryRemove(item.ServiceType, out IServiceRecord? _);
     }
 
     public int Count => Records.Count;

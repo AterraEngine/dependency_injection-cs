@@ -4,4 +4,4 @@
 
  Rule ID | Category            | Severity | Notes              
 ---------|---------------------|----------|--------------------
- DI001   | DependencyInjection | Error    | CollectorGenerator 
+ DI001   | DependencyInjection | Warning  | CollectorGenerator 
