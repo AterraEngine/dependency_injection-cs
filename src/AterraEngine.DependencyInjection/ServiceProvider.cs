@@ -16,7 +16,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
     private ConcurrentDictionary<Guid, object> Instances { get; } = new();
     private ConcurrentBag<Guid> DisposableInstances { get; } = [];
     private ConcurrentBag<Guid> AsyncDisposableInstances { get; } = [];
-    
+
     private ConcurrentBag<IServiceProvider> ChildScopes { get; } = [];
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -66,28 +66,6 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         return instance;
     }
 
-    #region GetService by Type argument
-    private readonly ConcurrentDictionary<Type, MethodInfo> _getServiceMethodCache = new();
-
-    private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ServiceProvider)
-        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-        .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
-
-    public object? GetService(Type service) =>
-        _getServiceMethodCache
-            .GetOrAdd(service, valueFactory: _ => _getServiceMethod.Value.MakeGenericMethod(service))// get or store to cache
-            .Invoke(this, null);
-    #endregion
-
-    // ReSharper disable once ConvertIfStatementToReturnStatement
-    private TService? CreateInstanceFromFactory<TService>(IServiceRecord record) where TService : class {
-        record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? factory);
-        if (factory?.Invoke(this) is not {} newInstance) return null;
-        if (!Instances.TryAdd(record.Id, newInstance)) return null;// This feels wrong, we should throw an exception
-
-        return newInstance;// Don't need to store to the parent here, because if there is a parent, it will be stored there.
-    }
-
     public TService GetRequiredService<TService>() where TService : class {
         try {
             if (GetService<TService>() is not {} service) {
@@ -104,25 +82,54 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         }
     }
 
-    public IServiceProvider CreateScope()  {
-        var scopedProvider =  new ServiceProvider(serviceContainer) {
+    public IServiceProvider CreateScope() {
+        var scopedProvider = new ServiceProvider(serviceContainer) {
             ParentScope = this,
             ScopeLevel = ScopeLevel
         };
-        
+
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
 
     public IServiceProvider CreateDeeperScope() {
-        var scopedProvider =  new ServiceProvider(serviceContainer) {
+        var scopedProvider = new ServiceProvider(serviceContainer) {
             ParentScope = this,
             ScopeLevel = ScopeLevel + 1
         };
-        
+
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
+
+    // ReSharper disable once ConvertIfStatementToReturnStatement
+    private TService? CreateInstanceFromFactory<TService>(IServiceRecord record) where TService : class {
+        record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? factory);
+        if (factory?.Invoke(this) is not {} newInstance) return null;
+        if (!Instances.TryAdd(record.Id, newInstance)) return null;// This feels wrong, we should throw an exception
+
+        return newInstance;// Don't need to store to the parent here, because if there is a parent, it will be stored there.
+    }
+
+    private void RegisterDisposePatternIfApplicable(IServiceRecord record) {
+        switch (record) {
+            case { IsDisposable: true }: DisposableInstances.Add(record.Id); break;
+            case { IsAsyncDisposable: true }: AsyncDisposableInstances.Add(record.Id); break;
+        }
+    }
+
+    #region GetService by Type argument
+    private readonly ConcurrentDictionary<Type, MethodInfo> _getServiceMethodCache = new();
+
+    private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ServiceProvider)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
+
+    public object? GetService(Type service) =>
+        _getServiceMethodCache
+            .GetOrAdd(service, valueFactory: _ => _getServiceMethod.Value.MakeGenericMethod(service))// get or store to cache
+            .Invoke(this, null);
+    #endregion
 
     #region IEnumerable<IServiceRecord>
     public IEnumerator<IServiceRecord> GetEnumerator() => serviceContainer.ServiceRecords.Values.ToBuilder().GetEnumerator();
@@ -131,13 +138,6 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
     public int Count => serviceContainer.ServiceRecords.Count;
     #endregion
-
-    private void RegisterDisposePatternIfApplicable(IServiceRecord record) {
-        switch (record) {
-            case { IsDisposable: true }: DisposableInstances.Add(record.Id); break;
-            case { IsAsyncDisposable: true }: AsyncDisposableInstances.Add(record.Id); break;
-        }
-    }
     #region Dispose
     public void Dispose() {
         try {
@@ -160,7 +160,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                         disposableFallback.Dispose(); break;
                 }
             }
-            
+
             // Only ChildScopes should be disposed
             while (ChildScopes.TryTake(out IServiceProvider? childScope)) childScope.Dispose();
         }
@@ -169,22 +169,24 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
             GC.SuppressFinalize(this);
         }
     }
-    
+
     public async ValueTask DisposeAsync() {
         try {
             // Dispose all async-disposable instances
             while (AsyncDisposableInstances.TryTake(out Guid instanceId)) {
                 // If the instance is found, dispose it asynchronously
                 if (!Instances.TryGetValue(instanceId, out object? instance) || instance is not IAsyncDisposable asyncDisposable) continue;
+
                 await asyncDisposable.DisposeAsync().ConfigureAwait(false);
             }
 
             // Dispose synchronously any disposable objects if applicable
             while (DisposableInstances.TryTake(out Guid instanceId)) {
                 if (!Instances.TryGetValue(instanceId, out object? instance) || instance is not IDisposable disposable) continue;
+
                 disposable.Dispose();
             }
-        
+
             // Only ChildScopes should be disposed
             while (ChildScopes.TryTake(out IServiceProvider? childScope)) await childScope.DisposeAsync().ConfigureAwait(false);
         }
@@ -199,8 +201,8 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         DisposableInstances.Clear();
         AsyncDisposableInstances.Clear();
         Instances.Clear();
-        ChildScopes.Clear(); // To make sure we free up everything
-        ParentScope = null; // Do not dispose the parent scope, only remove the reference
+        ChildScopes.Clear();// To make sure we free up everything
+        ParentScope = null;// Do not dispose the parent scope, only remove the reference
     }
     #endregion
 }

@@ -13,7 +13,7 @@ public static class Program {
         var switcher = new BenchmarkSwitcher([
             // typeof(RepeatedServiceCollectionBenchmarks),
             // typeof(LargeServiceCollectionBenchmarks),
-            typeof(ServiceCollectionBenchmarks),
+            typeof(ServiceCollectionBenchmarks)
         ]);
 
         switcher.RunAllJoined();

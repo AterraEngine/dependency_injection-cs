@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
 
 namespace Benchmarks.AterraEngine.DependencyInjection;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -20,10 +19,10 @@ public class ServiceCollectionBenchmarks {
         collection.AddSingleton<IService, Service>();
 
         ServiceProvider provider = collection.BuildServiceProvider();
-        
+
         return provider.GetRequiredService<IService>();
     }
-    
+
     [Benchmark(OperationsPerInvoke = 1000)]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency() {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
@@ -31,11 +30,11 @@ public class ServiceCollectionBenchmarks {
         collection.AddSingleton<IService, Service>();
 
         IServiceProvider provider = collection.Build();
-        
+
         return provider.GetRequiredService<IService>();
     }
-    
+
     public interface IService {}
+
     public class Service : IService {}
 }
-

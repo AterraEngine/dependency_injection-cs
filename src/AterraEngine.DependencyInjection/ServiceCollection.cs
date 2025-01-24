@@ -22,12 +22,15 @@ public class ServiceCollection : IServiceCollection {
             addValueFactory: _ => ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel),
             updateValueFactory: (_, _) => ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel)
         );
+
         return this;
     }
-    
+
+    public IServiceProvider Build() => new ServiceProvider(ServiceContainer.FromCollection(Records));
+
     #region AddService by Record
     public IServiceCollection AddService(IServiceRecord record) {
-        Records.AddOrUpdate(record.ServiceType, record, (_, _) => record);
+        Records.AddOrUpdate(record.ServiceType, record, updateValueFactory: (_, _) => record);
         return this;
     }
     #endregion
@@ -36,7 +39,7 @@ public class ServiceCollection : IServiceCollection {
     private readonly Lazy<MethodInfo> _addServiceMethod1 = new(static () => typeof(ServiceCollection)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
-    
+
     public IServiceCollection AddService(Type implementation, int scopeLevel) =>
         _addServiceMethod1.Value
             .MakeGenericMethod(implementation)
@@ -67,8 +70,6 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddTransient(Type implementation) => AddService(implementation, -1);
     public IServiceCollection AddTransient(Type service, Type implementation) => AddService(service, implementation, -1);
     #endregion
-
-    public IServiceProvider Build() => new ServiceProvider(ServiceContainer.FromCollection(Records));
 
     #region ICollection<IServiceRecord>
     public IEnumerator<IServiceRecord> GetEnumerator() => Records.Values.GetEnumerator();

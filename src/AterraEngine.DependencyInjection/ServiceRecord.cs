@@ -4,7 +4,6 @@
 using System.Diagnostics.CodeAnalysis;
 
 namespace AterraEngine.DependencyInjection;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -20,14 +19,15 @@ public record ServiceRecord<TService>(
     public bool IsTransient { get; } = Lifetime == -1;
     public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
-    
+
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public bool TryGetFactory<T>([NotNullWhen(true)]  out Func<IServiceProvider, T>? factory) {
+    public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IServiceProvider, T>? factory) {
         factory = null;
         if (typeof(T) != typeof(TService)) return false;
         if (ImplementationFactory is not Func<IServiceProvider, T> casted) return false;
+
         return (factory = casted) is not null;
     }
 }

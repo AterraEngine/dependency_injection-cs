@@ -75,6 +75,7 @@ public class CollectorGenerator : IIncrementalGenerator {
                             attributeData.AttributeClass.Name,
                             serviceTypeSymbol.ToDisplayString()
                         ));
+
                         break;
                     }
 
@@ -95,6 +96,7 @@ public class CollectorGenerator : IIncrementalGenerator {
                             attributeData.AttributeClass.Name,
                             serviceTypeSymbol.ToDisplayString()
                         ));
+
                         break;
                     }
                 }

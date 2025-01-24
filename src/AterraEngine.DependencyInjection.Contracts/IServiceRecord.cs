@@ -4,7 +4,6 @@
 using System.Diagnostics.CodeAnalysis;
 
 namespace AterraEngine.DependencyInjection;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -13,7 +12,7 @@ public interface IServiceRecord {
     Type ServiceType { get; }
     Type ImplementationType { get; }
     int Lifetime { get; }
-    
+
     bool IsSingleton { get; }
     bool IsTransient { get; }
     bool IsDisposable { get; }

@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Tests.AterraEngine.DependencyInjection;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -30,6 +29,7 @@ public static class ServiceHelper {
             string className = $"Service{i}";
             TypeBuilder classBuilder = moduleBuilder.DefineType(className,
                 TypeAttributes.Public | TypeAttributes.Class);
+
             classBuilder.AddInterfaceImplementation(interfaceType);
 
             // Create a parameterless constructor for the class

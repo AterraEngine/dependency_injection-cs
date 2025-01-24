@@ -6,7 +6,6 @@ using Tests.AterraEngine.DependencyInjection.Services;
 using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
 
 namespace Tests.AterraEngine.DependencyInjection;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -18,29 +17,29 @@ public class ServiceCollectionTests {
         collection.AddSingleton<IEmptyService, EmptyService>();
 
         // Act
-        var provider = collection.Build();
+        IServiceProvider provider = collection.Build();
         var service = provider.GetService<IEmptyService>();
-        
+
         // Assert
         await Assert.That(provider)
             .IsNotNull()
             .And.HasCount().EqualTo(1);
+
         await Assert.That(service)
             .IsNotNull();
     }
 
     [Test]
-    public async Task Collection_Should_Return_Service_Provider_With_Multiple_Services()
-    {
+    public async Task Collection_Should_Return_Service_Provider_With_Multiple_Services() {
         // Arrange
         var collection = new ServiceCollection();
-            
+
         // Add multiple services
         collection.AddSingleton<IEmptyService, EmptyService>();
         collection.AddSingleton<ISampleService, SampleService>();
 
         // Act
-        var provider = collection.Build();
+        IServiceProvider provider = collection.Build();
 
         var emptyService = provider.GetService<IEmptyService>();
         var sampleService = provider.GetService<ISampleService>();
@@ -48,7 +47,7 @@ public class ServiceCollectionTests {
         // Assert
         await Assert.That(provider)
             .IsNotNull()
-            .And.HasCount().EqualTo(2); // Expecting two services registered
+            .And.HasCount().EqualTo(2);// Expecting two services registered
 
         await Assert.That(emptyService)
             .IsNotNull();
@@ -62,11 +61,11 @@ public class ServiceCollectionTests {
         // Arrange
         var collection = new ServiceCollection();
         collection.AddSingleton<IServiceProviderRequiredService, ServiceProviderRequiredService>();
-        
+
         // Act
-        var provider = collection.Build();
+        IServiceProvider provider = collection.Build();
         var service = provider.GetService<IServiceProviderRequiredService>();
-        
+
         // Assert
         await Assert.That(provider)
             .IsNotNull()
@@ -81,7 +80,7 @@ public class ServiceCollectionTests {
     public async Task Collection_Should_Throw_ServicesWithGenerics() {
         // Arrange
         var collection = new ServiceCollection();
-        
+
         // Act & Assert
         await Assert.ThrowsAsync(() => Task.FromResult(collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics))));
         // TODO find a way to make services with generics be auto created through a factory system?
@@ -92,19 +91,19 @@ public class ServiceCollectionTests {
         // Arrange
         var collection = new ServiceCollection();
         collection.AddSingleton<IEmptyService, EmptyService>();
-        collection.AddService<IIdService, IdService>(scopeLevel:1);
+        collection.AddService<IIdService, IdService>(scopeLevel: 1);
         IServiceProvider globalProvider = collection.Build();
-        
+
         // Act
         var singletonService = globalProvider.GetService<IEmptyService>();
         IServiceProvider scope0 = globalProvider.CreateDeeperScope();
         var scope0Service = scope0.GetService<IIdService>();
         var scope0SingletonService = scope0.GetService<IEmptyService>();
-        
+
         IServiceProvider scope1 = globalProvider.CreateDeeperScope();
         var scope1Service = scope1.GetService<IIdService>();
         var scope1SingletonService = scope0.GetService<IEmptyService>();
-        
+
         // Assert
         await Assert.That(singletonService).IsNotNull()
             .And.IsEqualTo(scope0SingletonService)
@@ -113,20 +112,20 @@ public class ServiceCollectionTests {
         await Assert.That(scope0Service).IsNotNull()
             .And.IsNotEqualTo(scope1Service)
             .And.HasMember(s => s!.Id).NotEqualTo(scope1Service!.Id);
-        
+
         await Assert.That(scope0SingletonService).IsNotNull()
             .And.IsEqualTo(singletonService)
             .And.IsEqualTo(scope1SingletonService);
-        
+
         await Assert.That(scope1Service).IsNotNull()
             .And!.IsNotEqualTo(scope0Service)
             .And.HasMember(s => s!.Id).NotEqualTo(scope0Service!.Id);
-        
+
         await Assert.That(scope1SingletonService).IsNotNull()
             .And.IsEqualTo(scope0SingletonService)
             .And.IsEqualTo(singletonService);
     }
-    
+
     [Test]
     public async Task Collection_Should_Handle_Multiple_Services() {
         // Arrange

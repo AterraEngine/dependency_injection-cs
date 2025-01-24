@@ -8,12 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
+        <PackageReference Include="BenchmarkDotNet" Version="0.14.0"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\src\AterraEngine.DependencyInjection\AterraEngine.DependencyInjection.csproj" />
+        <ProjectReference Include="..\src\AterraEngine.DependencyInjection\AterraEngine.DependencyInjection.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -27,6 +27,7 @@ public static class Program {
             "AterraEngine.DependencyInjection.Generators",
             "AterraEngine.DependencyInjection.Contracts"
         );
+
         string oneLineArgs = InputHelper.ToOneLine(args).Replace("%PROJECTS%", projects);
 
         // Finally start executing

@@ -4,7 +4,6 @@
 using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
 
 namespace Tests.AterraEngine.DependencyInjection.Services;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------

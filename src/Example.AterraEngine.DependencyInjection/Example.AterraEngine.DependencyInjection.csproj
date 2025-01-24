@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\AterraEngine.DependencyInjection\AterraEngine.DependencyInjection.csproj" />
+        <ProjectReference Include="..\AterraEngine.DependencyInjection\AterraEngine.DependencyInjection.csproj"/>
     </ItemGroup>
 
 </Project>

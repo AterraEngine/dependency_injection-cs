@@ -2,13 +2,12 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using BenchmarkDotNet.Attributes;
+using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using System.Reflection.Emit;
-using Microsoft.Extensions.DependencyInjection;
 using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
 
 namespace Benchmarks.AterraEngine.DependencyInjection;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -20,33 +19,33 @@ public class LargeServiceCollectionBenchmarks {
         var collection = new ServiceCollection();
         const int serviceCount = 1_000;// Number of services to generate
         Dictionary<Type, Type> generatedServices = GenerateServices(serviceCount);
-        
+
         // Register each dynamically created service in the collection
         foreach ((Type serviceType, Type implementationType) in generatedServices) {
             collection.AddSingleton(serviceType, implementationType);
         }
 
         ServiceProvider provider = collection.BuildServiceProvider();
-        
+
         return provider;
     }
-    
+
     [Benchmark]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency() {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
         const int serviceCount = 1_000;// Number of services to generate
         Dictionary<Type, Type> generatedServices = GenerateServices(serviceCount);
-        
+
         // Register each dynamically created service in the collection
         foreach ((Type serviceType, Type implementationType) in generatedServices) {
             collection.AddSingleton(serviceType, implementationType);
         }
 
         IServiceProvider provider = collection.Build();
-        
+
         return provider;
     }
-    
+
     private static Dictionary<Type, Type> GenerateServices(int count) {
         var interfaceImplementationPairs = new Dictionary<Type, Type>();
 
@@ -67,6 +66,7 @@ public class LargeServiceCollectionBenchmarks {
             string className = $"Service{i}";
             TypeBuilder classBuilder = moduleBuilder.DefineType(className,
                 TypeAttributes.Public | TypeAttributes.Class);
+
             classBuilder.AddInterfaceImplementation(interfaceType);
 
             // Create a parameterless constructor for the class

@@ -45,8 +45,8 @@ You can use the provided attributes to define services:
     ```
 
 
-- `FactoryCreatedService` : Marks the class as a service which creation depends on another injected service. 
-  - The factory service must implement `IFactoryService<>`
+- `FactoryCreatedService` : Marks the class as a service which creation depends on another injected service.
+    - The factory service must implement `IFactoryService<>`
   ```csharp
   public interface ICreatedService;
   
@@ -64,9 +64,10 @@ You can use the provided attributes to define services:
   ```
 
 
-- `PooledInjectableService` : Marks the class as a poolable service. This library creates a class `AutoPoolableService` under which the class will be registered.
-  - It uses `PooledInjectableServiceObjectPolicy` to create a policy.
-  - The poolable service must implement `PooledInjectableServiceObjectPolicy`
+- `PooledInjectableService` : Marks the class as a poolable service. This library creates a class `AutoPoolableService`
+  under which the class will be registered.
+    - It uses `PooledInjectableServiceObjectPolicy` to create a policy.
+    - The poolable service must implement `PooledInjectableServiceObjectPolicy`
   ```csharp
   public interface IExamplePooled : IManualPoolable; 
   
@@ -75,7 +76,6 @@ You can use the provided attributes to define services:
       public bool Reset() => true;
   }
   ```
-
 
 #### Generate Service Registrations
 

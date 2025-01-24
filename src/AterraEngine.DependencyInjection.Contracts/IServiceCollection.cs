@@ -2,7 +2,6 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 namespace AterraEngine.DependencyInjection;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -16,11 +15,11 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService;
     IServiceCollection AddSingleton(Type implementation);
     IServiceCollection AddSingleton(Type service, Type implementation);
-    
+
     IServiceCollection AddTransient<TImplementation>() where TImplementation : class;
     IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService;
     IServiceCollection AddTransient(Type implementation);
     IServiceCollection AddTransient(Type service, Type implementation);
-    
+
     IServiceProvider Build();
 }
