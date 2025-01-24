@@ -24,7 +24,6 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
     // -----------------------------------------------------------------------------------------------------------------=
     #region GetService by Type argument
     private readonly ConcurrentDictionary<Type, MethodInfo> _getServiceMethodCache = new();
-
     private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ServiceProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
@@ -122,24 +121,21 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
     #region Scope Creation
     public IServiceProvider CreateScope() {
-        var scopedProvider = new ServiceProvider(serviceContainer) {
-            ParentScope = this,
-            ScopeLevel = ScopeLevel
-        };
-
+        IServiceProvider scopedProvider = NewScopeProvider(ScopeLevel);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
 
     public IServiceProvider CreateDeeperScope() {
-        var scopedProvider = new ServiceProvider(serviceContainer) {
-            ParentScope = this,
-            ScopeLevel = ScopeLevel + 1
-        };
-
+        IServiceProvider scopedProvider = NewScopeProvider(ScopeLevel + 1);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
+
+    private ServiceProvider NewScopeProvider(int scopeLevel) => new(serviceContainer) {
+        ParentScope = this,
+        ScopeLevel = scopeLevel
+    };
     #endregion
 
     #region IEnumerable<IServiceRecord>
