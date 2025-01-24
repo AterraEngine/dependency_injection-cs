@@ -18,7 +18,7 @@ public static class ServiceRecordReflectionFactory {
         Type type = typeof(TImplementation);
         if (type.GetConstructors() is { Length: 0 }) throw new Exception("No constructors");
 
-        #region Special cases
+        #region Special Constructor format cases
         // Special case for empty constructor
         if (type.GetConstructor([]) is {} emptyConstructor) {
             return new ServiceRecord<TService>(
@@ -40,30 +40,30 @@ public static class ServiceRecordReflectionFactory {
         }
         #endregion
 
-        ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
-            .Where(info => info.GetParameters().Length > 0)
-            .ToArray();
+        ConstructorInfo? constructor = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+            .SingleOrDefault(info => info.GetParameters().Length > 0);
 
-        if (constructors.Length > 1) throw new MultipleConstructorsException($"Multiple constructors found for {type.FullName} with parameters");
-
-        ConstructorInfo constructor = constructors.First();
+        if (constructor is null) throw new MultipleConstructorsException($"Multiple constructors found for {type.FullName} with parameters");
         ParameterInfo[] parameters = constructor.GetParameters();
 
         // Lambda generation
         ParameterExpression parameterExpression = Expression.Parameter(typeof(IServiceProvider), "provider");
 
         // Generate constructor arguments, handling IServiceProvider specially
-        Expression[] arguments = parameters.Select<ParameterInfo, Expression>(p => {
-                // Pass the provider itself for IServiceProvider
-                if (p.ParameterType == typeof(IServiceProvider)) return parameterExpression; 
-                
-                // Call provider.GetRequiredService<T>()
-                return Expression.Call(
-                    parameterExpression,
-                    GetRequiredServiceMethod.MakeGenericMethod(p.ParameterType)
-                );
+        var arguments = new Expression[parameters.Length];
+        for (int i = parameters.Length - 1; i >= 0; i--) {
+            Type parameterType = parameters[i].ParameterType;
+            
+            if (parameterType == typeof(IServiceProvider)) {
+                arguments[i] = parameterExpression;
+                continue;
             }
-        ).ToArray();
+            
+            arguments[i] = Expression.Call(
+                parameterExpression,
+                GetRequiredServiceMethod.MakeGenericMethod(parameterType)
+            );
+        }
 
         // Create a constructor call with the generated arguments
         NewExpression constructorCall = Expression.New(constructor, arguments);
