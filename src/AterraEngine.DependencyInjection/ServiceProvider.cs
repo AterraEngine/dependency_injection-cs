@@ -37,11 +37,12 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
     
     #region GetServices by Generic Type argument
     public TService? GetService<TService>() where TService : class {
+        // Do some basic checks first before we try and actually use the record.
         Type typeOfService = typeof(TService);
         if (typeOfService == typeof(IServiceProvider)) return (TService)(object)this;// workaround to make sure we can inject the service provider
         if (!serviceContainer.ServiceRecords.TryGetValue(typeOfService, out IServiceRecord? record)) return null;
-
-        // Resolve the type and create an instance
+        
+        // Resolve the type and create an instance        
         TService? instance = null;
         switch (record) {
             // Transient, we don't track the instance, but we do track disposing patterns.
@@ -56,7 +57,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                 break;
             }
 
-            // Checking the lifetime value
+            // Lifetime is the current scope level
             case { Lifetime: var level } when level == ScopeLevel: {
                 // Check if the instance already exists, if so, return it
                 if (Instances.TryGetValue(record.Id, out object? alreadyCreatedInstance)) {
@@ -74,9 +75,13 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                 break;
             }
 
+            // Lifetime was shallower than the current scope level
             case { Lifetime: var level } when level < ScopeLevel: {
-                instance = ParentScope?.GetService<TService>();
-                break;
+                return ParentScope?.GetService<TService>();
+                
+                // Okay I know you see the `RegisterDisposePatternIfApplicable` below and think "hey don't we need to
+                // register the dispose pattern for this instance as well? And why aren't we assigning the instance?"
+                // The main reason for this is that the ParentScope handles the new instance's lifetime, not the current one!
             }
 
             // Level could not be determined, or scope was deeper than the current scope, and thus cannot be resolved
@@ -115,7 +120,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
     }
     #endregion
 
-    #region ScopeCreation
+    #region Scope Creation
     public IServiceProvider CreateScope() {
         var scopedProvider = new ServiceProvider(serviceContainer) {
             ParentScope = this,
@@ -208,8 +213,8 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         DisposableInstances.Clear();
         AsyncDisposableInstances.Clear();
         Instances.Clear();
-        ChildScopes.Clear();// To make sure we free up everything
-        ParentScope = null;// Do not dispose the parent scope, only remove the reference
+        ChildScopes.Clear(); 
+        ParentScope = null; // Do not dispose the parent scope, only remove the reference
     }
     #endregion
 }
