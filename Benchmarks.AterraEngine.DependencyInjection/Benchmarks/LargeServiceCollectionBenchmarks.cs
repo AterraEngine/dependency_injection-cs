@@ -2,7 +2,6 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Order;
 using System.Reflection;
 using System.Reflection.Emit;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +13,7 @@ namespace Benchmarks.AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 [MemoryDiagnoser]
-[Orderer(SummaryOrderPolicy.FastestToSlowest)]
+// [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 public class LargeServiceCollectionBenchmarks {
     [Benchmark(Baseline = true)]
     public object Microsoft_AddBuildAndRetrieve_SingleDependency() {

@@ -12,9 +12,9 @@ namespace Benchmarks.AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 [MemoryDiagnoser]
-[Orderer(SummaryOrderPolicy.FastestToSlowest)]
+// [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 public class RepeatedServiceCollectionBenchmarks {
-    [Benchmark(Baseline = true, OperationsPerInvoke = 1000)]
+    [Benchmark(Baseline = true)]
     public object Microsoft_AddBuildAndRetrieve_SingleDependency_Transient() {
         var collection = new ServiceCollection();
 
@@ -29,7 +29,7 @@ public class RepeatedServiceCollectionBenchmarks {
         return list;
     }
     
-    [Benchmark(OperationsPerInvoke = 1000)]
+    [Benchmark()]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient() {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
 
@@ -44,7 +44,7 @@ public class RepeatedServiceCollectionBenchmarks {
         return list;
     }
     
-    [Benchmark(OperationsPerInvoke = 1000)]
+    [Benchmark()]
     public object Microsoft_AddBuildAndRetrieve_SingleDependency_Singleton() {
         var collection = new ServiceCollection();
 
@@ -59,7 +59,7 @@ public class RepeatedServiceCollectionBenchmarks {
         return list;
     }
     
-    [Benchmark(OperationsPerInvoke = 1000)]
+    [Benchmark()]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency_Singleton() {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
 

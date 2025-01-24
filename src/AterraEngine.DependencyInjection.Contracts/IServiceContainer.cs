@@ -9,5 +9,7 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public interface IServiceContainer {
-    FrozenDictionary<Type, IServiceRecord> Records { get; }
+    FrozenDictionary<Type, IServiceRecord> ServiceRecords { get; }
+
+    TService? GetSingletonService<TService>(IServiceRecord recordId, IServiceProvider serviceProvider) where TService : class;
 }

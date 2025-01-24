@@ -2,6 +2,7 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using AterraEngine.DependencyInjection;
+using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
 
 namespace Example.AterraEngine.DependencyInjection;
 
@@ -13,26 +14,26 @@ public static class Program {
         var collection = new ServiceCollection();
         
         collection.AddSingleton<IService, Service>(); 
-        collection.AddSingleton<IServiceRez, ServiceReze>(); 
+        collection.AddSingleton<IServiceRez, ServiceRez>(); 
         collection.AddTransient<ITransient, Transient>();
         
-        var provider = collection.Build();
+        using IServiceProvider disposable = collection.Build();
 
-        var service = provider.GetService<IService>();
+        var service = disposable.GetService<IService>();
         Console.WriteLine(service?.Name);
         
-        var service1 = provider.GetService<IService>();
+        var service1 = disposable.GetService<IService>();
         Console.WriteLine(service1?.Name);
         Console.WriteLine(service == service1);
         
-        var serviceRez = provider.GetRequiredService<IServiceRez>();
+        var serviceRez = disposable.GetRequiredService<IServiceRez>();
         Console.WriteLine(serviceRez.Service.Name);
         Console.WriteLine(serviceRez.Service1.Name);
         Console.WriteLine(serviceRez.Transient.Name);
         Console.WriteLine(serviceRez.Service == service);
         Console.WriteLine(serviceRez.Service1 == service1);
         
-        var transient = provider.GetRequiredService<ITransient>();
+        var transient = disposable.GetRequiredService<ITransient>();
         Console.WriteLine(transient.Name);
         
         return Task.CompletedTask;
@@ -67,7 +68,7 @@ public static class Program {
         IService Service1 { get; }
         ITransient Transient { get; }
     }
-    public class ServiceReze(IService service, IService service1, ITransient transient) : IServiceRez {
+    public class ServiceRez(IService service, IService service1, ITransient transient) : IServiceRez {
         public IService Service { get; } = service;
         public IService Service1 { get; } = service1;
         public ITransient Transient { get; } = transient;

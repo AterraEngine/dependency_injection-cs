@@ -10,12 +10,17 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public static class ServiceRecordReflectionFactory {
-    public static ServiceRecord<TService, TImplementation> CreateWithFactory<TService, TImplementation>(int lifetime) where TImplementation : class, TService {
+    private static readonly MethodInfo GetRequiredServiceMethod = typeof(IServiceProvider).GetMethod(nameof(IServiceProvider.GetRequiredService), BindingFlags.Instance | BindingFlags.Public)!;
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Methods
+    // -----------------------------------------------------------------------------------------------------------------
+    public static ServiceRecord<TService> CreateWithFactory<TService, TImplementation>(int lifetime) where TImplementation : class, TService {
         Type type = typeof(TImplementation);
         if (type.GetConstructors() is { Length: 0 }) throw new Exception("No constructors");
         
         // Special case for empty constructor
-        if (type.GetConstructor([]) is {} emptyConstructor) return new ServiceRecord<TService, TImplementation>(
+        if (type.GetConstructor([]) is {} emptyConstructor) return new ServiceRecord<TService>(
             typeof(TService),
             typeof(TImplementation),
             _ => (TService)emptyConstructor.Invoke(null),
@@ -30,31 +35,20 @@ public static class ServiceRecordReflectionFactory {
         ConstructorInfo constructor = constructors[0];
         
         ParameterInfo[] parameters = constructor.GetParameters();
-
-        // Small optimization
-        // if (parameters.Length == 1 && parameters[0].ParameterType == typeof(IServiceProvider)) {
-        //     return new ServiceRecord<TService, TImplementation>(
-        //         typeof(TService),
-        //         typeof(TImplementation),
-        //         provider =>  (TService)constructor.Invoke([provider]),
-        //         lifetime
-        //     );
-        // }
         
         // Lambda generation
         ParameterExpression parameterExpression = Expression.Parameter(typeof(IServiceProvider), "provider");
-        MethodInfo methodInfo = typeof(IServiceProvider).GetMethod(nameof(IServiceProvider.GetRequiredService), BindingFlags.Instance | BindingFlags.Public)!;
         
         Expression[] arguments = parameters.Select(p => Expression.Call(
             parameterExpression,
-            methodInfo.MakeGenericMethod(p.ParameterType)
+            GetRequiredServiceMethod.MakeGenericMethod(p.ParameterType)
         )).ToArray<Expression>();
         
         NewExpression constructorCall = Expression.New(constructor, arguments);
         Expression<Func<IServiceProvider, TService>> lambda = Expression.Lambda<Func<IServiceProvider, TService>>(constructorCall, parameterExpression);
 
         // Actually store the record
-        return new ServiceRecord<TService, TImplementation>(
+        return new ServiceRecord<TService>(
             typeof(TService),
             typeof(TImplementation),
             lambda.Compile(), // Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>, ...)

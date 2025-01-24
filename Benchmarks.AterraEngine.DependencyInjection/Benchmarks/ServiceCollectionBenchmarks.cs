@@ -12,7 +12,7 @@ namespace Benchmarks.AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 [MemoryDiagnoser]
-[Orderer(SummaryOrderPolicy.FastestToSlowest)]
+// [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 public class ServiceCollectionBenchmarks {
     [Benchmark(Baseline = true, OperationsPerInvoke = 1000)]
     public object Microsoft_AddBuildAndRetrieve_SingleDependency() {
