@@ -25,6 +25,13 @@ public class ServiceCollection : IServiceCollection {
         );
         return this;
     }
+    
+    #region AddService by Record
+    public IServiceCollection AddService(IServiceRecord record) {
+        Records.AddOrUpdate(record.ServiceType, record, (_, _) => record);
+        return this;
+    }
+    #endregion
 
     #region AddService by Type argument
     private readonly Lazy<MethodInfo> _addServiceMethod1 = new(static () => typeof(ServiceCollection)

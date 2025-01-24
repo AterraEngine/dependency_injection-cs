@@ -19,3 +19,13 @@ public class GenericTestservice<T> : ITestService;
 public class TransientGenericTestservice<T> : ITestService;
 
 public interface ITestService;
+
+
+public class a {
+    public void b() {
+        var collection = new ServiceCollection();
+        
+        
+        collection.AddSingleton<ITestService, TestService>();
+    }
+}
