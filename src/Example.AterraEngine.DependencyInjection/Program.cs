@@ -71,9 +71,10 @@ public static class Program {
         ITransient Transient { get; }
     }
 
-    public class ServiceRez(IService service, IService service1, ITransient transient) : IServiceRez {
+    public class ServiceRez(IService service, IService service1, ITransient transient, IServiceProvider provider) : IServiceRez {
         public IService Service { get; } = service;
         public IService Service1 { get; } = service1;
         public ITransient Transient { get; } = transient;
+        public IServiceProvider Provider { get; } = provider;
     }
 }
