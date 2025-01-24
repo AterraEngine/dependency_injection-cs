@@ -21,19 +21,33 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
-    // -----------------------------------------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------------------------=
+    #region GetService by Type argument
+    private readonly ConcurrentDictionary<Type, MethodInfo> _getServiceMethodCache = new();
+
+    private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ServiceProvider)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
+
+    public object? GetService(Type service) =>
+        _getServiceMethodCache
+            .GetOrAdd(service, valueFactory: _ => _getServiceMethod.Value.MakeGenericMethod(service))// get or store to cache
+            .Invoke(this, null);
+    #endregion
+    
+    #region GetServices by Generic Type argument
     public TService? GetService<TService>() where TService : class {
         Type typeOfService = typeof(TService);
         if (typeOfService == typeof(IServiceProvider)) return (TService)(object)this;// workaround to make sure we can inject the service provider
         if (!serviceContainer.ServiceRecords.TryGetValue(typeOfService, out IServiceRecord? record)) return null;
 
         // Resolve the type and create an instance
-        TService? instance;
+        TService? instance = null;
         switch (record) {
-            // check if it is a transient
+            // Transient, we don't track the instance, but we do track disposing patterns.
             case { IsTransient: true }:
-                record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? factory);
-                instance = factory?.Invoke(this);
+                if (!record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? transientFactory)) break;
+                instance = transientFactory(this);
                 break;
 
             // Singleton, but we have a parent, so we should ask it because it could exist there;
@@ -44,7 +58,19 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
             // Checking the lifetime value
             case { Lifetime: var level } when level == ScopeLevel: {
-                instance = CreateInstanceFromFactory<TService>(record);
+                // Check if the instance already exists, if so, return it
+                if (Instances.TryGetValue(record.Id, out object? alreadyCreatedInstance)) {
+                    instance = alreadyCreatedInstance as TService;
+                    break;
+                }
+                
+                // instance hasn't been created yet, so we need to create it
+                if (!record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? factory)) break;
+                instance = factory(this);
+
+                // If the instance was created, add it to the instances collection
+                //      If we can't add it, then it means it was already created by something else, and thus we can just forget it ( not the best option)
+                if (!Instances.TryAdd(record.Id, instance)) instance = null;
                 break;
             }
 
@@ -58,7 +84,8 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                 throw new DeeperScopeRequiredException($"Required scope level {record.Lifetime} is higher than the current scope level of {ScopeLevel}", typeOfService, ScopeLevel);
             }
         }
-
+        // If for some reason something went wrong, we can just return null
+        //      TODO add some logging to this when this fails.
         if (instance is null) return null;
 
         // After a possible instance has been found do some more registers if needed
@@ -68,9 +95,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
     public TService GetRequiredService<TService>() where TService : class {
         try {
-            if (GetService<TService>() is not {} service) {
-                throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
-            }
+            if (GetService<TService>() is not {} service) throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
 
             return service;
         }
@@ -82,6 +107,15 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         }
     }
 
+    private void RegisterDisposePatternIfApplicable(IServiceRecord record) {
+        switch (record) {
+            case { IsAsyncDisposable: true }: AsyncDisposableInstances.Add(record.Id); break; // Async is always preferred over sync
+            case { IsDisposable: true }: DisposableInstances.Add(record.Id); break;
+        }
+    }
+    #endregion
+
+    #region ScopeCreation
     public IServiceProvider CreateScope() {
         var scopedProvider = new ServiceProvider(serviceContainer) {
             ParentScope = this,
@@ -101,34 +135,6 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
-
-    // ReSharper disable once ConvertIfStatementToReturnStatement
-    private TService? CreateInstanceFromFactory<TService>(IServiceRecord record) where TService : class {
-        record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? factory);
-        if (factory?.Invoke(this) is not {} newInstance) return null;
-        if (!Instances.TryAdd(record.Id, newInstance)) return null;// This feels wrong, we should throw an exception
-
-        return newInstance;// Don't need to store to the parent here, because if there is a parent, it will be stored there.
-    }
-
-    private void RegisterDisposePatternIfApplicable(IServiceRecord record) {
-        switch (record) {
-            case { IsDisposable: true }: DisposableInstances.Add(record.Id); break;
-            case { IsAsyncDisposable: true }: AsyncDisposableInstances.Add(record.Id); break;
-        }
-    }
-
-    #region GetService by Type argument
-    private readonly ConcurrentDictionary<Type, MethodInfo> _getServiceMethodCache = new();
-
-    private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ServiceProvider)
-        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-        .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
-
-    public object? GetService(Type service) =>
-        _getServiceMethodCache
-            .GetOrAdd(service, valueFactory: _ => _getServiceMethod.Value.MakeGenericMethod(service))// get or store to cache
-            .Invoke(this, null);
     #endregion
 
     #region IEnumerable<IServiceRecord>
@@ -138,6 +144,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
     public int Count => serviceContainer.ServiceRecords.Count;
     #endregion
+    
     #region Dispose
     public void Dispose() {
         try {
