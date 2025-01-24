@@ -3,7 +3,6 @@
 // ---------------------------------------------------------------------------------------------------------------------
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Frozen;
 using System.Reflection;
 
 namespace AterraEngine.DependencyInjection;

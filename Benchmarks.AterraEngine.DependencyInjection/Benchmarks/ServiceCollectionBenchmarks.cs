@@ -2,7 +2,6 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Order;
 using Microsoft.Extensions.DependencyInjection;
 using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
 
