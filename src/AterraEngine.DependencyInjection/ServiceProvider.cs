@@ -152,6 +152,25 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
     #region Dispose
     public void Dispose() {
         try {
+            // Dispose all objects marked as async disposable synchronously, if needed
+            while (AsyncDisposableInstances.TryTake(out Guid instanceId)) {
+                if (!Instances.TryRemove(instanceId, out object? instance)) continue;
+
+                switch (instance) {
+                    case IAsyncDisposable asyncDisposableInstance: {
+                        // wait for the task to complete. I know this is bad, but it's the only way I know of
+                        asyncDisposableInstance.DisposeAsync().AsTask().GetAwaiter().GetResult(); 
+                        break; 
+                    }
+                    
+                    // yes we are also looking for a fallback, because errors can happen when a game-dev does something unexpected
+                    case IDisposable disposableFallback: {
+                        disposableFallback.Dispose(); 
+                        break;
+                    }
+                }
+            }
+            
             // Dispose all objects marked as disposable
             while (DisposableInstances.TryTake(out Guid instanceId)) {
                 if (!Instances.TryRemove(instanceId, out object? instance) || instance is not IDisposable disposableInstance) continue;
@@ -159,21 +178,10 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                 disposableInstance.Dispose();
             }
 
-            // Dispose all objects marked as async disposable synchronously, if needed
-            while (AsyncDisposableInstances.TryTake(out Guid instanceId)) {
-                if (!Instances.TryRemove(instanceId, out object? instance)) continue;
-
-                switch (instance) {
-                    // yes we are also looking for a fallback, because errors can happen
-                    case IAsyncDisposable asyncDisposableInstance:
-                        asyncDisposableInstance.DisposeAsync().AsTask().GetAwaiter().GetResult(); break;
-                    case IDisposable disposableFallback:
-                        disposableFallback.Dispose(); break;
-                }
-            }
-
             // Only ChildScopes should be disposed
-            while (ChildScopes.TryTake(out IServiceProvider? childScope)) childScope.Dispose();
+            while (ChildScopes.TryTake(out IServiceProvider? childScope)) {
+                childScope.Dispose();
+            }
         }
         finally {
             CommonCleanup();
@@ -183,23 +191,25 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
     public async ValueTask DisposeAsync() {
         try {
+            // Yes I know we could do some sort of task collection and then do a Task.WhenAll()
+            //      But I don't think it's worth it, because we don't expect this to be a performance bottleneck (at the moment)
+            
             // Dispose all async-disposable instances
             while (AsyncDisposableInstances.TryTake(out Guid instanceId)) {
-                // If the instance is found, dispose it asynchronously
                 if (!Instances.TryGetValue(instanceId, out object? instance) || instance is not IAsyncDisposable asyncDisposable) continue;
-
                 await asyncDisposable.DisposeAsync().ConfigureAwait(false);
             }
 
             // Dispose synchronously any disposable objects if applicable
             while (DisposableInstances.TryTake(out Guid instanceId)) {
                 if (!Instances.TryGetValue(instanceId, out object? instance) || instance is not IDisposable disposable) continue;
-
                 disposable.Dispose();
             }
 
-            // Only ChildScopes should be disposed
-            while (ChildScopes.TryTake(out IServiceProvider? childScope)) await childScope.DisposeAsync().ConfigureAwait(false);
+            // Don't forget about ChildScopes!
+            while (ChildScopes.TryTake(out IServiceProvider? childScope)) {
+                await childScope.DisposeAsync().ConfigureAwait(false);
+            }
         }
         finally {
             CommonCleanup();
@@ -208,7 +218,9 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
     }
 
     private void CommonCleanup() {
-        // Clear all collections
+        // Clear collections of all references
+        //      Do know that this doesn't necessarily mark all the objects to be garbage collected.
+        //      It just means that the references are no longer valid.
         DisposableInstances.Clear();
         AsyncDisposableInstances.Clear();
         Instances.Clear();
