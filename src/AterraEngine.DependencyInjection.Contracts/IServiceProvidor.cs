@@ -10,6 +10,7 @@ public interface IServiceProvider : IReadOnlyCollection<IServiceRecord>, IDispos
     object? GetService(Type service);
 
     TService GetRequiredService<TService>() where TService : class;
+    object GetRequiredService(Type service);
 
     IServiceProvider CreateScope();
     IServiceProvider CreateDeeperScope();

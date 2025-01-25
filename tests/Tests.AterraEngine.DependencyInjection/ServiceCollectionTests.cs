@@ -2,6 +2,7 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using AterraEngine.DependencyInjection;
+using Tests.AterraEngine.DependencyInjection.Helpers;
 using Tests.AterraEngine.DependencyInjection.Services;
 using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
 

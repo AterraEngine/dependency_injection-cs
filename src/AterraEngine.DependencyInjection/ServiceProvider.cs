@@ -32,6 +32,9 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         _getServiceMethodCache
             .GetOrAdd(service, valueFactory: _ => _getServiceMethod.Value.MakeGenericMethod(service))// get or store to cache
             .Invoke(this, null);
+    
+    public object GetRequiredService(Type service) =>
+        GetService(service) ?? throw new CouldNotBeResolvedException($"The required service of type '{service}' could not be resolved.");
     #endregion
     
     #region GetServices by Generic Type argument

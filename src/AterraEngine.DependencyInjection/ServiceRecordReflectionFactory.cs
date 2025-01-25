@@ -9,7 +9,10 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public static class ServiceRecordReflectionFactory {
-    private static readonly MethodInfo GetRequiredServiceMethod = typeof(IServiceProvider).GetMethod(nameof(IServiceProvider.GetRequiredService), BindingFlags.Instance | BindingFlags.Public)!;
+    private static readonly MethodInfo GetRequiredServiceMethod = typeof(IServiceProvider)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        .Single(m => m is { Name: nameof(IServiceProvider.GetRequiredService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
+
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
