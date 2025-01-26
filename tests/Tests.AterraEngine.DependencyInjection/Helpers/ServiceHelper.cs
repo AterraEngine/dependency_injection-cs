@@ -49,7 +49,7 @@ public static class ServiceHelper {
         foreach ((Type? serviceType, Type? implementationType) in GenerateServices(count)) {
             collection.AddSingleton(serviceType, implementationType);
         }
-        
+
         return collection;
     }
 }

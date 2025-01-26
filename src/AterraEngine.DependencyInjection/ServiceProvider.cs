@@ -24,6 +24,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
     // -----------------------------------------------------------------------------------------------------------------=
     #region GetService by Type argument
     private readonly ConcurrentDictionary<Type, MethodInfo> _getServiceMethodCache = new();
+
     private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ServiceProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
@@ -32,24 +33,30 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         _getServiceMethodCache
             .GetOrAdd(service, valueFactory: _ => _getServiceMethod.Value.MakeGenericMethod(service))// get or store to cache
             .Invoke(this, null);
-    
+
     public object GetRequiredService(Type service) =>
         GetService(service) ?? throw new CouldNotBeResolvedException($"The required service of type '{service}' could not be resolved.");
     #endregion
-    
+
     #region GetServices by Generic Type argument
     public TService? GetService<TService>() where TService : class {
         // Do some basic checks first before we try and actually use the record.
         Type typeOfService = typeof(TService);
-        if (typeOfService == typeof(IServiceProvider)) return (TService)(object)this;// workaround to make sure we can inject the service provider
-        if (!serviceContainer.ServiceRecords.TryGetValue(typeOfService, out IServiceRecord? record)) return null;
-        
+        if (!serviceContainer.ServiceRecords.TryGetValue(typeOfService, out IServiceRecord? record)) {
+            // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
+            if (typeOfService == typeof(IServiceProvider)) return (TService)(object)this;
+            if (typeOfService == typeof(IServiceContainer)) return (TService)serviceContainer;
+
+            return null;// if all fails, return null
+        }
+
         // Resolve the type and create an instance        
         TService? instance = null;
         switch (record) {
             // Transient, we don't track the instance, but we do track disposing patterns.
             case { IsTransient: true }:
                 if (!record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? transientFactory)) break;
+
                 instance = transientFactory(this);
                 break;
 
@@ -66,9 +73,10 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                     instance = alreadyCreatedInstance as TService;
                     break;
                 }
-                
+
                 // instance hasn't been created yet, so we need to create it
                 if (!record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? factory)) break;
+
                 instance = factory(this);
 
                 // If the instance was created, add it to the instances collection
@@ -80,7 +88,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
             // Lifetime was shallower than the current scope level
             case { Lifetime: var level } when level < ScopeLevel: {
                 return ParentScope?.GetService<TService>();
-                
+
                 // Okay I know you see the `RegisterDisposePatternIfApplicable` below and think "hey don't we need to
                 // register the dispose pattern for this instance as well? And why aren't we assigning the instance?"
                 // The main reason for this is that the ParentScope handles the new instance's lifetime, not the current one!
@@ -91,6 +99,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                 throw new DeeperScopeRequiredException($"Required scope level {record.Lifetime} is higher than the current scope level of {ScopeLevel}", typeOfService, ScopeLevel);
             }
         }
+
         // If for some reason something went wrong, we can just return null
         //      TODO add some logging to this when this fails.
         if (instance is null) return null;
@@ -107,7 +116,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
             return service;
         }
         catch (DeeperScopeRequiredException ex) when (ex.TypeToResolve == typeof(TService)) {
-            throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
+            throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.", ex);
         }
         catch (DeeperScopeRequiredException ex) when (ex.TypeToResolve != typeof(TService)) {
             throw new CouldNotBeResolvedException($"While trying to resolve {typeof(TService)} another service of type '{ex.TypeToResolve}' could not be resolved due to a scope conflict", ex);
@@ -116,7 +125,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
     private void RegisterDisposePatternIfApplicable(IServiceRecord record) {
         switch (record) {
-            case { IsAsyncDisposable: true }: AsyncDisposableInstances.Add(record.Id); break; // Async is always preferred over sync
+            case { IsAsyncDisposable: true }: AsyncDisposableInstances.Add(record.Id); break;// Async is always preferred over sync
             case { IsDisposable: true }: DisposableInstances.Add(record.Id); break;
         }
     }
@@ -148,7 +157,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
     public int Count => serviceContainer.ServiceRecords.Count;
     #endregion
-    
+
     #region Dispose
     public void Dispose() {
         try {
@@ -159,18 +168,18 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                 switch (instance) {
                     case IAsyncDisposable asyncDisposableInstance: {
                         // wait for the task to complete. I know this is bad, but it's the only way I know of
-                        asyncDisposableInstance.DisposeAsync().AsTask().GetAwaiter().GetResult(); 
-                        break; 
+                        asyncDisposableInstance.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                        break;
                     }
-                    
+
                     // yes we are also looking for a fallback, because errors can happen when a game-dev does something unexpected
                     case IDisposable disposableFallback: {
-                        disposableFallback.Dispose(); 
+                        disposableFallback.Dispose();
                         break;
                     }
                 }
             }
-            
+
             // Dispose all objects marked as disposable
             while (DisposableInstances.TryTake(out Guid instanceId)) {
                 if (!Instances.TryRemove(instanceId, out object? instance) || instance is not IDisposable disposableInstance) continue;
@@ -193,16 +202,18 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         try {
             // Yes I know we could do some sort of task collection and then do a Task.WhenAll()
             //      But I don't think it's worth it, because we don't expect this to be a performance bottleneck (at the moment)
-            
+
             // Dispose all async-disposable instances
             while (AsyncDisposableInstances.TryTake(out Guid instanceId)) {
                 if (!Instances.TryGetValue(instanceId, out object? instance) || instance is not IAsyncDisposable asyncDisposable) continue;
+
                 await asyncDisposable.DisposeAsync().ConfigureAwait(false);
             }
 
             // Dispose synchronously any disposable objects if applicable
             while (DisposableInstances.TryTake(out Guid instanceId)) {
                 if (!Instances.TryGetValue(instanceId, out object? instance) || instance is not IDisposable disposable) continue;
+
                 disposable.Dispose();
             }
 
@@ -224,8 +235,27 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         DisposableInstances.Clear();
         AsyncDisposableInstances.Clear();
         Instances.Clear();
-        ChildScopes.Clear(); 
-        ParentScope = null; // Do not dispose the parent scope, only remove the reference
+        ChildScopes.Clear();
+        ParentScope?.RemoveItemFromBag(this);// Remove this instance from the parent scope's bag, else we will leak memory
+        ParentScope = null;// Do not dispose the parent scope, only remove the reference
+    }
+
+    private void RemoveItemFromBag(ServiceProvider child) {
+        if (ChildScopes.IsEmpty) return;
+
+        var itemsToKeep = new List<IServiceProvider>(ChildScopes.Count - 1);
+
+        // Remove specific item, keeping others in memory
+        while (ChildScopes.TryTake(out IServiceProvider? item)) {
+            if (item.Equals(child)) continue;
+
+            itemsToKeep.Add(item);
+        }
+
+        // Re-add only the items we want to keep
+        foreach (IServiceProvider item in itemsToKeep) {
+            ChildScopes.Add(item);
+        }
     }
     #endregion
 }

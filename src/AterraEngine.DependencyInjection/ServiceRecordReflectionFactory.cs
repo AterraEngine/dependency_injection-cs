@@ -31,7 +31,7 @@ public static class ServiceRecordReflectionFactory {
                 lifetime
             );
         }
-        
+
         // special case for only a service provider
         if (type.GetConstructor([typeof(IServiceProvider)]) is {} onlyServiceProviderConstructor) {
             return new ServiceRecord<TService>(
@@ -47,6 +47,7 @@ public static class ServiceRecordReflectionFactory {
             .SingleOrDefault(info => info.GetParameters().Length > 0);
 
         if (constructor is null) throw new MultipleConstructorsException($"Multiple constructors found for {type.FullName} with parameters");
+
         ParameterInfo[] parameters = constructor.GetParameters();
 
         // Lambda generation
@@ -56,12 +57,12 @@ public static class ServiceRecordReflectionFactory {
         var arguments = new Expression[parameters.Length];
         for (int i = parameters.Length - 1; i >= 0; i--) {
             Type parameterType = parameters[i].ParameterType;
-            
+
             if (parameterType == typeof(IServiceProvider)) {
                 arguments[i] = parameterExpression;
                 continue;
             }
-            
+
             arguments[i] = Expression.Call(
                 parameterExpression,
                 GetRequiredServiceMethod.MakeGenericMethod(parameterType)
@@ -73,8 +74,8 @@ public static class ServiceRecordReflectionFactory {
 
         // Build the lambda expression for the factory
         Expression<Func<IServiceProvider, TService>> lambda = Expression.Lambda<Func<IServiceProvider, TService>>(constructorCall, parameterExpression);
-        Func<IServiceProvider, TService> compiled = lambda.Compile();  // Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>, ...)
-        
+        Func<IServiceProvider, TService> compiled = lambda.Compile();// Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>, ...)
+
         // Actually store the record
         return new ServiceRecord<TService>(
             typeof(TService),
