@@ -10,14 +10,14 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvider {
-    private ServiceProvider? ParentScope { get; set; }
-    private int ScopeLevel { get; init; }
+    internal ServiceProvider? ParentScope { get; set; }
+    internal int ScopeLevel { get; init; }
 
-    private ConcurrentDictionary<Guid, object> Instances { get; } = new();
-    private ConcurrentBag<Guid> DisposableInstances { get; } = [];
-    private ConcurrentBag<Guid> AsyncDisposableInstances { get; } = [];
+    internal ConcurrentDictionary<Guid, object> Instances { get; } = new();
+    internal ConcurrentBag<Guid> DisposableInstances { get; } = [];
+    internal ConcurrentBag<Guid> AsyncDisposableInstances { get; } = [];
 
-    private ConcurrentBag<IServiceProvider> ChildScopes { get; } = [];
+    internal ConcurrentBag<IServiceProvider> ChildScopes { get; } = [];
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
@@ -65,9 +65,12 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                 instance = serviceContainer.GetSingletonService<TService>(record, this);
                 break;
             }
-
-            // Lifetime is the current scope level
-            case { Lifetime: var level } when level == ScopeLevel: {
+            
+            // SCOPED : Has two variant
+            //      - ProviderScoped, meaning that per provider we create a new one, regardless of scope depth
+            //      - Lifetime is the current scope level
+            case { IsProviderScoped: true } :                           
+            case { Lifetime: var level } when level == ScopeLevel: { 
                 // Check if the instance already exists, if so, return it
                 if (Instances.TryGetValue(record.Id, out object? alreadyCreatedInstance)) {
                     instance = alreadyCreatedInstance as TService;
@@ -112,7 +115,6 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
     public TService GetRequiredService<TService>() where TService : class {
         try {
             if (GetService<TService>() is not {} service) throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
-
             return service;
         }
         catch (DeeperScopeRequiredException ex) when (ex.TypeToResolve == typeof(TService)) {

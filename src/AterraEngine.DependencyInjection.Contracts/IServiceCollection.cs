@@ -21,5 +21,10 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     IServiceCollection AddTransient(Type implementation);
     IServiceCollection AddTransient(Type service, Type implementation);
 
+    IServiceCollection AddScoped<TImplementation>() where TImplementation : class;
+    IServiceCollection AddScoped<TService, TImplementation>() where TImplementation : class, TService;
+    IServiceCollection AddScoped(Type implementation);
+    IServiceCollection AddScoped(Type service, Type implementation);
+
     IServiceProvider Build();
 }

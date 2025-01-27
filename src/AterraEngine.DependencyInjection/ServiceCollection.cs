@@ -59,16 +59,23 @@ public class ServiceCollection : IServiceCollection {
 
     #region AddSingleton
     public IServiceCollection AddSingleton<TImplementation>() where TImplementation : class => AddSingleton<TImplementation, TImplementation>();
-    public IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService => AddService<TService, TImplementation>(0);
-    public IServiceCollection AddSingleton(Type implementation) => AddService(implementation, 0);
-    public IServiceCollection AddSingleton(Type service, Type implementation) => AddService(service, implementation, 0);
+    public IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService => AddService<TService, TImplementation>((int)DefaultScopeLevelValues.Singleton);
+    public IServiceCollection AddSingleton(Type implementation) => AddService(implementation, (int)DefaultScopeLevelValues.Singleton);
+    public IServiceCollection AddSingleton(Type service, Type implementation) => AddService(service, implementation, (int)DefaultScopeLevelValues.Singleton);
     #endregion
 
     #region AddTransient
     public IServiceCollection AddTransient<TImplementation>() where TImplementation : class => AddTransient<TImplementation, TImplementation>();
-    public IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService => AddService<TService, TImplementation>(-1);
-    public IServiceCollection AddTransient(Type implementation) => AddService(implementation, -1);
-    public IServiceCollection AddTransient(Type service, Type implementation) => AddService(service, implementation, -1);
+    public IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService => AddService<TService, TImplementation>((int)DefaultScopeLevelValues.Transient);
+    public IServiceCollection AddTransient(Type implementation) => AddService(implementation, (int)DefaultScopeLevelValues.Transient);
+    public IServiceCollection AddTransient(Type service, Type implementation) => AddService(service, implementation, (int)DefaultScopeLevelValues.Transient);
+    #endregion
+
+    #region AddTransient
+    public IServiceCollection AddScoped<TImplementation>() where TImplementation : class => AddScoped<TImplementation, TImplementation>();
+    public IServiceCollection AddScoped<TService, TImplementation>() where TImplementation : class, TService => AddService<TService, TImplementation>((int)DefaultScopeLevelValues.ProviderScoped);
+    public IServiceCollection AddScoped(Type implementation) => AddService(implementation, (int)DefaultScopeLevelValues.ProviderScoped);
+    public IServiceCollection AddScoped(Type service, Type implementation) => AddService(service, implementation, (int)DefaultScopeLevelValues.ProviderScoped);
     #endregion
 
     #region ICollection<IServiceRecord>

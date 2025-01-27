@@ -1,23 +1,20 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using System.Diagnostics.CodeAnalysis;
+namespace Tests.AterraEngine.DependencyInjection.Services;
 
-namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public interface IServiceRecord {
-    Guid Id { get; }
-    Type ServiceType { get; }
-    Type ImplementationType { get; }
-    int Lifetime { get; }
+public class DisposableService : IDisposableService {
+    public string? ConnectionString { get; set; } = string.Empty;
     
-    bool IsSingleton { get; }
-    bool IsTransient { get; }
-    bool IsProviderScoped { get; }
-    bool IsDisposable { get; }
-    bool IsAsyncDisposable { get; }
+    public void Dispose() {
+        ConnectionString = null;
+        GC.SuppressFinalize(this);
+    }
+}
 
-    bool TryGetFactory<TService>([NotNullWhen(true)] out Func<IServiceProvider, TService>? factory);
+public interface IDisposableService : IDisposable {
+    public string? ConnectionString { get; }
 }

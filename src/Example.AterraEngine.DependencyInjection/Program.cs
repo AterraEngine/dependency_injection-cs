@@ -13,10 +13,11 @@ public static class Program {
     public enum ServiceLifetime {
         Transient = -1,
         Singleton = 0,
-        EngineScope = 1,
-        GameScope = 2,
-        WorldScope = 3,
-        LevelScope = 4
+        Scoped = 1, 
+        EngineScope = 2,
+        GameScope = 3,
+        WorldScope = 4,
+        LevelScope = 5
     }
 
     public static Task Main(string[] args) {
@@ -49,7 +50,6 @@ public static class Program {
 
         // var serviceRez2 = provider.GetRequiredService<ServiceReze2>();
     }
-
 
     public interface IService {
         string Name { get; }

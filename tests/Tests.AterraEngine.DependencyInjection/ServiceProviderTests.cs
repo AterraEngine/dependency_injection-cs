@@ -128,6 +128,79 @@ public class ServiceProviderTests {
             .IsNotNull()
             .And.IsAssignableTo(serviceType)
             .And.IsTypeOf(implementationType);
+    }
 
+    [Test]
+    // ReSharper disable MethodHasAsyncOverload
+    public async Task ServiceProvider_UsingScope_ManualDispose() {
+        // Arrange
+        IServiceCollection collection = CollectionHelper.CreateCollectionWithServices(256);
+        collection.AddScoped<IDisposableService, DisposableService>();
+        IServiceProvider originalProvider = collection.Build();
+        
+        var scopeProviderLevel0 = (ServiceProvider)originalProvider.CreateScope(); // Cast to original type because of internal implementation.
+        var scopeProviderLevel1A = (ServiceProvider)scopeProviderLevel0.CreateScope();
+        var scopeProviderLevel1B = (ServiceProvider)scopeProviderLevel0.CreateScope();
+        
+        var disposableServiceLevel0 = scopeProviderLevel0.GetRequiredService<IDisposableService>();
+        var disposableServiceLevel1A = scopeProviderLevel1A.GetRequiredService<IDisposableService>();
+        var disposableServiceLevel1B = scopeProviderLevel1B.GetRequiredService<IDisposableService>();
+        
+        // Act
+        int originalScopeCount = scopeProviderLevel0.ChildScopes.Count;
+        scopeProviderLevel1A.Dispose();
+        IServiceProvider remainingScope = scopeProviderLevel0.ChildScopes.First();
+
+        // Assert
+        await Assert.That(originalScopeCount).IsEqualTo(2);
+        await Assert.That(scopeProviderLevel0).IsNotNull();
+        await Assert.That(scopeProviderLevel0.ChildScopes).HasCount().EqualTo(1);
+        await Assert.That(remainingScope).IsEqualTo(scopeProviderLevel1B);
+        
+        await Assert.That(scopeProviderLevel1A.ParentScope).IsNull();
+        await Assert.That(scopeProviderLevel1A.Instances).IsEmpty();
+        await Assert.That(scopeProviderLevel1A.DisposableInstances).IsEmpty();
+        await Assert.That(scopeProviderLevel1A.AsyncDisposableInstances).IsEmpty();
+        await Assert.That(scopeProviderLevel1A.ChildScopes).IsEmpty();
+
+        await Assert.That(disposableServiceLevel0.ConnectionString).IsNotNull();
+        await Assert.That(disposableServiceLevel1A.ConnectionString).IsNull().Because("Should have been disposed");
+        await Assert.That(disposableServiceLevel1B.ConnectionString).IsNotNull();
+    }
+    
+    [Test]
+    public async Task ServiceProvider_UsingScope_ManualDisposeAsync() {
+        // Arrange
+        IServiceCollection collection = CollectionHelper.CreateCollectionWithServices(256);
+        collection.AddScoped<IDisposableService, DisposableService>();
+        IServiceProvider originalProvider = collection.Build();
+        var scopeProviderLevel0 = (ServiceProvider)originalProvider.CreateScope(); // Cast to original type because of internal implementation.
+        var scopeProviderLevel1A = (ServiceProvider)scopeProviderLevel0.CreateScope();
+        var scopeProviderLevel1B = (ServiceProvider)scopeProviderLevel0.CreateScope();
+        
+        var disposableServiceLevel0 = scopeProviderLevel0.GetRequiredService<IDisposableService>();
+        var disposableServiceLevel1A = scopeProviderLevel1A.GetRequiredService<IDisposableService>();
+        var disposableServiceLevel1B = scopeProviderLevel1B.GetRequiredService<IDisposableService>();
+        
+        // Act
+        int originalScopeCount = scopeProviderLevel0.ChildScopes.Count;
+        await scopeProviderLevel1A.DisposeAsync();
+        IServiceProvider remainingScope = scopeProviderLevel0.ChildScopes.First();
+
+        // Assert
+        await Assert.That(originalScopeCount).IsEqualTo(2);
+        await Assert.That(scopeProviderLevel0).IsNotNull();
+        await Assert.That(scopeProviderLevel0.ChildScopes).HasCount().EqualTo(1);
+        await Assert.That(remainingScope).IsEqualTo(scopeProviderLevel1B);
+        
+        await Assert.That(scopeProviderLevel1A.ParentScope).IsNull();
+        await Assert.That(scopeProviderLevel1A.Instances).IsEmpty();
+        await Assert.That(scopeProviderLevel1A.DisposableInstances).IsEmpty();
+        await Assert.That(scopeProviderLevel1A.AsyncDisposableInstances).IsEmpty();
+        await Assert.That(scopeProviderLevel1A.ChildScopes).IsEmpty();
+
+        await Assert.That(disposableServiceLevel0.ConnectionString).IsNotNull();
+        await Assert.That(disposableServiceLevel1A.ConnectionString).IsNull().Because("Should have been disposed");
+        await Assert.That(disposableServiceLevel1B.ConnectionString).IsNotNull();
     }
 }

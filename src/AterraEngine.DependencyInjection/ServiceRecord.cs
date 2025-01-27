@@ -15,8 +15,9 @@ public record ServiceRecord<TService>(
 ) : IServiceRecord {
 
     public Guid Id { get; } = Guid.CreateVersion7();
-    public bool IsSingleton { get; } = Lifetime == 0;
-    public bool IsTransient { get; } = Lifetime == -1;
+    public bool IsTransient { get; } = Lifetime == (int)DefaultScopeLevelValues.Transient;
+    public bool IsSingleton { get; } = Lifetime == (int)DefaultScopeLevelValues.Singleton;
+    public bool IsProviderScoped { get; } = Lifetime == (int)DefaultScopeLevelValues.ProviderScoped;
     public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
 
