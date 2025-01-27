@@ -25,12 +25,13 @@ jobs:
             
             # Ensure that the tests must pass 
             # The job will fail automatically if any test fails because `dotnet test` exits with a non-zero code
-            - name: Run tests - Extensions
+            - name: Run tests - AterraEngine.DependencyInjection
               run: dotnet run -c Release --no-restore --no-build
               working-directory: "tests/Tests.AterraEngine.DependencyInjection"
-            - name: Run tests - Extensions.AspNetCore
-              run: dotnet run -c Release --no-restore --no-build
-              working-directory: "tests/Tests.AterraEngine.DependencyInjection.Generators"
+# ENABLE WHEN TESTS EXIST !
+#            - name: Run tests - AterraEngine.DependencyInjection.Generators
+#              run: dotnet run -c Release --no-restore --no-build
+#              working-directory: "tests/Tests.AterraEngine.DependencyInjection.Generators"
 
             - name: Publish to NuGet
               env:

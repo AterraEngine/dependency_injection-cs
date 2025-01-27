@@ -16,7 +16,7 @@
 
         <!-- Package metadata -->
         <PackageId>AterraEngine.DependencyInjection.Generators</PackageId> <!-- Main package name -->
-        <Version>2.0.0-preview.4</Version> <!-- Package version -->
+        <Version>2.0.0-preview.5</Version> <!-- Package version -->
         <Authors>Anna Sas</Authors>
         <Description>A small package allowing easy collection of dependency injection services</Description>
         <PackageProjectUrl>https://github.com/AterraEngine/dependency_injection-cs/</PackageProjectUrl>
