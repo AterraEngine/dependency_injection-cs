@@ -1,21 +1,16 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using BenchmarkDotNet.Running;
+using Microsoft.CodeAnalysis;
 
-namespace Benchmarks.AterraEngine.DependencyInjection;
+namespace AterraEngine.DependencyInjection.Generators;
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public static class Program {
-    public static void Main(string[] args) {
-        // Run all benchmarks in parallel
-        var switcher = new BenchmarkSwitcher([
-            typeof(RepeatedServiceCollectionBenchmarks),
-            // typeof(LargeServiceCollectionBenchmarks),
-            // typeof(ServiceCollectionBenchmarks)
-        ]);
-
-        switcher.RunAllJoined();
-    }
+public record ServiceCollectorRecord(
+    INamedTypeSymbol classSymbol,
+    INamedTypeSymbol attributeSymbol, 
+    INamedTypeSymbol serviceTypeSymbol, 
+    int scopeLevel) {
 }
