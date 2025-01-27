@@ -11,7 +11,7 @@ public interface IServiceRecord {
     Guid Id { get; }
     Type ServiceType { get; }
     Type ImplementationType { get; }
-    int Lifetime { get; }
+    int ScopeDepth { get; }
     
     bool IsSingleton { get; }
     bool IsTransient { get; }

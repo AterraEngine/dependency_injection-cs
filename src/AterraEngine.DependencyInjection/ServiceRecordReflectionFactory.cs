@@ -17,7 +17,7 @@ public static class ServiceRecordReflectionFactory {
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public static ServiceRecord<TService> CreateWithFactory<TService, TImplementation>(int lifetime) where TImplementation : class, TService {
+    public static ServiceRecord<TService> CreateWithFactory<TService, TImplementation>(int scopeDepth) where TImplementation : class, TService {
         Type type = typeof(TImplementation);
         if (type.GetConstructors() is { Length: 0 }) throw new Exception("No constructors");
 
@@ -28,7 +28,7 @@ public static class ServiceRecordReflectionFactory {
                 typeof(TService),
                 typeof(TImplementation),
                 ImplementationFactory: _ => (TService)emptyConstructor.Invoke(null),
-                lifetime
+                scopeDepth
             );
         }
 
@@ -38,7 +38,7 @@ public static class ServiceRecordReflectionFactory {
                 typeof(TService),
                 typeof(TImplementation),
                 ImplementationFactory: provider => (TService)onlyServiceProviderConstructor.Invoke([provider]),
-                lifetime
+                scopeDepth
             );
         }
         #endregion
@@ -81,7 +81,7 @@ public static class ServiceRecordReflectionFactory {
             typeof(TService),
             typeof(TImplementation),
             compiled,
-            lifetime
+            scopeDepth
         );
     }
 }

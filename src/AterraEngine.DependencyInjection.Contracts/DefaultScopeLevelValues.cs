@@ -6,7 +6,7 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public enum DefaultScopeLevelValues {
+public enum DefaultScopeDepth {
     Transient = -2,
     Singleton = -1,
     ProviderScoped = 0

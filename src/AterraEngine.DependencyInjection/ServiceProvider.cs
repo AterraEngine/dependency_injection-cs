@@ -10,8 +10,8 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvider {
-    internal ServiceProvider? ParentScope { get; set; }
-    internal int ScopeLevel { get; init; }
+    internal ServiceProvider? ParentScope { get; private set; }
+    internal int ScopeDepth { get; init; }
 
     internal ConcurrentDictionary<Guid, object> Instances { get; } = new();
     internal ConcurrentBag<Guid> DisposableInstances { get; } = [];
@@ -40,17 +40,20 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
     #region GetServices by Generic Type argument
     public TService? GetService<TService>() where TService : class {
-        // Do some basic checks first before we try and actually use the record.
         Type typeOfService = typeof(TService);
-        if (!serviceContainer.ServiceRecords.TryGetValue(typeOfService, out IServiceRecord? record)) {
-            // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
-            if (typeOfService == typeof(IServiceProvider)) return (TService)(object)this;
-            if (typeOfService == typeof(IServiceContainer)) return (TService)serviceContainer;
-
-            return null;// if all fails, return null
+        // Resolve the record and try and create the instance
+        if (serviceContainer.ServiceRecords.TryGetValue(typeOfService, out IServiceRecord? record)) {
+            return ResolveServiceInstance<TService>(record, typeOfService);
         }
 
-        // Resolve the type and create an instance        
+        // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
+        if (typeOfService == typeof(IServiceProvider)) return (TService)(object)this;
+        if (typeOfService == typeof(IServiceContainer)) return (TService)serviceContainer;
+
+        return null;// if all fails, return null
+    }
+    
+    private TService? ResolveServiceInstance<TService>(IServiceRecord record, Type typeOfService) where TService : class {
         TService? instance = null;
         switch (record) {
             // Transient, we don't track the instance, but we do track disposing patterns.
@@ -68,9 +71,9 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
             
             // SCOPED : Has two variant
             //      - ProviderScoped, meaning that per provider we create a new one, regardless of scope depth
-            //      - Lifetime is the current scope level
+            //      - ScopeDepth is the current scope's depth
             case { IsProviderScoped: true } :                           
-            case { Lifetime: var level } when level == ScopeLevel: { 
+            case { ScopeDepth: var scopeDepth } when scopeDepth == ScopeDepth: { 
                 // Check if the instance already exists, if so, return it
                 if (Instances.TryGetValue(record.Id, out object? alreadyCreatedInstance)) {
                     instance = alreadyCreatedInstance as TService;
@@ -88,18 +91,18 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                 break;
             }
 
-            // Lifetime was shallower than the current scope level
-            case { Lifetime: var level } when level < ScopeLevel: {
-                return ParentScope?.GetService<TService>();
+            // ScopeDepth was shallower than the current scope scopeDepth
+            case { ScopeDepth: var scopeDepth } when scopeDepth < ScopeDepth: {
+                return ParentScope?.ResolveServiceInstance<TService>(record, typeOfService);
 
                 // Okay I know you see the `RegisterDisposePatternIfApplicable` below and think "hey don't we need to
                 // register the dispose pattern for this instance as well? And why aren't we assigning the instance?"
-                // The main reason for this is that the ParentScope handles the new instance's lifetime, not the current one!
+                // The main reason for this is that the ParentScope handles the new instance's ScopeDepth, not the current one!
             }
 
             // Level could not be determined, or scope was deeper than the current scope, and thus cannot be resolved
             default: {
-                throw new DeeperScopeRequiredException($"Required scope level {record.Lifetime} is higher than the current scope level of {ScopeLevel}", typeOfService, ScopeLevel);
+                throw new DeeperScopeRequiredException($"Required scope's depth {record.ScopeDepth} is higher than the current scope's depth of {ScopeDepth}", typeOfService, ScopeDepth);
             }
         }
 
@@ -135,20 +138,20 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
 
     #region Scope Creation
     public IServiceProvider CreateScope() {
-        IServiceProvider scopedProvider = NewScopeProvider(ScopeLevel);
+        IServiceProvider scopedProvider = NewScopeProvider(ScopeDepth);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
 
     public IServiceProvider CreateDeeperScope() {
-        IServiceProvider scopedProvider = NewScopeProvider(ScopeLevel + 1);
+        IServiceProvider scopedProvider = NewScopeProvider(ScopeDepth + 1);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
 
     private ServiceProvider NewScopeProvider(int scopeLevel) => new(serviceContainer) {
         ParentScope = this,
-        ScopeLevel = scopeLevel
+        ScopeDepth = scopeLevel
     };
     #endregion
 

@@ -11,13 +11,13 @@ public record ServiceRecord<TService>(
     Type ServiceType,
     Type ImplementationType,
     Func<IServiceProvider, TService>? ImplementationFactory,
-    int Lifetime
+    int ScopeDepth
 ) : IServiceRecord {
 
     public Guid Id { get; } = Guid.CreateVersion7();
-    public bool IsTransient { get; } = Lifetime == (int)DefaultScopeLevelValues.Transient;
-    public bool IsSingleton { get; } = Lifetime == (int)DefaultScopeLevelValues.Singleton;
-    public bool IsProviderScoped { get; } = Lifetime == (int)DefaultScopeLevelValues.ProviderScoped;
+    public bool IsTransient { get; } = ScopeDepth == (int)DefaultScopeDepth.Transient;
+    public bool IsSingleton { get; } = ScopeDepth == (int)DefaultScopeDepth.Singleton;
+    public bool IsProviderScoped { get; } = ScopeDepth == (int)DefaultScopeDepth.ProviderScoped;
     public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
 
