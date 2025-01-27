@@ -18,10 +18,10 @@ jobs:
                   dotnet-version: '9.x'
 
             - name: Restore dependencies
-              run: dotnet restore DependencyInjection.sln
+              run: dotnet restore AterraEngine.DependencyInjection.sln
 
             - name: Build
-              run: dotnet build DependencyInjection.sln --configuration Release --no-restore
+              run: dotnet build AterraEngine.DependencyInjection.sln --configuration Release --no-restore
             
             # Ensure that the tests must pass 
             # The job will fail automatically if any test fails because `dotnet test` exits with a non-zero code
