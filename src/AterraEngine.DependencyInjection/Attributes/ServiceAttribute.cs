@@ -11,4 +11,5 @@ public class ServiceAttribute(Type serviceType, int scopeLevel) : Attribute {
     public int ScopeLevel { get; } = scopeLevel;
 }
 
+[AttributeUsage(AttributeTargets.Class)]
 public class ServiceAttribute<TService>(int scopeLevel) : ServiceAttribute(typeof(TService), scopeLevel);
