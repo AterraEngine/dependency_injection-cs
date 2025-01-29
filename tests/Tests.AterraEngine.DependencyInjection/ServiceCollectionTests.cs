@@ -4,7 +4,6 @@
 using AterraEngine.DependencyInjection;
 using Tests.AterraEngine.DependencyInjection.Helpers;
 using Tests.AterraEngine.DependencyInjection.Services;
-using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
 
 namespace Tests.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
@@ -18,7 +17,7 @@ public class ServiceCollectionTests {
         collection.AddSingleton<IEmptyService, EmptyService>();
 
         // Act
-        IServiceProvider provider = collection.Build();
+        IScopedProvider provider = collection.Build();
         var service = provider.GetService<IEmptyService>();
 
         // Assert
@@ -40,7 +39,7 @@ public class ServiceCollectionTests {
         collection.AddSingleton<ISampleService, SampleService>();
 
         // Act
-        IServiceProvider provider = collection.Build();
+        IScopedProvider provider = collection.Build();
 
         var emptyService = provider.GetService<IEmptyService>();
         var sampleService = provider.GetService<ISampleService>();
@@ -58,14 +57,14 @@ public class ServiceCollectionTests {
     }
 
     [Test]
-    public async Task Collection_Should_Handle_ServiceProvider_Service() {
+    public async Task Collection_Should_Handle_ScopedProvider_Service() {
         // Arrange
         var collection = new ServiceCollection();
-        collection.AddSingleton<IServiceProviderRequiredService, ServiceProviderRequiredService>();
+        collection.AddSingleton<IScopedProviderRequiredService, ScopedProviderRequiredService>();
 
         // Act
-        IServiceProvider provider = collection.Build();
-        var service = provider.GetService<IServiceProviderRequiredService>();
+        IScopedProvider provider = collection.Build();
+        var service = provider.GetService<IScopedProviderRequiredService>();
 
         // Assert
         await Assert.That(provider)
@@ -73,8 +72,8 @@ public class ServiceCollectionTests {
             .And.HasCount().EqualTo(1);
 
         await Assert.That(service)
-            .IsTypeOf<ServiceProviderRequiredService>()
-            .And.HasMember(p => p!.ServiceProvider).EqualTo(provider);
+            .IsTypeOf<ScopedProviderRequiredService>()
+            .And.HasMember(p => p!.ScopedProvider).EqualTo(provider);
     }
 
     [Test]
@@ -93,15 +92,15 @@ public class ServiceCollectionTests {
         var collection = new ServiceCollection();
         collection.AddSingleton<IEmptyService, EmptyService>();
         collection.AddService<IIdService, IdService>(scopeLevel: 1);
-        IServiceProvider globalProvider = collection.Build();
+        IScopedProvider globalProvider = collection.Build();
 
         // Act
         var singletonService = globalProvider.GetService<IEmptyService>();
-        IServiceProvider scope0 = globalProvider.CreateDeeperScope();
+        IScopedProvider scope0 = globalProvider.CreateDeeperScope();
         var scope0Service = scope0.GetService<IIdService>();
         var scope0SingletonService = scope0.GetService<IEmptyService>();
 
-        IServiceProvider scope1 = globalProvider.CreateDeeperScope();
+        IScopedProvider scope1 = globalProvider.CreateDeeperScope();
         var scope1Service = scope1.GetService<IIdService>();
         var scope1SingletonService = scope0.GetService<IEmptyService>();
 
@@ -142,7 +141,7 @@ public class ServiceCollectionTests {
         }
 
         // Act
-        IServiceProvider provider = collection.Build();
+        IScopedProvider provider = collection.Build();
 
         // Assert
         foreach ((Type interfaceType, Type implementationType) in generatedServices) {

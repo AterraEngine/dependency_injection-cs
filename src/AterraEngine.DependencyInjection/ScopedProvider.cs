@@ -9,15 +9,15 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvider {
-    internal ServiceProvider? ParentScope { get; private set; }
-    internal int ScopeDepth { get; init; }
+public class ScopedProvider(IServiceContainer serviceContainer) : IScopedProvider {
+    internal ScopedProvider? ParentScope { get; private set; }
+    private int ScopeDepth { get; init; }
 
     internal ConcurrentDictionary<Guid, object> Instances { get; } = new();
     internal ConcurrentBag<Guid> DisposableInstances { get; } = [];
     internal ConcurrentBag<Guid> AsyncDisposableInstances { get; } = [];
 
-    internal ConcurrentBag<IServiceProvider> ChildScopes { get; } = [];
+    internal ConcurrentBag<IScopedProvider> ChildScopes { get; } = [];
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
@@ -25,7 +25,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
     #region GetService by Type argument
     private readonly ConcurrentDictionary<Type, MethodInfo> _getServiceMethodCache = new();
 
-    private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ServiceProvider)
+    private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ScopedProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
 
@@ -47,7 +47,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         }
 
         // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
-        if (typeOfService == typeof(IServiceProvider)) return (TService)(object)this;
+        if (typeOfService == typeof(IScopedProvider) || typeOfService == typeof(IScopedProvider)) return (TService)(object)this;
         if (typeOfService == typeof(IServiceContainer)) return (TService)serviceContainer;
 
         return null;// if all fails, return null
@@ -58,7 +58,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         switch (record) {
             // Transient, we don't track the instance, but we do track disposing patterns.
             case { IsTransient: true }:
-                if (!record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? transientFactory)) break;
+                if (!record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? transientFactory)) break;
 
                 instance = transientFactory(this);
                 break;
@@ -81,7 +81,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
                 }
 
                 // instance hasn't been created yet, so we need to create it
-                if (!record.TryGetFactory<TService>(out Func<IServiceProvider, TService>? factory)) break;
+                if (!record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? factory)) break;
 
                 instance = factory(this);
 
@@ -137,19 +137,19 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
     #endregion
 
     #region Scope Creation
-    public IServiceProvider CreateScope() {
-        IServiceProvider scopedProvider = NewScopeProvider(ScopeDepth);
+    public IScopedProvider CreateNewScope() {
+        ScopedProvider scopedProvider = NewScopeProvider(ScopeDepth);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
 
-    public IServiceProvider CreateDeeperScope() {
-        IServiceProvider scopedProvider = NewScopeProvider(ScopeDepth + 1);
+    public IScopedProvider CreateDeeperScope() {
+        ScopedProvider scopedProvider = NewScopeProvider(ScopeDepth + 1);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
 
-    private ServiceProvider NewScopeProvider(int scopeLevel) => new(serviceContainer) {
+    private ScopedProvider NewScopeProvider(int scopeLevel) => new(serviceContainer) {
         ParentScope = this,
         ScopeDepth = scopeLevel
     };
@@ -193,7 +193,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
             }
 
             // Only ChildScopes should be disposed
-            while (ChildScopes.TryTake(out IServiceProvider? childScope)) {
+            while (ChildScopes.TryTake(out IScopedProvider? childScope)) {
                 childScope.Dispose();
             }
         }
@@ -223,7 +223,7 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
             }
 
             // Don't forget about ChildScopes!
-            while (ChildScopes.TryTake(out IServiceProvider? childScope)) {
+            while (ChildScopes.TryTake(out IScopedProvider? childScope)) {
                 await childScope.DisposeAsync().ConfigureAwait(false);
             }
         }
@@ -245,20 +245,20 @@ public class ServiceProvider(IServiceContainer serviceContainer) : IServiceProvi
         ParentScope = null;// Do not dispose the parent scope, only remove the reference
     }
 
-    private void RemoveItemFromBag(ServiceProvider child) {
+    private void RemoveItemFromBag(ScopedProvider child) {
         if (ChildScopes.IsEmpty) return;
 
-        var itemsToKeep = new List<IServiceProvider>(ChildScopes.Count - 1);
+        var itemsToKeep = new List<IScopedProvider>(ChildScopes.Count - 1);
 
         // Remove specific item, keeping others in memory
-        while (ChildScopes.TryTake(out IServiceProvider? item)) {
+        while (ChildScopes.TryTake(out IScopedProvider? item)) {
             if (item.Equals(child)) continue;
 
             itemsToKeep.Add(item);
         }
 
         // Re-add only the items we want to keep
-        foreach (IServiceProvider item in itemsToKeep) {
+        foreach (IScopedProvider item in itemsToKeep) {
             ChildScopes.Add(item);
         }
     }

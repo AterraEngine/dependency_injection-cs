@@ -1,9 +1,11 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using AterraEngine.DependencyInjection;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
-using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
+using ServiceCollection=Microsoft.Extensions.DependencyInjection.ServiceCollection;
+using ServiceProvider=Microsoft.Extensions.DependencyInjection.ServiceProvider;
 
 namespace Benchmarks.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
@@ -29,7 +31,7 @@ public class ServiceCollectionBenchmarks {
 
         collection.AddSingleton<IService, Service>();
 
-        IServiceProvider provider = collection.Build();
+        IScopedProvider provider = collection.Build();
 
         return provider.GetRequiredService<IService>();
     }

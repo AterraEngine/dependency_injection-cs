@@ -1,9 +1,11 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using AterraEngine.DependencyInjection;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
-using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
+using ServiceCollection=Microsoft.Extensions.DependencyInjection.ServiceCollection;
+using ServiceProvider=Microsoft.Extensions.DependencyInjection.ServiceProvider;
 
 namespace Benchmarks.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
@@ -34,7 +36,7 @@ public class RepeatedServiceCollectionBenchmarks {
 
         collection.AddTransient<IService, Service>();
 
-        IServiceProvider provider = collection.Build();
+        IScopedProvider provider = collection.Build();
 
         var list = new List<IService>(1000);
         for (int i = 0; i < 1000; i++) {
@@ -66,7 +68,7 @@ public class RepeatedServiceCollectionBenchmarks {
 
         collection.AddSingleton<IService, Service>();
 
-        IServiceProvider provider = collection.Build();
+        IScopedProvider provider = collection.Build();
 
         var list = new List<IService>(1000);
         for (int i = 0; i < 1000; i++) {

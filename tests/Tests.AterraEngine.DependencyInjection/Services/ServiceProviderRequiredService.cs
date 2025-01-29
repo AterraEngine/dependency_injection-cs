@@ -1,16 +1,16 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
+using AterraEngine.DependencyInjection;
 
 namespace Tests.AterraEngine.DependencyInjection.Services;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class ServiceProviderRequiredService(IServiceProvider serviceProvider) : IServiceProviderRequiredService {
-    public IServiceProvider ServiceProvider { get; set; } = serviceProvider;
+public class ScopedProviderRequiredService(IScopedProvider serviceProvider) : IScopedProviderRequiredService {
+    public IScopedProvider ScopedProvider { get; set; } = serviceProvider;
 }
 
-public interface IServiceProviderRequiredService {
-    public IServiceProvider ServiceProvider { get; }
+public interface IScopedProviderRequiredService {
+    public IScopedProvider ScopedProvider { get; }
 }

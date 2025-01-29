@@ -10,7 +10,7 @@ namespace AterraEngine.DependencyInjection;
 public record ServiceRecord<TService>(
     Type ServiceType,
     Type ImplementationType,
-    Func<IServiceProvider, TService>? ImplementationFactory,
+    Func<IScopedProvider, TService>? ImplementationFactory,
     int ScopeDepth
 ) : IServiceRecord {
 
@@ -24,10 +24,10 @@ public record ServiceRecord<TService>(
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IServiceProvider, T>? factory) {
+    public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IScopedProvider, T>? factory) {
         factory = null;
         if (typeof(T) != typeof(TService)) return false;
-        if (ImplementationFactory is not Func<IServiceProvider, T> casted) return false;
+        if (ImplementationFactory is not Func<IScopedProvider, T> casted) return false;
 
         return (factory = casted) is not null;
     }

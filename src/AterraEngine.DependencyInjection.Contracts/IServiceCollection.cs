@@ -26,5 +26,5 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     IServiceCollection AddScoped(Type implementation);
     IServiceCollection AddScoped(Type service, Type implementation);
 
-    IServiceProvider Build();
+    IScopedProvider Build();
 }

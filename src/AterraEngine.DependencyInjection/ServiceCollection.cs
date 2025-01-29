@@ -26,7 +26,7 @@ public class ServiceCollection : IServiceCollection {
         return this;
     }
 
-    public IServiceProvider Build() => new ServiceProvider(ServiceContainer.FromCollection(Records));
+    public IScopedProvider Build() => new ScopedProvider(ServiceContainer.FromCollection(Records));
 
     #region AddService by Record
     public IServiceCollection AddService(IServiceRecord record) {

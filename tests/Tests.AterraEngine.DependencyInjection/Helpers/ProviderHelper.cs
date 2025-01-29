@@ -2,23 +2,22 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using AterraEngine.DependencyInjection;
-using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
 
 namespace Tests.AterraEngine.DependencyInjection.Helpers;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public static class ProviderHelper {
-    public static IServiceProvider CreateEmptyServiceProvider() {
+    public static IScopedProvider CreateEmptyServiceProvider() {
         // Populate collection
         var collection = new ServiceCollection();
 
         // Create provider
-        IServiceProvider provider = collection.Build();
+        IScopedProvider provider = collection.Build();
         return provider;
     }
 
-    public static IServiceProvider CreateServiceProviderWithGeneratedServices(int count = 100, Action<IServiceCollection>? configureServices = null) {
+    public static IScopedProvider CreateServiceProviderWithGeneratedServices(int count = 100, Action<IServiceCollection>? configureServices = null) {
         // Populate collection
         var collection = new ServiceCollection();
 
@@ -29,7 +28,7 @@ public static class ProviderHelper {
         configureServices?.Invoke(collection);
 
         // Create provider
-        IServiceProvider provider = collection.Build();
+        IScopedProvider provider = collection.Build();
         return provider;
     }
 }

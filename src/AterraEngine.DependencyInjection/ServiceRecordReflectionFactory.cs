@@ -1,6 +1,7 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using System.Collections.Frozen;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -9,10 +10,11 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public static class ServiceRecordReflectionFactory {
-    private static readonly MethodInfo GetRequiredServiceMethod = typeof(IServiceProvider)
+    private static readonly MethodInfo GetRequiredServiceMethod = typeof(IScopedProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-        .Single(m => m is { Name: nameof(IServiceProvider.GetRequiredService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
+        .Single(m => m is { Name: nameof(IScopedProvider.GetRequiredService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
 
+    private static readonly FrozenSet<Type> ResolveAsScopedProvider = new[] { typeof(IServiceProvider), typeof(IScopedProvider) }.ToFrozenSet();
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
@@ -33,7 +35,7 @@ public static class ServiceRecordReflectionFactory {
         }
 
         // special case for only a service provider
-        if (type.GetConstructor([typeof(IServiceProvider)]) is {} onlyServiceProviderConstructor) {
+        if (type.GetConstructor([typeof(IScopedProvider)]) is {} onlyServiceProviderConstructor) {
             return new ServiceRecord<TService>(
                 typeof(TService),
                 typeof(TImplementation),
@@ -51,14 +53,13 @@ public static class ServiceRecordReflectionFactory {
         ParameterInfo[] parameters = constructor.GetParameters();
 
         // Lambda generation
-        ParameterExpression parameterExpression = Expression.Parameter(typeof(IServiceProvider), "provider");
+        ParameterExpression parameterExpression = Expression.Parameter(typeof(IScopedProvider), "provider");
 
         // Generate constructor arguments, handling IServiceProvider specially
         var arguments = new Expression[parameters.Length];
         for (int i = parameters.Length - 1; i >= 0; i--) {
             Type parameterType = parameters[i].ParameterType;
-
-            if (parameterType == typeof(IServiceProvider)) {
+            if (ResolveAsScopedProvider.Contains(parameterType)) {
                 arguments[i] = parameterExpression;
                 continue;
             }
@@ -73,8 +74,8 @@ public static class ServiceRecordReflectionFactory {
         NewExpression constructorCall = Expression.New(constructor, arguments);
 
         // Build the lambda expression for the factory
-        Expression<Func<IServiceProvider, TService>> lambda = Expression.Lambda<Func<IServiceProvider, TService>>(constructorCall, parameterExpression);
-        Func<IServiceProvider, TService> compiled = lambda.Compile();// Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>, ...)
+        Expression<Func<IScopedProvider, TService>> lambda = Expression.Lambda<Func<IScopedProvider, TService>>(constructorCall, parameterExpression);
+        Func<IScopedProvider, TService> compiled = lambda.Compile();// Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>, ...)
 
         // Actually store the record
         return new ServiceRecord<TService>(

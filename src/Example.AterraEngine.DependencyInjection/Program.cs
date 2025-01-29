@@ -2,7 +2,6 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using AterraEngine.DependencyInjection;
-using IServiceProvider=AterraEngine.DependencyInjection.IServiceProvider;
 
 namespace Example.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
@@ -27,7 +26,7 @@ public static class Program {
         collection.AddSingleton<IServiceRez, ServiceRez>();
         collection.AddTransient<ITransient, Transient>();
 
-        using IServiceProvider disposable = collection.Build();
+        using IScopedProvider disposable = collection.Build();
 
         var service = disposable.GetService<IService>();
         Console.WriteLine(service?.Name);
@@ -71,8 +70,8 @@ public static class Program {
         ITransient Transient { get; }
     }
 
-    public class ServiceRez(IService service, IService service1, ITransient transient, IServiceProvider provider) : IServiceRez {
-        public IServiceProvider Provider { get; } = provider;
+    public class ServiceRez(IService service, IService service1, ITransient transient, IScopedProvider provider) : IServiceRez {
+        public IScopedProvider Provider { get; } = provider;
         public IService Service { get; } = service;
         public IService Service1 { get; } = service1;
         public ITransient Transient { get; } = transient;
