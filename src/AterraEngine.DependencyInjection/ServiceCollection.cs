@@ -32,7 +32,7 @@ public class ServiceCollection : IServiceCollection {
         return this;
     }
     
-    public IServiceCollection AddService<TService>(Func<IServiceProvider, TService> factory, int scopeLevel) where TService : class
+    public IServiceCollection AddService<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class
         => AddService(new ServiceRecord<TService>(typeof(TService), typeof(TService), factory, scopeLevel));
 
     #region AddService by Type argument
@@ -71,7 +71,7 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddSingleton(Type service, Type implementation) 
         => AddService(service, implementation, (int)DefaultScopeDepth.Singleton);
 
-    public IServiceCollection AddSingleton<TService>(Func<IServiceProvider, TService> factory, int scopeLevel) where TService : class
+    public IServiceCollection AddSingleton<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class
         => AddService(factory, (int)DefaultScopeDepth.Singleton);
     #endregion
 
@@ -88,7 +88,7 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddTransient(Type service, Type implementation) 
         => AddService(service, implementation, (int)DefaultScopeDepth.Transient);
     
-    public IServiceCollection AddTransient<TService>(Func<IServiceProvider, TService> factory) where TService : class 
+    public IServiceCollection AddTransient<TService>(Func<IScopedProvider, TService> factory) where TService : class 
         => AddService(factory, (int)DefaultScopeDepth.Transient);
     #endregion
 
@@ -105,7 +105,7 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddScoped(Type service, Type implementation) 
         => AddService(service, implementation, (int)DefaultScopeDepth.ProviderScoped);
     
-    public IServiceCollection AddScoped<TService>(Func<IServiceProvider, TService> factory) where TService : class 
+    public IServiceCollection AddScoped<TService>(Func<IScopedProvider, TService> factory) where TService : class 
         => AddService(factory, (int)DefaultScopeDepth.ProviderScoped);
     #endregion
 
