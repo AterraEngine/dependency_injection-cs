@@ -10,21 +10,25 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService;
     IServiceCollection AddService(Type implementation, int scopeLevel);
     IServiceCollection AddService(Type service, Type implementation, int scopeLevel);
+    IServiceCollection AddService<TService>(Func<IServiceProvider, TService> factory, int scopeLevel) where TService : class;
 
     IServiceCollection AddSingleton<TImplementation>() where TImplementation : class;
     IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService;
     IServiceCollection AddSingleton(Type implementation);
     IServiceCollection AddSingleton(Type service, Type implementation);
+    IServiceCollection AddSingleton<TService>(Func<IServiceProvider, TService> factory, int scopeLevel) where TService : class;
 
     IServiceCollection AddTransient<TImplementation>() where TImplementation : class;
     IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService;
     IServiceCollection AddTransient(Type implementation);
     IServiceCollection AddTransient(Type service, Type implementation);
+    IServiceCollection AddTransient<TService>(Func<IServiceProvider, TService> factory) where TService : class;
 
     IServiceCollection AddScoped<TImplementation>() where TImplementation : class;
     IServiceCollection AddScoped<TService, TImplementation>() where TImplementation : class, TService;
     IServiceCollection AddScoped(Type implementation);
     IServiceCollection AddScoped(Type service, Type implementation);
+    IServiceCollection AddScoped<TService>(Func<IServiceProvider, TService> factory) where TService : class;
 
     IScopedProvider Build();
 }

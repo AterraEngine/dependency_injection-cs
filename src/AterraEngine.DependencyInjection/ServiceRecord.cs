@@ -22,6 +22,16 @@ public record ServiceRecord<TService>(
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
 
     // -----------------------------------------------------------------------------------------------------------------
+    // Constructors
+    // -----------------------------------------------------------------------------------------------------------------
+    public ServiceRecord(
+        Type ServiceType,
+        Type ImplementationType,
+        Func<IScopedProvider, TService>? ImplementationFactory,
+        DefaultScopeDepth ScopeDepth
+    ) : this(ServiceType, ImplementationType, ImplementationFactory, (int)ScopeDepth) {}
+    
+    // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
     public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IScopedProvider, T>? factory) {

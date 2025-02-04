@@ -117,7 +117,7 @@ public class ServiceCollectionTests {
             .And.IsEqualTo(scope1SingletonService);
 
         await Assert.That(scope1Service).IsNotNull()
-            .And!.IsNotEqualTo(scope0Service)
+            .And.IsNotEqualTo(scope0Service)
             .And.HasMember(s => s!.Id).NotEqualTo(scope0Service!.Id);
 
         await Assert.That(scope1SingletonService).IsNotNull()
