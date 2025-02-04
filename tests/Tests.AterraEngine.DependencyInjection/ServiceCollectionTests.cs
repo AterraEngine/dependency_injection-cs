@@ -71,9 +71,8 @@ public class ServiceCollectionTests {
             .IsNotNull()
             .And.HasCount().EqualTo(1);
 
-        await Assert.That(service)
-            .IsTypeOf<ScopedProviderRequiredService>()
-            .And.HasMember(p => p!.ScopedProvider).EqualTo(provider);
+        await Assert.That(service).IsTypeOf<ScopedProviderRequiredService>();
+        await Assert.That(service).HasMember(p => p!.ScopedProvider).EqualTo(provider);
     }
 
     [Test]
