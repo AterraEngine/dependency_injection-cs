@@ -14,7 +14,7 @@ public static class Program {
         string? projectDir = Directory.GetParent(Directory.GetCurrentDirectory())?.FullName;
         if (projectDir is null) return;
 
-        var config = DefaultConfig.Instance
+        ManualConfig config = DefaultConfig.Instance
             .WithArtifactsPath(projectDir) // Set the output to the directory of the .csproj
             .AddExporter(MarkdownExporter.Default);
 
@@ -22,8 +22,8 @@ public static class Program {
         // Run all benchmarks in parallel
         var switcher = new BenchmarkSwitcher([
             typeof(RepeatedServiceCollectionBenchmarks),
-            // typeof(LargeServiceCollectionBenchmarks),
-            // typeof(ServiceCollectionBenchmarks)
+            typeof(LargeServiceCollectionBenchmarks),
+            typeof(ServiceCollectionBenchmarks)
         ]);
 
         switcher.RunAllJoined(config);
