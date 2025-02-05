@@ -1,7 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using System.Collections.Frozen;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -14,74 +13,102 @@ public static class ServiceRecordReflectionFactory {
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(IScopedProvider.GetRequiredServiceAsync), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
 
-    private static readonly FrozenSet<Type> ResolveAsScopedProvider = new[] { typeof(IServiceProvider), typeof(IScopedProvider) }.ToFrozenSet();
-
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public static ServiceRecord<TService> CreateWithFactory<TService, TImplementation>(int scopeDepth) where TImplementation : class, TService {
+    // ---------------------------------------------------------------------------------------------------------------------
+    public static ServiceRecord<TService> CreateWithFactory<TService, TImplementation>(int scopeDepth)
+        where TImplementation : class, TService {
         Type type = typeof(TImplementation);
-        if (type.GetConstructors() is { Length: 0 }) throw new Exception("No constructors");
 
-        #region Special Constructor format cases
-        // Special case for empty constructor
-        if (type.GetConstructor([]) is {} emptyConstructor) {
-            return new ServiceRecord<TService>(
-                typeof(TService),
-                typeof(TImplementation),
-                ImplementationFactory: _ => (TService)emptyConstructor.Invoke(null),
-                scopeDepth
-            );
-        }
+        // Find the constructor with the most parameters
+        ConstructorInfo? constructor = type.GetConstructors()
+            .OrderByDescending(c => c.GetParameters().Length)
+            .FirstOrDefault();
 
-        // special case for only a service provider
-        if (type.GetConstructor([typeof(IScopedProvider)]) is {} onlyServiceProviderConstructor) {
-            return new ServiceRecord<TService>(
-                typeof(TService),
-                typeof(TImplementation),
-                ImplementationFactory: provider => (TService)onlyServiceProviderConstructor.Invoke([provider]),
-                scopeDepth
-            );
-        }
-        #endregion
+        if (constructor is null) throw new Exception($"No suitable constructor found for {type.Name}");
 
-        ConstructorInfo? constructor = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
-            .SingleOrDefault(info => info.GetParameters().Length > 0);
+        ParameterExpression providerParameter = Expression.Parameter(typeof(IScopedProvider), "provider");
 
-        if (constructor is null) throw new MultipleConstructorsException($"Multiple constructors found for {type.FullName} with parameters");
+        // We are leveraging Task.WhenAll() when we resolve the services
+        // This is a bit of a hack, but it works for now
+        List<ParameterExpression> taskVariables = [];
+        List<Expression> taskAssignments = [];
+        List<Expression> constructorArguments = [];
 
-        ParameterInfo[] parameters = constructor.GetParameters();
+        foreach (ParameterInfo parameter in constructor.GetParameters()) {
+            Type parameterType = parameter.ParameterType;
 
-        // Lambda generation
-        ParameterExpression parameterExpression = Expression.Parameter(typeof(IScopedProvider), "provider");
-
-        // Generate constructor arguments, handling IServiceProvider specially
-        var arguments = new Expression[parameters.Length];
-        for (int i = parameters.Length - 1; i >= 0; i--) {
-            Type parameterType = parameters[i].ParameterType;
-            if (ResolveAsScopedProvider.Contains(parameterType)) {
-                arguments[i] = parameterExpression;
+            // For IScopedProvider, pass the provider directly to the constructor
+            if (parameterType == typeof(IScopedProvider)) {
+                constructorArguments.Add(providerParameter);
                 continue;
             }
 
-            arguments[i] = Expression.Call(
-                parameterExpression,
+            // Create the ValueTask<> parameter which will hold the output of the required service
+            ParameterExpression taskVariable = Expression.Variable(typeof(ValueTask<>).MakeGenericType(parameterType), parameter.Name + "Task");
+            taskVariables.Add(taskVariable);
+
+            taskAssignments.Add(Expression.Assign(taskVariable, Expression.Call(
+                providerParameter,
                 GetRequiredServiceMethod.MakeGenericMethod(parameterType)
+            )));
+            
+            MemberExpression resultAccess = Expression.Property(
+                Expression.Call(taskVariable, "AsTask", null),
+                "Result"
             );
+
+            constructorArguments.Add(resultAccess);
         }
 
-        // Create a constructor call with the generated arguments
-        NewExpression constructorCall = Expression.New(constructor, arguments);
+        // Array of tasks for Task.WhenAll
+        NewArrayExpression taskArray = Expression.NewArrayInit(
+            typeof(Task),
+            taskVariables.Select(tv => Expression.Call(tv, "AsTask", null))
+        );
 
-        // Build the lambda expression for the factory
-        Expression<Func<IScopedProvider, TService>> lambda = Expression.Lambda<Func<IScopedProvider, TService>>(constructorCall, parameterExpression);
-        Func<IScopedProvider, TService> compiled = lambda.Compile();// Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>, ...)
+        // Use reflection to select the appropriate Task.WhenAll overload
+        MethodInfo? whenAllMethod = typeof(Task).GetMethod(nameof(Task.WhenAll), [typeof(Task[])]);
+        if (whenAllMethod is null) {
+            throw new Exception("Could not find Task.WhenAll method.");
+        }
 
-        // Actually store the record
+        // Await Task.WhenAll to complete all tasks
+        MethodCallExpression whenAllCall = Expression.Call(
+            whenAllMethod,// Specify the correct overload explicitly
+            taskArray
+        );
+
+        // Create an expression block
+        BlockExpression body = Expression.Block(
+            taskVariables,// Declare task variables
+            taskAssignments.Append(whenAllCall).Append(// Assign tasks and await Task.WhenAll
+                // Invoke the constructor with resolved arguments
+                Expression.New(constructor, constructorArguments)
+            )
+        );
+
+        // Wrap the constructor result in a ValueTask<TService>
+        NewExpression valueTaskResult = Expression.New(
+            typeof(ValueTask<TService>).GetConstructor([typeof(TService)])!,
+            body
+        );
+
+        // Create a lambda function
+        Expression<Func<IScopedProvider, ValueTask<TService>>> lambda = Expression.Lambda<Func<IScopedProvider, ValueTask<TService>>>(
+            valueTaskResult,
+            providerParameter
+        );
+ 
+        // Compile the factory method
+        Func<IScopedProvider, ValueTask<TService>> factory = lambda.Compile();
+
+        // Return the ServiceRecord
         return new ServiceRecord<TService>(
             typeof(TService),
             typeof(TImplementation),
-            compiled,
+            factory,
             scopeDepth
         );
     }

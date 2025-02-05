@@ -19,7 +19,7 @@ public static class Program {
         LevelScope = 5
     }
 
-    public static Task Main(string[] args) {
+    public static async Task Main(string[] args) {
         var collection = new ServiceCollection();
 
         collection.AddSingleton<IService, Service>();
@@ -28,26 +28,22 @@ public static class Program {
 
         using IScopedProvider disposable = collection.Build();
 
-        var service = disposable.GetServiceAsync<IService>();
+        var service = await disposable.GetServiceAsync<IService>();
         Console.WriteLine(service?.Name);
 
-        var service1 = disposable.GetServiceAsync<IService>();
+        var service1 = await disposable.GetServiceAsync<IService>();
         Console.WriteLine(service1?.Name);
         Console.WriteLine(service == service1);
 
-        var serviceRez = disposable.GetRequiredServiceAsync<IServiceRez>();
+        var serviceRez = await disposable.GetRequiredServiceAsync<IServiceRez>();
         Console.WriteLine(serviceRez.Service.Name);
         Console.WriteLine(serviceRez.Service1.Name);
         Console.WriteLine(serviceRez.Transient.Name);
         Console.WriteLine(serviceRez.Service == service);
         Console.WriteLine(serviceRez.Service1 == service1);
 
-        var transient = disposable.GetRequiredServiceAsync<ITransient>();
+        var transient = await disposable.GetRequiredServiceAsync<ITransient>();
         Console.WriteLine(transient.Name);
-
-        return Task.CompletedTask;
-
-        // var serviceRez2 = provider.GetRequiredService<ServiceReze2>();
     }
 
     public interface IService {
