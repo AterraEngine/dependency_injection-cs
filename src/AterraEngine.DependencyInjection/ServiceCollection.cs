@@ -13,6 +13,8 @@ namespace AterraEngine.DependencyInjection;
 public class ServiceCollection : IServiceCollection {
     private ConcurrentDictionary<Type, IServiceRecord> ServiceRecords { get; } = new();
 
+    public IScopedProvider Build() => new ScopedProvider(ServiceContainer.FromCollection(ServiceRecords));
+
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
@@ -24,14 +26,15 @@ public class ServiceCollection : IServiceCollection {
             addValueFactory: _ => ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel),
             updateValueFactory: (_, _) => ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel)
         );
+
         return this;
     }
-    
+
     public IServiceCollection AddService(IServiceRecord record) {
         ServiceRecords.AddOrUpdate(record.ServiceType, record, updateValueFactory: (_, _) => record);
         return this;
     }
-    
+
     public IServiceCollection AddServiceFromFactory<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class
         => AddService(new ServiceRecord<TService>(typeof(TService), typeof(TService), factory, scopeLevel));
 
@@ -40,7 +43,8 @@ public class ServiceCollection : IServiceCollection {
         return AddService(new ServiceRecord<TService>(
             typeof(TService),
             typeof(TService),
-            async static provider => (await provider.GetRequiredServiceAsync<TFactoryService>()).Create(), scopeLevel)
+            ImplementationFactory: async static provider => (await provider.GetRequiredServiceAsync<TFactoryService>()).Create(),
+            scopeLevel)
         );
     }
     public IServiceCollection AddServiceFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory, int scopeLevel) where TService : class
@@ -51,7 +55,7 @@ public class ServiceCollection : IServiceCollection {
         return AddService(new ServiceRecord<TService>(
             typeof(TService),
             typeof(TService),
-            async static provider => await (await provider.GetRequiredServiceAsync<TAsyncFactoryService>()).CreateAsync(),
+            ImplementationFactory: async static provider => await (await provider.GetRequiredServiceAsync<TAsyncFactoryService>()).CreateAsync(),
             scopeLevel)
         );
     }
@@ -82,77 +86,77 @@ public class ServiceCollection : IServiceCollection {
     #region AddSingleton
     public IServiceCollection AddSingleton<TImplementation>() where TImplementation : class
         => AddSingleton<TImplementation, TImplementation>();
-    
-    public IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService 
+
+    public IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService
         => AddService<TService, TImplementation>((int)DefaultScopeDepth.Singleton);
-    
+
     public IServiceCollection AddSingleton(Type implementation)
         => AddService(implementation, (int)DefaultScopeDepth.Singleton);
-    
-    public IServiceCollection AddSingleton(Type service, Type implementation) 
+
+    public IServiceCollection AddSingleton(Type service, Type implementation)
         => AddService(service, implementation, (int)DefaultScopeDepth.Singleton);
 
     public IServiceCollection AddSingletonFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Singleton);
-    
+
     public IServiceCollection AddSingletonFromFactory<TService, TFactoryService>() where TService : class where TFactoryService : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactoryService>((int)DefaultScopeDepth.Singleton);
-    
-    public IServiceCollection AddSingletonFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class 
+
+    public IServiceCollection AddSingletonFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class
         => AddServiceFromAsyncFactory(factory, (int)DefaultScopeDepth.Singleton);
-    
-    public IServiceCollection AddSingletonFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService> 
+
+    public IServiceCollection AddSingletonFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService>
         => AddServiceFromAsyncFactory<TService, TAsyncFactoryService>((int)DefaultScopeDepth.Singleton);
     #endregion
 
     #region AddTransient
-    public IServiceCollection AddTransient<TImplementation>() where TImplementation : class 
+    public IServiceCollection AddTransient<TImplementation>() where TImplementation : class
         => AddTransient<TImplementation, TImplementation>();
-    
-    public IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService 
+
+    public IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService
         => AddService<TService, TImplementation>((int)DefaultScopeDepth.Transient);
-    
-    public IServiceCollection AddTransient(Type implementation) 
+
+    public IServiceCollection AddTransient(Type implementation)
         => AddService(implementation, (int)DefaultScopeDepth.Transient);
-    
-    public IServiceCollection AddTransient(Type service, Type implementation) 
+
+    public IServiceCollection AddTransient(Type service, Type implementation)
         => AddService(service, implementation, (int)DefaultScopeDepth.Transient);
-    
-    public IServiceCollection AddTransientFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class 
+
+    public IServiceCollection AddTransientFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Transient);
-    
+
     public IServiceCollection AddTransientFromFactory<TService, TFactoryService>() where TService : class where TFactoryService : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactoryService>((int)DefaultScopeDepth.Transient);
-    
+
     public IServiceCollection AddTransientFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class
         => AddServiceFromAsyncFactory(factory, (int)DefaultScopeDepth.Transient);
-    
+
     public IServiceCollection AddTransientFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService>
         => AddServiceFromAsyncFactory<TService, TAsyncFactoryService>((int)DefaultScopeDepth.Transient);
     #endregion
 
     #region AddScoped
-    public IServiceCollection AddScoped<TImplementation>() where TImplementation : class 
+    public IServiceCollection AddScoped<TImplementation>() where TImplementation : class
         => AddScoped<TImplementation, TImplementation>();
-    
+
     public IServiceCollection AddScoped<TService, TImplementation>() where TImplementation : class, TService
         => AddService<TService, TImplementation>((int)DefaultScopeDepth.ProviderScoped);
-    
-    public IServiceCollection AddScoped(Type implementation) 
+
+    public IServiceCollection AddScoped(Type implementation)
         => AddService(implementation, (int)DefaultScopeDepth.ProviderScoped);
-    
-    public IServiceCollection AddScoped(Type service, Type implementation) 
+
+    public IServiceCollection AddScoped(Type service, Type implementation)
         => AddService(service, implementation, (int)DefaultScopeDepth.ProviderScoped);
-    
-    public IServiceCollection AddScopedFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class 
+
+    public IServiceCollection AddScopedFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.ProviderScoped);
-    
+
     public IServiceCollection AddScopedFromFactory<TService, TFactoryService>() where TService : class where TFactoryService : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactoryService>((int)DefaultScopeDepth.ProviderScoped);
-    
-    public IServiceCollection AddScopedFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class 
+
+    public IServiceCollection AddScopedFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class
         => AddServiceFromAsyncFactory(factory, (int)DefaultScopeDepth.ProviderScoped);
-    
+
     public IServiceCollection AddScopedFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService>
         => AddServiceFromAsyncFactory<TService, TAsyncFactoryService>((int)DefaultScopeDepth.ProviderScoped);
     #endregion
@@ -193,6 +197,4 @@ public class ServiceCollection : IServiceCollection {
     public int Count => ServiceRecords.Count;
     public bool IsReadOnly => false;
     #endregion
-
-    public IScopedProvider Build() => new ScopedProvider(ServiceContainer.FromCollection(ServiceRecords));
 }

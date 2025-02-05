@@ -11,11 +11,6 @@ namespace AterraEngine.DependencyInjection;
 public class ServiceContainer(IDictionary<Type, IServiceRecord> records) : IServiceContainer {
     private ConcurrentDictionary<Guid, object> SingletonInstances { get; } = new();
     public FrozenDictionary<Type, IServiceRecord> ServiceRecords { get; } = records.ToFrozenDictionary();
-    
-    // -----------------------------------------------------------------------------------------------------------------
-    // Constructors
-    // -----------------------------------------------------------------------------------------------------------------
-    public static IServiceContainer FromCollection(ConcurrentDictionary<Type, IServiceRecord> records) => new ServiceContainer(records);
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
@@ -30,4 +25,9 @@ public class ServiceContainer(IDictionary<Type, IServiceRecord> records) : IServ
         SingletonInstances.TryAdd(record.Id, casted);
         return casted;
     }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Constructors
+    // -----------------------------------------------------------------------------------------------------------------
+    public static IServiceContainer FromCollection(ConcurrentDictionary<Type, IServiceRecord> records) => new ServiceContainer(records);
 }

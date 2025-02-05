@@ -31,7 +31,7 @@ public static class ServiceRecordReflectionFactory {
             scopeDepth
         );
     }
-    
+
     private static ConstructorInfo? GetConstructor(Type type) {
         return type.GetConstructors()
             .OrderByDescending(c => c.GetParameters().Length)

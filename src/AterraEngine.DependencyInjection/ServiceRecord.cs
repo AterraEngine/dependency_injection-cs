@@ -14,13 +14,6 @@ public record ServiceRecord<TService>(
     int ScopeDepth
 ) : IServiceRecord {
 
-    public Guid Id { get; } = Guid.CreateVersion7();
-    public bool IsTransient { get; } = ScopeDepth == (int)DefaultScopeDepth.Transient;
-    public bool IsSingleton { get; } = ScopeDepth == (int)DefaultScopeDepth.Singleton;
-    public bool IsProviderScoped { get; } = ScopeDepth == (int)DefaultScopeDepth.ProviderScoped;
-    public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
-    public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
-
     // -----------------------------------------------------------------------------------------------------------------
     // Constructors
     // -----------------------------------------------------------------------------------------------------------------
@@ -29,10 +22,18 @@ public record ServiceRecord<TService>(
         Type ImplementationType,
         Func<IScopedProvider, TService>? ImplementationFactory,
         int ScopeDepth
-    ) : this(ServiceType, ImplementationType,default(Func<IScopedProvider, ValueTask<TService>>?), ScopeDepth) {
+    ) : this(ServiceType, ImplementationType, default(Func<IScopedProvider, ValueTask<TService>>?), ScopeDepth) {
         if (ImplementationFactory is null) return;
+
         this.ImplementationFactory = provider => new ValueTask<TService>(ImplementationFactory(provider));
     }
+
+    public Guid Id { get; } = Guid.CreateVersion7();
+    public bool IsTransient { get; } = ScopeDepth == (int)DefaultScopeDepth.Transient;
+    public bool IsSingleton { get; } = ScopeDepth == (int)DefaultScopeDepth.Singleton;
+    public bool IsProviderScoped { get; } = ScopeDepth == (int)DefaultScopeDepth.ProviderScoped;
+    public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
+    public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
