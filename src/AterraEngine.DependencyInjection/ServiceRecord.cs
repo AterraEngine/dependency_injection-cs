@@ -28,28 +28,11 @@ public record ServiceRecord<TService>(
         Type ServiceType,
         Type ImplementationType,
         Func<IScopedProvider, TService>? ImplementationFactory,
-        DefaultScopeDepth ScopeDepth
-    ) : this(ServiceType, ImplementationType, default(Func<IScopedProvider, ValueTask<TService>>?), (int)ScopeDepth) {
-        if (ImplementationFactory is null) return;
-        this.ImplementationFactory = provider => new ValueTask<TService>(ImplementationFactory(provider));
-    }
-    
-    public ServiceRecord(
-        Type ServiceType,
-        Type ImplementationType,
-        Func<IScopedProvider, TService>? ImplementationFactory,
         int ScopeDepth
     ) : this(ServiceType, ImplementationType,default(Func<IScopedProvider, ValueTask<TService>>?), ScopeDepth) {
         if (ImplementationFactory is null) return;
         this.ImplementationFactory = provider => new ValueTask<TService>(ImplementationFactory(provider));
     }
-
-    public ServiceRecord(
-        Type ServiceType,
-        Type ImplementationType,
-        Func<IScopedProvider, ValueTask<TService>>? ImplementationFactory,
-        DefaultScopeDepth ScopeDepth
-    ) : this(ServiceType, ImplementationType, ImplementationFactory, (int)ScopeDepth) {}
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods

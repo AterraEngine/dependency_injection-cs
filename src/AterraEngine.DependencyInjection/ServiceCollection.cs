@@ -95,10 +95,14 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddSingletonFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Singleton);
     
-    public IServiceCollection AddSingletonFromFactoryy<TService, TFactoryService>() where TService : class where TFactoryService : class, IFactoryService<TService>
+    public IServiceCollection AddSingletonFromFactory<TService, TFactoryService>() where TService : class where TFactoryService : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactoryService>((int)DefaultScopeDepth.Singleton);
-    public IServiceCollection AddSingletonFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class => throw new NotImplementedException();
-    public IServiceCollection AddSingletonFromAsyncFactoryy<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService> => throw new NotImplementedException();
+    
+    public IServiceCollection AddSingletonFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class 
+        => AddServiceFromAsyncFactory(factory, (int)DefaultScopeDepth.Singleton);
+    
+    public IServiceCollection AddSingletonFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService> 
+        => AddServiceFromAsyncFactory<TService, TAsyncFactoryService>((int)DefaultScopeDepth.Singleton);
     #endregion
 
     #region AddTransient
@@ -119,8 +123,12 @@ public class ServiceCollection : IServiceCollection {
     
     public IServiceCollection AddTransientFromFactory<TService, TFactoryService>() where TService : class where TFactoryService : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactoryService>((int)DefaultScopeDepth.Transient);
-    public IServiceCollection AddTransientFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class => throw new NotImplementedException();
-    public IServiceCollection AddTransientFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService> => throw new NotImplementedException();
+    
+    public IServiceCollection AddTransientFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class
+        => AddServiceFromAsyncFactory(factory, (int)DefaultScopeDepth.Transient);
+    
+    public IServiceCollection AddTransientFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService>
+        => AddServiceFromAsyncFactory<TService, TAsyncFactoryService>((int)DefaultScopeDepth.Transient);
     #endregion
 
     #region AddScoped
@@ -141,8 +149,12 @@ public class ServiceCollection : IServiceCollection {
     
     public IServiceCollection AddScopedFromFactory<TService, TFactoryService>() where TService : class where TFactoryService : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactoryService>((int)DefaultScopeDepth.ProviderScoped);
-    public IServiceCollection AddScopedFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class => throw new NotImplementedException();
-    public IServiceCollection AddScopedFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService> => throw new NotImplementedException();
+    
+    public IServiceCollection AddScopedFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class 
+        => AddServiceFromAsyncFactory(factory, (int)DefaultScopeDepth.ProviderScoped);
+    
+    public IServiceCollection AddScopedFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService>
+        => AddServiceFromAsyncFactory<TService, TAsyncFactoryService>((int)DefaultScopeDepth.ProviderScoped);
     #endregion
 
     #region ICollection<IServiceRecord>

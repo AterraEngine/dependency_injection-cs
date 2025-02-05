@@ -22,9 +22,9 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     IServiceCollection AddSingleton(Type implementation);
     IServiceCollection AddSingleton(Type service, Type implementation);
     IServiceCollection AddSingletonFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class;
-    IServiceCollection AddSingletonFromFactoryy<TService, TFactoryService>() where TFactoryService : class, IFactoryService<TService> where TService : class;
+    IServiceCollection AddSingletonFromFactory<TService, TFactoryService>() where TFactoryService : class, IFactoryService<TService> where TService : class;
     IServiceCollection AddSingletonFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class;
-    IServiceCollection AddSingletonFromAsyncFactoryy<TService, TAsyncFactoryService>() where TAsyncFactoryService : class, IAsyncFactoryService<TService> where TService : class;
+    IServiceCollection AddSingletonFromAsyncFactory<TService, TAsyncFactoryService>() where TAsyncFactoryService : class, IAsyncFactoryService<TService> where TService : class;
     
     IServiceCollection AddTransient<TImplementation>() where TImplementation : class;
     IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService;
