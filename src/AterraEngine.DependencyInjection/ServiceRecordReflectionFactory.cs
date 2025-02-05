@@ -12,7 +12,7 @@ namespace AterraEngine.DependencyInjection;
 public static class ServiceRecordReflectionFactory {
     private static readonly MethodInfo GetRequiredServiceMethod = typeof(IScopedProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-        .Single(m => m is { Name: nameof(IScopedProvider.GetRequiredService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
+        .Single(m => m is { Name: nameof(IScopedProvider.GetRequiredServiceAsync), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
 
     private static readonly FrozenSet<Type> ResolveAsScopedProvider = new[] { typeof(IServiceProvider), typeof(IScopedProvider) }.ToFrozenSet();
 

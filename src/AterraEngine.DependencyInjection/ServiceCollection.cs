@@ -40,14 +40,26 @@ public class ServiceCollection : IServiceCollection {
         return AddService(new ServiceRecord<TService>(
             typeof(TService),
             typeof(TService),
-            static provider => provider.GetRequiredService<TFactoryService>().Create(), scopeLevel)
+            async static provider => (await provider.GetRequiredServiceAsync<TFactoryService>()).Create(), scopeLevel)
+        );
+    }
+    public IServiceCollection AddServiceFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory, int scopeLevel) where TService : class
+        => AddService(new ServiceRecord<TService>(typeof(TService), typeof(TService), factory, scopeLevel));
+
+    public IServiceCollection AddServiceFromAsyncFactory<TService, TAsyncFactoryService>(int scopeLevel) where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService> {
+        if (ServiceRecords.ContainsKey(typeof(TAsyncFactoryService))) AddService<TAsyncFactoryService>(scopeLevel);
+        return AddService(new ServiceRecord<TService>(
+            typeof(TService),
+            typeof(TService),
+            async static provider => await (await provider.GetRequiredServiceAsync<TAsyncFactoryService>()).CreateAsync(),
+            scopeLevel)
         );
     }
 
     #region AddService by Type argument
     private readonly Lazy<MethodInfo> _addServiceMethod1 = new(static () => typeof(ServiceCollection)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-        .Single(m => m is { Name: nameof(AddServiceFromFactory), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
+        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
 
     public IServiceCollection AddService(Type implementation, int scopeLevel) =>
         _addServiceMethod1.Value
@@ -57,7 +69,7 @@ public class ServiceCollection : IServiceCollection {
 
     private readonly Lazy<MethodInfo> _addServiceMethod2 = new(static () => typeof(ServiceCollection)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-        .Single(m => m is { Name: nameof(AddServiceFromFactory), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
+        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
 
     public IServiceCollection AddService(Type service, Type implementation, int scopeLevel) =>
         _addServiceMethod2.Value
@@ -85,6 +97,8 @@ public class ServiceCollection : IServiceCollection {
     
     public IServiceCollection AddSingletonFromFactoryy<TService, TFactoryService>() where TService : class where TFactoryService : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactoryService>((int)DefaultScopeDepth.Singleton);
+    public IServiceCollection AddSingletonFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class => throw new NotImplementedException();
+    public IServiceCollection AddSingletonFromAsyncFactoryy<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService> => throw new NotImplementedException();
     #endregion
 
     #region AddTransient
@@ -105,6 +119,8 @@ public class ServiceCollection : IServiceCollection {
     
     public IServiceCollection AddTransientFromFactory<TService, TFactoryService>() where TService : class where TFactoryService : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactoryService>((int)DefaultScopeDepth.Transient);
+    public IServiceCollection AddTransientFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class => throw new NotImplementedException();
+    public IServiceCollection AddTransientFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService> => throw new NotImplementedException();
     #endregion
 
     #region AddScoped
@@ -125,6 +141,8 @@ public class ServiceCollection : IServiceCollection {
     
     public IServiceCollection AddScopedFromFactory<TService, TFactoryService>() where TService : class where TFactoryService : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactoryService>((int)DefaultScopeDepth.ProviderScoped);
+    public IServiceCollection AddScopedFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory) where TService : class => throw new NotImplementedException();
+    public IServiceCollection AddScopedFromAsyncFactory<TService, TAsyncFactoryService>() where TService : class where TAsyncFactoryService : class, IAsyncFactoryService<TService> => throw new NotImplementedException();
     #endregion
 
     #region ICollection<IServiceRecord>

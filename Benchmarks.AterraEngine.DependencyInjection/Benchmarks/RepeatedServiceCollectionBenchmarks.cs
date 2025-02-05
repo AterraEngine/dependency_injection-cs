@@ -15,7 +15,7 @@ namespace Benchmarks.AterraEngine.DependencyInjection;
 // [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 public class RepeatedServiceCollectionBenchmarks {
     [Benchmark(Baseline = true)]
-    public object Microsoft_AddBuildAndRetrieve_SingleDependency_Transient() {
+    public async Task<object> Microsoft_AddBuildAndRetrieve_SingleDependency_Transient() {
         var collection = new ServiceCollection();
 
         collection.AddTransient<IService, Service>();
@@ -31,7 +31,7 @@ public class RepeatedServiceCollectionBenchmarks {
     }
 
     [Benchmark]
-    public object AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient() {
+    public async Task<object> AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient() {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
 
         collection.AddTransient<IService, Service>();
@@ -40,14 +40,14 @@ public class RepeatedServiceCollectionBenchmarks {
 
         var list = new List<IService>(1000);
         for (int i = 0; i < 1000; i++) {
-            list.Add(provider.GetRequiredService<IService>());
+            list.Add(await provider.GetRequiredServiceAsync<IService>());
         }
 
         return list;
     }
 
     [Benchmark]
-    public object Microsoft_AddBuildAndRetrieve_SingleDependency_Singleton() {
+    public async Task<object> Microsoft_AddBuildAndRetrieve_SingleDependency_Singleton() {
         var collection = new ServiceCollection();
 
         collection.AddSingleton<IService, Service>();
@@ -63,7 +63,7 @@ public class RepeatedServiceCollectionBenchmarks {
     }
 
     [Benchmark]
-    public object AterraEngine_AddBuildAndRetrieve_SingleDependency_Singleton() {
+    public async Task<object> AterraEngine_AddBuildAndRetrieve_SingleDependency_Singleton() {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
 
         collection.AddSingleton<IService, Service>();
@@ -72,7 +72,7 @@ public class RepeatedServiceCollectionBenchmarks {
 
         var list = new List<IService>(1000);
         for (int i = 0; i < 1000; i++) {
-            list.Add(provider.GetRequiredService<IService>());
+            list.Add(await provider.GetRequiredServiceAsync<IService>());
         }
 
         return list;

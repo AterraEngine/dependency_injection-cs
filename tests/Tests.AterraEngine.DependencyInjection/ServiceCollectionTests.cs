@@ -18,7 +18,7 @@ public class ServiceCollectionTests {
 
         // Act
         IScopedProvider provider = collection.Build();
-        var service = provider.GetService<IEmptyService>();
+        var service = await provider.GetServiceAsync<IEmptyService>();
 
         // Assert
         await Assert.That(provider)
@@ -41,8 +41,8 @@ public class ServiceCollectionTests {
         // Act
         IScopedProvider provider = collection.Build();
 
-        var emptyService = provider.GetService<IEmptyService>();
-        var sampleService = provider.GetService<ISampleService>();
+        var emptyService = await provider.GetServiceAsync<IEmptyService>();
+        var sampleService = await provider.GetServiceAsync<ISampleService>();
 
         // Assert
         await Assert.That(provider)
@@ -64,7 +64,7 @@ public class ServiceCollectionTests {
 
         // Act
         IScopedProvider provider = collection.Build();
-        var service = provider.GetService<IScopedProviderRequiredService>();
+        var service = await provider.GetServiceAsync<IScopedProviderRequiredService>();
 
         // Assert
         await Assert.That(provider)
@@ -94,14 +94,14 @@ public class ServiceCollectionTests {
         IScopedProvider globalProvider = collection.Build();
 
         // Act
-        var singletonService = globalProvider.GetService<IEmptyService>();
+        var singletonService = await globalProvider.GetServiceAsync<IEmptyService>();
         IScopedProvider scope0 = globalProvider.CreateDeeperScope();
-        var scope0Service = scope0.GetService<IIdService>();
-        var scope0SingletonService = scope0.GetService<IEmptyService>();
+        var scope0Service = await scope0.GetServiceAsync<IIdService>();
+        var scope0SingletonService = await scope0.GetServiceAsync<IEmptyService>();
 
         IScopedProvider scope1 = globalProvider.CreateDeeperScope();
-        var scope1Service = scope1.GetService<IIdService>();
-        var scope1SingletonService = scope0.GetService<IEmptyService>();
+        var scope1Service = await scope1.GetServiceAsync<IIdService>();
+        var scope1SingletonService = await scope0.GetServiceAsync<IEmptyService>();
 
         // Assert
         await Assert.That(singletonService).IsNotNull()
@@ -144,7 +144,7 @@ public class ServiceCollectionTests {
 
         // Assert
         foreach ((Type interfaceType, Type implementationType) in generatedServices) {
-            object? service = provider.GetService(interfaceType);
+            object? service = await provider.GetServiceAsync(interfaceType);
             await Assert.That(service)
                 .IsNotNull()
                 .And.IsTypeOf(implementationType);

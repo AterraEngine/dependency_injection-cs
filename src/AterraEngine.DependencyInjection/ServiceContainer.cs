@@ -20,11 +20,12 @@ public class ServiceContainer(IDictionary<Type, IServiceRecord> records) : IServ
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public TService? GetSingletonService<TService>(IServiceRecord record, IScopedProvider serviceProvider) where TService : class {
+    public async ValueTask<TService?> GetSingletonServiceAsync<TService>(IServiceRecord record, IScopedProvider serviceProvider) where TService : class {
         if (SingletonInstances.TryGetValue(record.Id, out object? instance) && instance is TService singletonService) return singletonService;
 
-        record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? factory);
-        if (factory?.Invoke(serviceProvider) is not {} casted) return null;
+        record.TryGetFactory<TService>(out Func<IScopedProvider, ValueTask<TService>>? factory);
+        if (factory is null) return null;
+        if (await factory(serviceProvider) is not {} casted) return null;
 
         SingletonInstances.TryAdd(record.Id, casted);
         return casted;

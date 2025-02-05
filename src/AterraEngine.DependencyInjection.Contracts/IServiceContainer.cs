@@ -10,5 +10,5 @@ namespace AterraEngine.DependencyInjection;
 public interface IServiceContainer {
     FrozenDictionary<Type, IServiceRecord> ServiceRecords { get; }
 
-    TService? GetSingletonService<TService>(IServiceRecord recordId, IScopedProvider serviceProvider) where TService : class;
+    ValueTask<TService?> GetSingletonServiceAsync<TService>(IServiceRecord recordId, IScopedProvider serviceProvider) where TService : class;
 }

@@ -33,7 +33,7 @@ public class ServiceCollectionBenchmarks {
 
         IScopedProvider provider = collection.Build();
 
-        return provider.GetRequiredService<IService>();
+        return provider.GetRequiredServiceAsync<IService>();
     }
 
     public interface IService {}

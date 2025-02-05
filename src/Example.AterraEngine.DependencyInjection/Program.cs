@@ -28,21 +28,21 @@ public static class Program {
 
         using IScopedProvider disposable = collection.Build();
 
-        var service = disposable.GetService<IService>();
+        var service = disposable.GetServiceAsync<IService>();
         Console.WriteLine(service?.Name);
 
-        var service1 = disposable.GetService<IService>();
+        var service1 = disposable.GetServiceAsync<IService>();
         Console.WriteLine(service1?.Name);
         Console.WriteLine(service == service1);
 
-        var serviceRez = disposable.GetRequiredService<IServiceRez>();
+        var serviceRez = disposable.GetRequiredServiceAsync<IServiceRez>();
         Console.WriteLine(serviceRez.Service.Name);
         Console.WriteLine(serviceRez.Service1.Name);
         Console.WriteLine(serviceRez.Transient.Name);
         Console.WriteLine(serviceRez.Service == service);
         Console.WriteLine(serviceRez.Service1 == service1);
 
-        var transient = disposable.GetRequiredService<ITransient>();
+        var transient = disposable.GetRequiredServiceAsync<ITransient>();
         Console.WriteLine(transient.Name);
 
         return Task.CompletedTask;

@@ -65,7 +65,7 @@ public class ScopedProviderTests {
         IScopedProvider provider = collection.Build();
 
         // Act
-        object? service = provider.GetService(serviceType);
+        object? service = await provider.GetServiceAsync(serviceType);
 
         // Assert
         await Assert.That(service)
@@ -85,7 +85,7 @@ public class ScopedProviderTests {
         IScopedProvider provider = collection.Build();
 
         // Act
-        object? service = provider.GetService(serviceType);
+        object? service = await provider.GetServiceAsync(serviceType);
 
         // Assert
         await Assert.That(service)
@@ -104,7 +104,7 @@ public class ScopedProviderTests {
         IScopedProvider provider = collection.Build();
 
         // Act && Assert
-        await Assert.ThrowsAsync<CouldNotBeResolvedException>(() => Task.FromResult(provider.GetRequiredService(serviceType)));
+        await Assert.ThrowsAsync<CouldNotBeResolvedException>(async () => await provider.GetRequiredServiceAsync(serviceType));
     }
 
     [Test]
@@ -120,7 +120,7 @@ public class ScopedProviderTests {
         IScopedProvider provider = collection.Build();
 
         // Act
-        object service = provider.GetRequiredService(serviceType);
+        object service = await provider.GetRequiredServiceAsync(serviceType);
 
         // Assert
         await Assert.That(service)
@@ -141,9 +141,9 @@ public class ScopedProviderTests {
         var scopeProviderLevel1A = (ScopedProvider)scopeProviderLevel0.CreateNewScope();
         var scopeProviderLevel1B = (ScopedProvider)scopeProviderLevel0.CreateNewScope();
         
-        var disposableServiceLevel0 = scopeProviderLevel0.GetRequiredService<IDisposableService>();
-        var disposableServiceLevel1A = scopeProviderLevel1A.GetRequiredService<IDisposableService>();
-        var disposableServiceLevel1B = scopeProviderLevel1B.GetRequiredService<IDisposableService>();
+        var disposableServiceLevel0 = await scopeProviderLevel0.GetRequiredServiceAsync<IDisposableService>();
+        var disposableServiceLevel1A = await scopeProviderLevel1A.GetRequiredServiceAsync<IDisposableService>();
+        var disposableServiceLevel1B = await scopeProviderLevel1B.GetRequiredServiceAsync<IDisposableService>();
         
         // Act
         int originalScopeCount = scopeProviderLevel0.ChildScopes.Count;
@@ -177,9 +177,9 @@ public class ScopedProviderTests {
         var scopeProviderLevel1A = (ScopedProvider)scopeProviderLevel0.CreateNewScope();
         var scopeProviderLevel1B = (ScopedProvider)scopeProviderLevel0.CreateNewScope();
         
-        var disposableServiceLevel0 = scopeProviderLevel0.GetRequiredService<IDisposableService>();
-        var disposableServiceLevel1A = scopeProviderLevel1A.GetRequiredService<IDisposableService>();
-        var disposableServiceLevel1B = scopeProviderLevel1B.GetRequiredService<IDisposableService>();
+        var disposableServiceLevel0 = await scopeProviderLevel0.GetRequiredServiceAsync<IDisposableService>();
+        var disposableServiceLevel1A = await scopeProviderLevel1A.GetRequiredServiceAsync<IDisposableService>();
+        var disposableServiceLevel1B = await scopeProviderLevel1B.GetRequiredServiceAsync<IDisposableService>();
         
         // Act
         int originalScopeCount = scopeProviderLevel0.ChildScopes.Count;

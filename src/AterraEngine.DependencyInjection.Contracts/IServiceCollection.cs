@@ -14,7 +14,7 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     IServiceCollection AddService(Type service, Type implementation, int scopeLevel);
     IServiceCollection AddServiceFromFactory<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class;
     IServiceCollection AddServiceFromFactory<TService, TFactoryService>(int scopeLevel) where TFactoryService : class, IFactoryService<TService> where TService : class;
-    IServiceCollection AddServiceFromASyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory, int scopeLevel) where TService : class;
+    IServiceCollection AddServiceFromAsyncFactory<TService>(Func<IScopedProvider, ValueTask<TService>> factory, int scopeLevel) where TService : class;
     IServiceCollection AddServiceFromAsyncFactory<TService, TAsyncFactoryService>(int scopeLevel) where TAsyncFactoryService : class, IAsyncFactoryService<TService> where TService : class;
     
     IServiceCollection AddSingleton<TImplementation>() where TImplementation : class;
