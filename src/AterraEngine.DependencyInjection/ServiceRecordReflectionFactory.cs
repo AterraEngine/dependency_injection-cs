@@ -13,7 +13,11 @@ public static class ServiceRecordReflectionFactory {
     private static readonly MethodInfo GetRequiredServiceMethod = typeof(IScopedProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(IScopedProvider.GetRequiredService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
-
+    
+    private static readonly MethodInfo GetServiceMethod = typeof(IScopedProvider)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        .Single(m => m is { Name: nameof(IScopedProvider.GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
+    
     private static readonly FrozenSet<Type> ResolveAsScopedProvider = new[] { typeof(IServiceProvider), typeof(IScopedProvider) }.ToFrozenSet();
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -58,16 +62,27 @@ public static class ServiceRecordReflectionFactory {
         // Generate constructor arguments, handling IServiceProvider specially
         var arguments = new Expression[parameters.Length];
         for (int i = parameters.Length - 1; i >= 0; i--) {
-            Type parameterType = parameters[i].ParameterType;
+            ParameterInfo parameter = parameters[i];
+            Type parameterType = parameter.ParameterType;
             if (ResolveAsScopedProvider.Contains(parameterType)) {
                 arguments[i] = parameterExpression;
                 continue;
             }
-
+            
+            // Check if the parameter type is specifically T?
+            //      This means we can allow for services to not always having to be implemented
+            if (parameter.IsNullableReferenceType() || parameter is { HasDefaultValue: true, DefaultValue: null }) {
+                arguments[i] = Expression.Call(
+                    parameterExpression,
+                    GetServiceMethod.MakeGenericMethod(parameterType)
+                );
+                continue;
+            }
+            
             arguments[i] = Expression.Call(
-                parameterExpression,
-                GetRequiredServiceMethod.MakeGenericMethod(parameterType)
-            );
+                    parameterExpression,
+                    GetRequiredServiceMethod.MakeGenericMethod(parameterType)
+                );
         }
 
         // Create a constructor call with the generated arguments

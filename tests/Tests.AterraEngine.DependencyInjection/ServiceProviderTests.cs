@@ -202,4 +202,35 @@ public class ScopedProviderTests {
         await Assert.That(disposableServiceLevel1A.ConnectionString).IsNull().Because("Should have been disposed");
         await Assert.That(disposableServiceLevel1B.ConnectionString).IsNotNull();
     }
+
+    [Test]
+    public async Task ScopedProvider_ShouldAllowNullableDependencies_WhenNotRegistered() {
+        // Arrange
+        IServiceCollection collection = CollectionHelper.CreateCollectionWithServices(256);
+        collection.AddTransient<INullableDependantService, NullableDependantService>();
+        IScopedProvider provider = collection.Build();
+        
+        // Act
+        var service = provider.GetService<INullableDependantService>();
+        
+        // Assert
+        await Assert.That(service).IsNotNull();
+        await Assert.That(service!.Service).IsNull();
+    }
+
+    [Test]
+    public async Task ScopedProvider_ShouldAllowNullableDependencies_WhenRegistered() {
+        // Arrange
+        IServiceCollection collection = CollectionHelper.CreateCollectionWithServices(256);
+        collection.AddTransient<INullableDependantService, NullableDependantService>();
+        collection.AddTransient<IEmptyService, EmptyService>();
+        IScopedProvider provider = collection.Build();
+        
+        // Act
+        var service = provider.GetService<INullableDependantService>();
+        
+        // Assert
+        await Assert.That(service).IsNotNull();
+        await Assert.That(service!.Service).IsNotNull();
+    }
 }
