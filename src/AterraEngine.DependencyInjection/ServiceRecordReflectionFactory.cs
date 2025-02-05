@@ -1,7 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using System.Linq.Expressions;
 using System.Reflection;
 
 namespace AterraEngine.DependencyInjection;
@@ -16,100 +15,59 @@ public static class ServiceRecordReflectionFactory {
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------
     public static ServiceRecord<TService> CreateWithFactory<TService, TImplementation>(int scopeDepth)
         where TImplementation : class, TService {
         Type type = typeof(TImplementation);
 
-        // Find the constructor with the most parameters
-        ConstructorInfo? constructor = type.GetConstructors()
-            .OrderByDescending(c => c.GetParameters().Length)
-            .FirstOrDefault();
-
-        if (constructor is null) throw new Exception($"No suitable constructor found for {type.Name}");
-
-        ParameterExpression providerParameter = Expression.Parameter(typeof(IScopedProvider), "provider");
-
-        // We are leveraging Task.WhenAll() when we resolve the services
-        // This is a bit of a hack, but it works for now
-        List<ParameterExpression> taskVariables = [];
-        List<Expression> taskAssignments = [];
-        List<Expression> constructorArguments = [];
-
-        foreach (ParameterInfo parameter in constructor.GetParameters()) {
-            Type parameterType = parameter.ParameterType;
-
-            // For IScopedProvider, pass the provider directly to the constructor
-            if (parameterType == typeof(IScopedProvider)) {
-                constructorArguments.Add(providerParameter);
-                continue;
-            }
-
-            // Create the ValueTask<> parameter which will hold the output of the required service
-            ParameterExpression taskVariable = Expression.Variable(typeof(ValueTask<>).MakeGenericType(parameterType), parameter.Name + "Task");
-            taskVariables.Add(taskVariable);
-
-            taskAssignments.Add(Expression.Assign(taskVariable, Expression.Call(
-                providerParameter,
-                GetRequiredServiceMethod.MakeGenericMethod(parameterType)
-            )));
-            
-            MemberExpression resultAccess = Expression.Property(
-                Expression.Call(taskVariable, "AsTask", null),
-                "Result"
-            );
-
-            constructorArguments.Add(resultAccess);
+        if (GetConstructor(type) == null) {
+            throw new Exception($"No suitable constructor found for {typeof(TImplementation).FullName}");
         }
 
-        // Array of tasks for Task.WhenAll
-        NewArrayExpression taskArray = Expression.NewArrayInit(
-            typeof(Task),
-            taskVariables.Select(tv => Expression.Call(tv, "AsTask", null))
-        );
-
-        // Use reflection to select the appropriate Task.WhenAll overload
-        MethodInfo? whenAllMethod = typeof(Task).GetMethod(nameof(Task.WhenAll), [typeof(Task[])]);
-        if (whenAllMethod is null) {
-            throw new Exception("Could not find Task.WhenAll method.");
-        }
-
-        // Await Task.WhenAll to complete all tasks
-        MethodCallExpression whenAllCall = Expression.Call(
-            whenAllMethod,// Specify the correct overload explicitly
-            taskArray
-        );
-
-        // Create an expression block
-        BlockExpression body = Expression.Block(
-            taskVariables,// Declare task variables
-            taskAssignments.Append(whenAllCall).Append(// Assign tasks and await Task.WhenAll
-                // Invoke the constructor with resolved arguments
-                Expression.New(constructor, constructorArguments)
-            )
-        );
-
-        // Wrap the constructor result in a ValueTask<TService>
-        NewExpression valueTaskResult = Expression.New(
-            typeof(ValueTask<TService>).GetConstructor([typeof(TService)])!,
-            body
-        );
-
-        // Create a lambda function
-        Expression<Func<IScopedProvider, ValueTask<TService>>> lambda = Expression.Lambda<Func<IScopedProvider, ValueTask<TService>>>(
-            valueTaskResult,
-            providerParameter
-        );
- 
-        // Compile the factory method
-        Func<IScopedProvider, ValueTask<TService>> factory = lambda.Compile();
-
-        // Return the ServiceRecord
+        // Return the dynamically created ServiceRecord
         return new ServiceRecord<TService>(
             typeof(TService),
             typeof(TImplementation),
-            factory,
+            (Func<IScopedProvider, ValueTask<TService>>)InstanceFactoryAsync<TService, TImplementation>,
             scopeDepth
         );
+    }
+    
+    private static ConstructorInfo? GetConstructor(Type type) {
+        return type.GetConstructors()
+            .OrderByDescending(c => c.GetParameters().Length)
+            .FirstOrDefault();
+    }
+
+    private static async ValueTask<TService> InstanceFactoryAsync<TService, TImplementation>(IScopedProvider provider)
+        where TImplementation : class, TService {
+        Type type = typeof(TImplementation);
+
+        // Find the constructor 
+        //      Above we've already established that this can't be null and types don't change.
+        ParameterInfo[] parameterInfos = GetConstructor(type)!.GetParameters();
+        object[] resolvedDependencies = new object[parameterInfos.Length];
+
+        // Iterate over constructor parameters using a for loop
+        //      Yes we are doing this in reverse because of small performance gain
+        for (int i = parameterInfos.Length - 1; i >= 0; i--) {
+            Type parameterType = parameterInfos[i].ParameterType;
+
+            // Pass the provider directly for IScopedProvider parameters, some performance gain
+            if (parameterType == typeof(IScopedProvider)) {
+                resolvedDependencies[i] = provider;
+                continue;
+            }
+
+            // !!! Voodoo magic !!!
+            // Don't touch this, or you will lose your mind trying to do it any other way with static typing
+            // Dynamic shouldn't be used at all in normal circumstances!
+            // This is a very special case and one of the very few and ONLY times this should be allowed!
+            resolvedDependencies[i] = await (dynamic)GetRequiredServiceMethod
+                .MakeGenericMethod(parameterType)
+                .Invoke(provider, null)!;
+        }
+
+        // Finally create the instance with the activator
+        return (TImplementation)Activator.CreateInstance(type, resolvedDependencies)!;
     }
 }
