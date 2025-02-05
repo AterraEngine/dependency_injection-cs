@@ -143,7 +143,7 @@ public class ScopedProvider(IServiceContainer serviceContainer) : IScopedProvide
         return scopedProvider;
     }
 
-    public IScopedProvider CreateDeeperScope() {
+    public IScopedProvider CreateNewDeeperScope() {
         ScopedProvider scopedProvider = NewScopeProvider(ScopeDepth + 1);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;

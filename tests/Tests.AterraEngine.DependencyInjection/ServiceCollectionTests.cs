@@ -95,11 +95,11 @@ public class ServiceCollectionTests {
 
         // Act
         var singletonService = globalProvider.GetService<IEmptyService>();
-        IScopedProvider scope0 = globalProvider.CreateDeeperScope();
+        IScopedProvider scope0 = globalProvider.CreateNewDeeperScope();
         var scope0Service = scope0.GetService<IIdService>();
         var scope0SingletonService = scope0.GetService<IEmptyService>();
 
-        IScopedProvider scope1 = globalProvider.CreateDeeperScope();
+        IScopedProvider scope1 = globalProvider.CreateNewDeeperScope();
         var scope1Service = scope1.GetService<IIdService>();
         var scope1SingletonService = scope0.GetService<IEmptyService>();
 
