@@ -1,11 +1,10 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-#pragma warning disable CS9113// Parameter is unread.
+#pragma warning disable CS9113 // Parameter is unread.
 // ReSharper disable UnusedTypeParameter
 
 using AterraEngine.DependencyInjection;
-
 namespace Example.AterraEngine.DependencyInjection.Generators;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code

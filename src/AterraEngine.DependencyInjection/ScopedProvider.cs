@@ -24,93 +24,56 @@ public class ScopedProvider(IServiceContainer serviceContainer) : IScopedProvide
     // -----------------------------------------------------------------------------------------------------------------=
     #region GetService by Type argument
     private readonly ConcurrentDictionary<Type, MethodInfo> _getServiceMethodCache = new();
-    private static readonly ConcurrentDictionary<Type, MethodInfo> GetAwaiterCache = new();
-    private static readonly ConcurrentDictionary<Type, MethodInfo> GetResultCache = new();
 
+    private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ScopedProvider)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
 
-    private readonly Lazy<MethodInfo> _getServiceMethod = new(static () =>
-        typeof(ScopedProvider)
-            .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-            .Single(m =>
-                    m is { Name: nameof(GetServiceAsync), IsGenericMethodDefinition: true }// Must be a generic method definition
-                    && m.GetGenericArguments().Length == 1// Must have one generic argument
-                    && m.ReturnType.IsGenericType// Must have generic return type
-                    && m.ReturnType.GetGenericTypeDefinition() == typeof(ValueTask<>)// Specifically, ValueTask<T>
-            ));
+    public object? GetService(Type service) =>
+        _getServiceMethodCache
+            .GetOrAdd(service, valueFactory: _ => _getServiceMethod.Value.MakeGenericMethod(service))// get or store to cache
+            .Invoke(this, null);
 
-
-    public async ValueTask<object?> GetServiceAsync(Type service) {
-        if (!_getServiceMethodCache.TryGetValue(service, out MethodInfo? method)) {
-            method = _getServiceMethod.Value.MakeGenericMethod(service);
-            _getServiceMethodCache.TryAdd(service, method);
-        }
-
-        // Invoke the method dynamically
-        object? result = method.Invoke(this, null);
-
-        // Handle the case where the result is a generic ValueTask<T>
-        if (result == null || !result.GetType().IsGenericType || result.GetType().GetGenericTypeDefinition() != typeof(ValueTask<>)) return null;
-
-        Type valueTaskType = result.GetType();
-
-        // Get or cache the GetAwaiter() method
-        MethodInfo getAwaiterMethod = GetAwaiterCache.GetOrAdd(valueTaskType,
-            valueFactory: type =>
-                type.GetMethod("GetAwaiter", BindingFlags.Instance | BindingFlags.Public)!
-        );
-
-        if (getAwaiterMethod.Invoke(result, null) is not {} awaiter) return null;
-
-        // Get or cache the GetResult() method
-        MethodInfo getResultMethod = GetResultCache.GetOrAdd(awaiter.GetType(),
-            valueFactory: type =>
-                type.GetMethod("GetResult", BindingFlags.Instance | BindingFlags.Public)!
-        );
-
-        // Invoke GetResult() to resolve the final result
-        return getResultMethod.Invoke(awaiter, null);
-    }
-
-    public async ValueTask<object> GetRequiredServiceAsync(Type service) =>
-        await GetServiceAsync(service) ?? throw new CouldNotBeResolvedException($"The required service of type '{service}' could not be resolved.");
+    public object GetRequiredService(Type service) =>
+        GetService(service) ?? throw new CouldNotBeResolvedException($"The required service of type '{service}' could not be resolved.");
     #endregion
 
     #region GetServices by Generic Type argument
-    public async ValueTask<TService?> GetServiceAsync<TService>() where TService : class {
+    public TService? GetService<TService>() where TService : class {
         Type typeOfService = typeof(TService);
         // Resolve the record and try and create the instance
         if (serviceContainer.ServiceRecords.TryGetValue(typeOfService, out IServiceRecord? record)) {
-            return await ResolveServiceInstanceAsync<TService>(record, typeOfService);
+            return ResolveServiceInstance<TService>(record, typeOfService);
         }
 
-        // Records could not be established, so try and see if we are looking in calling some specific types which aren't in the container
+        // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
         if (typeOfService == typeof(IScopedProvider) || typeOfService == typeof(IScopedProvider)) return (TService)(object)this;
         if (typeOfService == typeof(IServiceContainer)) return (TService)serviceContainer;
 
         return null;// if all fails, return null
     }
-
-    private async ValueTask<TService?> ResolveServiceInstanceAsync<TService>(IServiceRecord record, Type typeOfService) where TService : class {
+    
+    private TService? ResolveServiceInstance<TService>(IServiceRecord record, Type typeOfService) where TService : class {
         TService? instance = null;
         switch (record) {
             // Transient, we don't track the instance, but we do track disposing patterns.
             case { IsTransient: true }:
-                if (!record.TryGetFactory<TService>(out Func<IScopedProvider, ValueTask<TService>>? transientFactory)) break;
+                if (!record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? transientFactory)) break;
 
-                instance = await transientFactory(this);
+                instance = transientFactory(this);
                 break;
 
             // Singleton, but we have a parent, so we should ask it because it could exist there;
             case { IsSingleton: true }: {
-                instance = await serviceContainer.GetSingletonServiceAsync<TService>(record, this);
+                instance = serviceContainer.GetSingletonService<TService>(record, this);
                 break;
             }
-
+            
             // SCOPED : Has two variant
             //      - ProviderScoped, meaning that per provider we create a new one, regardless of scope depth
             //      - ScopeDepth is the current scope's depth
-            case { IsProviderScoped: true }:
-            case { ScopeDepth: var scopeDepth } when scopeDepth == ScopeDepth: {
+            case { IsProviderScoped: true } :                           
+            case { ScopeDepth: var scopeDepth } when scopeDepth == ScopeDepth: { 
                 // Check if the instance already exists, if so, return it
                 if (Instances.TryGetValue(record.Id, out object? alreadyCreatedInstance)) {
                     instance = alreadyCreatedInstance as TService;
@@ -118,9 +81,9 @@ public class ScopedProvider(IServiceContainer serviceContainer) : IScopedProvide
                 }
 
                 // instance hasn't been created yet, so we need to create it
-                if (!record.TryGetFactory<TService>(out Func<IScopedProvider, ValueTask<TService>>? factory)) break;
+                if (!record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? factory)) break;
 
-                instance = await factory(this);
+                instance = factory(this);
 
                 // If the instance was created, add it to the instances collection
                 //      If we can't add it, then it means it was already created by something else, and thus we can just forget it ( not the best option)
@@ -130,9 +93,7 @@ public class ScopedProvider(IServiceContainer serviceContainer) : IScopedProvide
 
             // ScopeDepth was shallower than the current scope scopeDepth
             case { ScopeDepth: var scopeDepth } when scopeDepth < ScopeDepth: {
-                if (ParentScope is null) return null;
-
-                return await ParentScope.ResolveServiceInstanceAsync<TService>(record, typeOfService);
+                return ParentScope?.ResolveServiceInstance<TService>(record, typeOfService);
 
                 // Okay I know you see the `RegisterDisposePatternIfApplicable` below and think "hey don't we need to
                 // register the dispose pattern for this instance as well? And why aren't we assigning the instance?"
@@ -154,10 +115,9 @@ public class ScopedProvider(IServiceContainer serviceContainer) : IScopedProvide
         return instance;
     }
 
-    public async ValueTask<TService> GetRequiredServiceAsync<TService>() where TService : class {
+    public TService GetRequiredService<TService>() where TService : class {
         try {
-            if (await GetServiceAsync<TService>() is not {} service) throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
-
+            if (GetService<TService>() is not {} service) throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
             return service;
         }
         catch (DeeperScopeRequiredException ex) when (ex.TypeToResolve == typeof(TService)) {

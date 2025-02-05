@@ -10,23 +10,9 @@ namespace AterraEngine.DependencyInjection;
 public record ServiceRecord<TService>(
     Type ServiceType,
     Type ImplementationType,
-    Func<IScopedProvider, ValueTask<TService>>? ImplementationFactory,
+    Func<IScopedProvider, TService>? ImplementationFactory,
     int ScopeDepth
 ) : IServiceRecord {
-
-    // -----------------------------------------------------------------------------------------------------------------
-    // Constructors
-    // -----------------------------------------------------------------------------------------------------------------
-    public ServiceRecord(
-        Type ServiceType,
-        Type ImplementationType,
-        Func<IScopedProvider, TService>? ImplementationFactory,
-        int ScopeDepth
-    ) : this(ServiceType, ImplementationType, default(Func<IScopedProvider, ValueTask<TService>>?), ScopeDepth) {
-        if (ImplementationFactory is null) return;
-
-        this.ImplementationFactory = provider => new ValueTask<TService>(ImplementationFactory(provider));
-    }
 
     public Guid Id { get; } = Guid.CreateVersion7();
     public bool IsTransient { get; } = ScopeDepth == (int)DefaultScopeDepth.Transient;
@@ -36,12 +22,22 @@ public record ServiceRecord<TService>(
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
 
     // -----------------------------------------------------------------------------------------------------------------
+    // Constructors
+    // -----------------------------------------------------------------------------------------------------------------
+    public ServiceRecord(
+        Type ServiceType,
+        Type ImplementationType,
+        Func<IScopedProvider, TService>? ImplementationFactory,
+        DefaultScopeDepth ScopeDepth
+    ) : this(ServiceType, ImplementationType, ImplementationFactory, (int)ScopeDepth) {}
+    
+    // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IScopedProvider, ValueTask<T>>? factory) {
+    public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IScopedProvider, T>? factory) {
         factory = null;
         if (typeof(T) != typeof(TService)) return false;
-        if (ImplementationFactory is not Func<IScopedProvider, ValueTask<T>> casted) return false;
+        if (ImplementationFactory is not Func<IScopedProvider, T> casted) return false;
 
         return (factory = casted) is not null;
     }

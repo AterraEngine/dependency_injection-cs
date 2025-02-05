@@ -1,6 +1,8 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using System.Collections.Frozen;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace AterraEngine.DependencyInjection;
@@ -10,64 +12,77 @@ namespace AterraEngine.DependencyInjection;
 public static class ServiceRecordReflectionFactory {
     private static readonly MethodInfo GetRequiredServiceMethod = typeof(IScopedProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-        .Single(m => m is { Name: nameof(IScopedProvider.GetRequiredServiceAsync), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
+        .Single(m => m is { Name: nameof(IScopedProvider.GetRequiredService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
+
+    private static readonly FrozenSet<Type> ResolveAsScopedProvider = new[] { typeof(IServiceProvider), typeof(IScopedProvider) }.ToFrozenSet();
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public static ServiceRecord<TService> CreateWithFactory<TService, TImplementation>(int scopeDepth)
-        where TImplementation : class, TService {
+    public static ServiceRecord<TService> CreateWithFactory<TService, TImplementation>(int scopeDepth) where TImplementation : class, TService {
         Type type = typeof(TImplementation);
+        if (type.GetConstructors() is { Length: 0 }) throw new Exception("No constructors");
 
-        if (GetConstructor(type) == null) {
-            throw new Exception($"No suitable constructor found for {typeof(TImplementation).FullName}");
+        #region Special Constructor format cases
+        // Special case for empty constructor
+        if (type.GetConstructor([]) is {} emptyConstructor) {
+            return new ServiceRecord<TService>(
+                typeof(TService),
+                typeof(TImplementation),
+                ImplementationFactory: _ => (TService)emptyConstructor.Invoke(null),
+                scopeDepth
+            );
         }
 
-        // Return the dynamically created ServiceRecord
-        return new ServiceRecord<TService>(
-            typeof(TService),
-            typeof(TImplementation),
-            (Func<IScopedProvider, ValueTask<TService>>)InstanceFactoryAsync<TService, TImplementation>,
-            scopeDepth
-        );
-    }
+        // special case for only a service provider
+        if (type.GetConstructor([typeof(IScopedProvider)]) is {} onlyServiceProviderConstructor) {
+            return new ServiceRecord<TService>(
+                typeof(TService),
+                typeof(TImplementation),
+                ImplementationFactory: provider => (TService)onlyServiceProviderConstructor.Invoke([provider]),
+                scopeDepth
+            );
+        }
+        #endregion
 
-    private static ConstructorInfo? GetConstructor(Type type) {
-        return type.GetConstructors()
-            .OrderByDescending(c => c.GetParameters().Length)
-            .FirstOrDefault();
-    }
+        ConstructorInfo? constructor = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+            .SingleOrDefault(info => info.GetParameters().Length > 0);
 
-    private static async ValueTask<TService> InstanceFactoryAsync<TService, TImplementation>(IScopedProvider provider)
-        where TImplementation : class, TService {
-        Type type = typeof(TImplementation);
+        if (constructor is null) throw new MultipleConstructorsException($"Multiple constructors found for {type.FullName} with parameters");
 
-        // Find the constructor 
-        //      Above we've already established that this can't be null and types don't change.
-        ParameterInfo[] parameterInfos = GetConstructor(type)!.GetParameters();
-        object[] resolvedDependencies = new object[parameterInfos.Length];
+        ParameterInfo[] parameters = constructor.GetParameters();
 
-        // Iterate over constructor parameters using a for loop
-        //      Yes we are doing this in reverse because of small performance gain
-        for (int i = parameterInfos.Length - 1; i >= 0; i--) {
-            Type parameterType = parameterInfos[i].ParameterType;
+        // Lambda generation
+        ParameterExpression parameterExpression = Expression.Parameter(typeof(IScopedProvider), "provider");
 
-            // Pass the provider directly for IScopedProvider parameters, some performance gain
-            if (parameterType == typeof(IScopedProvider)) {
-                resolvedDependencies[i] = provider;
+        // Generate constructor arguments, handling IServiceProvider specially
+        var arguments = new Expression[parameters.Length];
+        for (int i = parameters.Length - 1; i >= 0; i--) {
+            Type parameterType = parameters[i].ParameterType;
+            if (ResolveAsScopedProvider.Contains(parameterType)) {
+                arguments[i] = parameterExpression;
                 continue;
             }
 
-            // !!! Voodoo magic !!!
-            // Don't touch this, or you will lose your mind trying to do it any other way with static typing
-            // Dynamic shouldn't be used at all in normal circumstances!
-            // This is a very special case and one of the very few and ONLY times this should be allowed!
-            resolvedDependencies[i] = await (dynamic)GetRequiredServiceMethod
-                .MakeGenericMethod(parameterType)
-                .Invoke(provider, null)!;
+            arguments[i] = Expression.Call(
+                parameterExpression,
+                GetRequiredServiceMethod.MakeGenericMethod(parameterType)
+            );
         }
 
-        // Finally create the instance with the activator
-        return (TImplementation)Activator.CreateInstance(type, resolvedDependencies)!;
+        // Create a constructor call with the generated arguments
+        NewExpression constructorCall = Expression.New(constructor, arguments);
+
+        // Build the lambda expression for the factory
+        Expression<Func<IScopedProvider, TService>> lambda = Expression.Lambda<Func<IScopedProvider, TService>>(constructorCall, parameterExpression);
+        Func<IScopedProvider, TService> compiled = lambda.Compile();// Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>, ...)
+
+        // Actually store the record
+        return new ServiceRecord<TService>(
+            typeof(TService),
+            typeof(TImplementation),
+            compiled,
+            scopeDepth
+        );
     }
 }

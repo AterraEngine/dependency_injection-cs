@@ -12,12 +12,12 @@ public interface IServiceRecord {
     Type ServiceType { get; }
     Type ImplementationType { get; }
     int ScopeDepth { get; }
-
+    
     bool IsSingleton { get; }
     bool IsTransient { get; }
     bool IsProviderScoped { get; }
     bool IsDisposable { get; }
     bool IsAsyncDisposable { get; }
 
-    bool TryGetFactory<TService>([NotNullWhen(true)] out Func<IScopedProvider, ValueTask<TService>>? factory);
+    bool TryGetFactory<TService>([NotNullWhen(true)] out Func<IScopedProvider, TService>? factory);
 }

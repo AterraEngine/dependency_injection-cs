@@ -12,14 +12,14 @@ public static class Program {
     public enum ServiceLifetime {
         Transient = -1,
         Singleton = 0,
-        Scoped = 1,
+        Scoped = 1, 
         EngineScope = 2,
         GameScope = 3,
         WorldScope = 4,
         LevelScope = 5
     }
 
-    public static async Task Main(string[] args) {
+    public static Task Main(string[] args) {
         var collection = new ServiceCollection();
 
         collection.AddSingleton<IService, Service>();
@@ -28,22 +28,26 @@ public static class Program {
 
         using IScopedProvider disposable = collection.Build();
 
-        var service = await disposable.GetServiceAsync<IService>();
+        var service = disposable.GetService<IService>();
         Console.WriteLine(service?.Name);
 
-        var service1 = await disposable.GetServiceAsync<IService>();
+        var service1 = disposable.GetService<IService>();
         Console.WriteLine(service1?.Name);
         Console.WriteLine(service == service1);
 
-        var serviceRez = await disposable.GetRequiredServiceAsync<IServiceRez>();
+        var serviceRez = disposable.GetRequiredService<IServiceRez>();
         Console.WriteLine(serviceRez.Service.Name);
         Console.WriteLine(serviceRez.Service1.Name);
         Console.WriteLine(serviceRez.Transient.Name);
         Console.WriteLine(serviceRez.Service == service);
         Console.WriteLine(serviceRez.Service1 == service1);
 
-        var transient = await disposable.GetRequiredServiceAsync<ITransient>();
+        var transient = disposable.GetRequiredService<ITransient>();
         Console.WriteLine(transient.Name);
+
+        return Task.CompletedTask;
+
+        // var serviceRez2 = provider.GetRequiredService<ServiceReze2>();
     }
 
     public interface IService {

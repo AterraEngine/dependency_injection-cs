@@ -52,7 +52,7 @@ public class ServiceCollectorGenerator : IIncrementalGenerator {
         foreach (ClassDeclarationSyntax? classDeclaration in classes) {
             SemanticModel semanticModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
 
-            if (semanticModel.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol classSymbol) continue;
+            if (ModelExtensions.GetDeclaredSymbol(semanticModel, classDeclaration) is not INamedTypeSymbol classSymbol) continue;
 
             // Check if any attribute on the class matches or derives from ServiceAttribute
             foreach (AttributeData? attributeData in classSymbol.GetAttributes()) {
@@ -153,4 +153,5 @@ public class ServiceCollectorGenerator : IIncrementalGenerator {
 
         return 0;
     }
+
 }

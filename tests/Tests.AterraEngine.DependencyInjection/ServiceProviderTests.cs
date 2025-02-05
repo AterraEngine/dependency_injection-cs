@@ -65,7 +65,7 @@ public class ScopedProviderTests {
         IScopedProvider provider = collection.Build();
 
         // Act
-        object? service = await provider.GetServiceAsync(serviceType);
+        object? service = provider.GetService(serviceType);
 
         // Assert
         await Assert.That(service)
@@ -85,7 +85,7 @@ public class ScopedProviderTests {
         IScopedProvider provider = collection.Build();
 
         // Act
-        object? service = await provider.GetServiceAsync(serviceType);
+        object? service = provider.GetService(serviceType);
 
         // Assert
         await Assert.That(service)
@@ -104,7 +104,7 @@ public class ScopedProviderTests {
         IScopedProvider provider = collection.Build();
 
         // Act && Assert
-        await Assert.ThrowsAsync<CouldNotBeResolvedException>(async () => await provider.GetRequiredServiceAsync(serviceType));
+        await Assert.ThrowsAsync<CouldNotBeResolvedException>(() => Task.FromResult(provider.GetRequiredService(serviceType)));
     }
 
     [Test]
@@ -120,7 +120,7 @@ public class ScopedProviderTests {
         IScopedProvider provider = collection.Build();
 
         // Act
-        object service = await provider.GetRequiredServiceAsync(serviceType);
+        object service = provider.GetRequiredService(serviceType);
 
         // Assert
         await Assert.That(service)
@@ -136,15 +136,15 @@ public class ScopedProviderTests {
         IServiceCollection collection = CollectionHelper.CreateCollectionWithServices(256);
         collection.AddScoped<IDisposableService, DisposableService>();
         IScopedProvider originalProvider = collection.Build();
-
-        var scopeProviderLevel0 = (ScopedProvider)originalProvider.CreateNewScope();// Cast to original type because of internal implementation.
+        
+        var scopeProviderLevel0 = (ScopedProvider)originalProvider.CreateNewScope(); // Cast to original type because of internal implementation.
         var scopeProviderLevel1A = (ScopedProvider)scopeProviderLevel0.CreateNewScope();
         var scopeProviderLevel1B = (ScopedProvider)scopeProviderLevel0.CreateNewScope();
-
-        var disposableServiceLevel0 = await scopeProviderLevel0.GetRequiredServiceAsync<IDisposableService>();
-        var disposableServiceLevel1A = await scopeProviderLevel1A.GetRequiredServiceAsync<IDisposableService>();
-        var disposableServiceLevel1B = await scopeProviderLevel1B.GetRequiredServiceAsync<IDisposableService>();
-
+        
+        var disposableServiceLevel0 = scopeProviderLevel0.GetRequiredService<IDisposableService>();
+        var disposableServiceLevel1A = scopeProviderLevel1A.GetRequiredService<IDisposableService>();
+        var disposableServiceLevel1B = scopeProviderLevel1B.GetRequiredService<IDisposableService>();
+        
         // Act
         int originalScopeCount = scopeProviderLevel0.ChildScopes.Count;
         scopeProviderLevel1A.Dispose();
@@ -155,7 +155,7 @@ public class ScopedProviderTests {
         await Assert.That(scopeProviderLevel0).IsNotNull();
         await Assert.That(scopeProviderLevel0.ChildScopes).HasCount().EqualTo(1);
         await Assert.That(remainingScope).IsEqualTo(scopeProviderLevel1B);
-
+        
         await Assert.That(scopeProviderLevel1A.ParentScope).IsNull();
         await Assert.That(scopeProviderLevel1A.Instances).IsEmpty();
         await Assert.That(scopeProviderLevel1A.DisposableInstances).IsEmpty();
@@ -166,21 +166,21 @@ public class ScopedProviderTests {
         await Assert.That(disposableServiceLevel1A.ConnectionString).IsNull().Because("Should have been disposed");
         await Assert.That(disposableServiceLevel1B.ConnectionString).IsNotNull();
     }
-
+    
     [Test]
     public async Task ScopedProvider_UsingScope_ManualDisposeAsync() {
         // Arrange
         IServiceCollection collection = CollectionHelper.CreateCollectionWithServices(256);
         collection.AddScoped<IDisposableService, DisposableService>();
         IScopedProvider originalProvider = collection.Build();
-        var scopeProviderLevel0 = (ScopedProvider)originalProvider.CreateNewScope();// Cast to original type because of internal implementation.
+        var scopeProviderLevel0 = (ScopedProvider)originalProvider.CreateNewScope(); // Cast to original type because of internal implementation.
         var scopeProviderLevel1A = (ScopedProvider)scopeProviderLevel0.CreateNewScope();
         var scopeProviderLevel1B = (ScopedProvider)scopeProviderLevel0.CreateNewScope();
-
-        var disposableServiceLevel0 = await scopeProviderLevel0.GetRequiredServiceAsync<IDisposableService>();
-        var disposableServiceLevel1A = await scopeProviderLevel1A.GetRequiredServiceAsync<IDisposableService>();
-        var disposableServiceLevel1B = await scopeProviderLevel1B.GetRequiredServiceAsync<IDisposableService>();
-
+        
+        var disposableServiceLevel0 = scopeProviderLevel0.GetRequiredService<IDisposableService>();
+        var disposableServiceLevel1A = scopeProviderLevel1A.GetRequiredService<IDisposableService>();
+        var disposableServiceLevel1B = scopeProviderLevel1B.GetRequiredService<IDisposableService>();
+        
         // Act
         int originalScopeCount = scopeProviderLevel0.ChildScopes.Count;
         await scopeProviderLevel1A.DisposeAsync();
@@ -191,7 +191,7 @@ public class ScopedProviderTests {
         await Assert.That(scopeProviderLevel0).IsNotNull();
         await Assert.That(scopeProviderLevel0.ChildScopes).HasCount().EqualTo(1);
         await Assert.That(remainingScope).IsEqualTo(scopeProviderLevel1B);
-
+        
         await Assert.That(scopeProviderLevel1A.ParentScope).IsNull();
         await Assert.That(scopeProviderLevel1A.Instances).IsEmpty();
         await Assert.That(scopeProviderLevel1A.DisposableInstances).IsEmpty();

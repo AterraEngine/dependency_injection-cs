@@ -5,12 +5,11 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public interface IScopedProvider : IReadOnlyCollection<IServiceRecord>, IDisposable, IAsyncDisposable {
-    ValueTask<TService?> GetServiceAsync<TService>() where TService : class;
-    ValueTask<object?> GetServiceAsync(Type service);
+public interface IScopedProvider : IReadOnlyCollection<IServiceRecord>, IDisposable, IAsyncDisposable, IServiceProvider {
+    TService? GetService<TService>() where TService : class;
 
-    ValueTask<TService> GetRequiredServiceAsync<TService>() where TService : class;
-    ValueTask<object> GetRequiredServiceAsync(Type service);
+    TService GetRequiredService<TService>() where TService : class;
+    object GetRequiredService(Type service);
 
     IScopedProvider CreateNewScope();
     IScopedProvider CreateDeeperScope();

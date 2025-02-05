@@ -10,3 +10,4 @@ public class TransientServiceAttribute(Type serviceType) : ServiceAttribute(serv
 
 [AttributeUsage(AttributeTargets.Class)]
 public class TransientServiceAttribute<TService>() : TransientServiceAttribute(typeof(TService));
+
