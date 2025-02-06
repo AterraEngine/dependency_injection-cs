@@ -22,24 +22,20 @@ public record ServiceRecord<TService>(
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public FrozenServiceRecord ToFrozen() {
-        var depth = FrozenServiceRecord.KnownScopeDepth.Transient;// same as checking for IsTransient;
-
-        if (IsSingleton) depth = FrozenServiceRecord.KnownScopeDepth.Singleton;
-        if (IsProviderScoped) depth = FrozenServiceRecord.KnownScopeDepth.ProviderScoped;
-        if (ScopeDepth > (int)DefaultScopeDepth.ProviderScoped) depth = FrozenServiceRecord.KnownScopeDepth.CustomScoped;
-
-        var disposal = FrozenServiceRecord.DisposalType.None;
-        if (IsDisposable) disposal = FrozenServiceRecord.DisposalType.Disposable;
-        if (IsAsyncDisposable) disposal = FrozenServiceRecord.DisposalType.AsyncDisposable;
-
-        // Create the FrozenServiceRecord using the combined flags
-        return new FrozenServiceRecord(
-            Id,
-            ImplementationFactory,
-            ScopeDepth,
-            depth,
-            disposal
-        );
-    }
+    public FrozenServiceRecord ToFrozen() => new(
+        Id,
+        ImplementationFactory,
+        ScopeDepth,
+        Depth:this switch {
+            { IsSingleton: true } => FrozenServiceRecord.KnownScopeDepth.Singleton,
+            { IsProviderScoped: true } => FrozenServiceRecord.KnownScopeDepth.ProviderScoped,
+            { ScopeDepth: > (int)DefaultScopeDepth.ProviderScoped } => FrozenServiceRecord.KnownScopeDepth.CustomScoped,
+            _ => FrozenServiceRecord.KnownScopeDepth.Transient,
+        },
+        Disposal: this switch {
+            { IsDisposable: true } => FrozenServiceRecord.DisposalType.Disposable,
+            { IsAsyncDisposable: true } => FrozenServiceRecord.DisposalType.AsyncDisposable,
+            _ => FrozenServiceRecord.DisposalType.None,
+        }
+    );
 }

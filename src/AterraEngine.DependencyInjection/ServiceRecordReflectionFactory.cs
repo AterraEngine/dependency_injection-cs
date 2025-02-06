@@ -2,6 +2,7 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -23,6 +24,7 @@ public static class ServiceRecordReflectionFactory {
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public static ServiceRecord<TService> CreateWithFactory<TService, TImplementation>(int scopeDepth) where TImplementation : class, TService {
         Type type = typeof(TImplementation);
         if (type.GetConstructors() is { Length: 0 }) throw new Exception("No constructors");

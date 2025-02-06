@@ -4,6 +4,7 @@
 using AterraEngine.DependencyInjection.Services;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace AterraEngine.DependencyInjection;
@@ -11,21 +12,23 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceCollection : IServiceCollection {
+    internal ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
+    internal ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
 
-    private static readonly Lazy<MethodInfo[]> ServiceCollectionMethods = new(static () => typeof(ServiceCollection).GetMethods(BindingFlags.Instance | BindingFlags.Public));
-
+    public int Count => Records.Count;
+    public bool IsReadOnly { get; private set; }
+    
+    private static readonly Lazy<MethodInfo[]> ServiceCollectionMethods = new(ServiceCollectionMethodsFactory);
+    
     private readonly Lazy<MethodInfo> _addServiceMethodByImplementationType = new(static () => ServiceCollectionMethods.Value
         .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
 
     private readonly Lazy<MethodInfo> _addServiceMethodByServiceAndImplementationTypes = new(static () => ServiceCollectionMethods.Value
         .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
 
-    internal ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
-    internal ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
-
-    public int Count => Records.Count;
-    public bool IsReadOnly { get; private set; }
-
+    // -----------------------------------------------------------------------------------------------------------------
+    // Methods
+    // -----------------------------------------------------------------------------------------------------------------
     public IScopedProvider Build() {
         IServiceContainer container = ServiceContainer.FromCollection(this);
         IScopedProvider provider = container.GetRootScopedProvider();
@@ -36,11 +39,11 @@ public class ServiceCollection : IServiceCollection {
 
     private void ThrowIfReadOnly() {
         if (IsReadOnly) throw new InvalidOperationException("Collection is read only");
-    }
+    }    
+    
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
+    private static MethodInfo[] ServiceCollectionMethodsFactory() => typeof(ServiceCollection).GetMethods(BindingFlags.Instance | BindingFlags.Public);
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Methods
-    // -----------------------------------------------------------------------------------------------------------------
     #region AddService
     public IServiceCollection AddService<TImplementation>(int scopeLevel) where TImplementation : class => AddService<TImplementation, TImplementation>(scopeLevel);
     public IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService {
@@ -66,12 +69,14 @@ public class ServiceCollection : IServiceCollection {
     }
 
     #region AddService by Type argument
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public IServiceCollection AddService(Type implementation, int scopeLevel) =>
         _addServiceMethodByImplementationType.Value
             .MakeGenericMethod(implementation)
             .Invoke(this, [scopeLevel]) as IServiceCollection
         ?? throw new InvalidOperationException();
 
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public IServiceCollection AddService(Type service, Type implementation, int scopeLevel) =>
         _addServiceMethodByServiceAndImplementationTypes.Value
             .MakeGenericMethod(service, implementation)
@@ -87,9 +92,11 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService
         => AddService<TService, TImplementation>((int)DefaultScopeDepth.Singleton);
 
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public IServiceCollection AddSingleton(Type implementation)
         => AddService(implementation, (int)DefaultScopeDepth.Singleton);
 
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public IServiceCollection AddSingleton(Type service, Type implementation)
         => AddService(service, implementation, (int)DefaultScopeDepth.Singleton);
 
@@ -107,9 +114,11 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService
         => AddService<TService, TImplementation>((int)DefaultScopeDepth.Transient);
 
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public IServiceCollection AddTransient(Type implementation)
         => AddService(implementation, (int)DefaultScopeDepth.Transient);
 
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public IServiceCollection AddTransient(Type service, Type implementation)
         => AddService(service, implementation, (int)DefaultScopeDepth.Transient);
 
@@ -127,9 +136,11 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddScoped<TService, TImplementation>() where TImplementation : class, TService
         => AddService<TService, TImplementation>((int)DefaultScopeDepth.ProviderScoped);
 
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public IServiceCollection AddScoped(Type implementation)
         => AddService(implementation, (int)DefaultScopeDepth.ProviderScoped);
 
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public IServiceCollection AddScoped(Type service, Type implementation)
         => AddService(service, implementation, (int)DefaultScopeDepth.ProviderScoped);
 
