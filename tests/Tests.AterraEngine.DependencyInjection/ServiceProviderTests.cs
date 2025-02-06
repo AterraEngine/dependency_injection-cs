@@ -21,6 +21,7 @@ public class ScopedProviderTests {
         // Assert
         await Assert.That(provider)
             .IsNotNull()
+            .And.IsTypeOf<ScopedProvider>()
             .And.HasCount().EqualTo(0);
     }
 
@@ -52,6 +53,7 @@ public class ScopedProviderTests {
         // Assert
         await Assert.That(provider)
             .IsNotNull()
+            .And.IsTypeOf<ScopedProvider>()
             .And.HasCount().EqualTo(count);
     }
 
@@ -158,8 +160,6 @@ public class ScopedProviderTests {
         
         await Assert.That(scopeProviderLevel1A.ParentScope).IsNull();
         await Assert.That(scopeProviderLevel1A.Instances).IsEmpty();
-        await Assert.That(scopeProviderLevel1A.DisposableInstances).IsEmpty();
-        await Assert.That(scopeProviderLevel1A.AsyncDisposableInstances).IsEmpty();
         await Assert.That(scopeProviderLevel1A.ChildScopes).IsEmpty();
 
         await Assert.That(disposableServiceLevel0.ConnectionString).IsNotNull();
@@ -194,8 +194,6 @@ public class ScopedProviderTests {
         
         await Assert.That(scopeProviderLevel1A.ParentScope).IsNull();
         await Assert.That(scopeProviderLevel1A.Instances).IsEmpty();
-        await Assert.That(scopeProviderLevel1A.DisposableInstances).IsEmpty();
-        await Assert.That(scopeProviderLevel1A.AsyncDisposableInstances).IsEmpty();
         await Assert.That(scopeProviderLevel1A.ChildScopes).IsEmpty();
 
         await Assert.That(disposableServiceLevel0.ConnectionString).IsNotNull();

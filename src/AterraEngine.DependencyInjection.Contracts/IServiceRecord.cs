@@ -1,14 +1,12 @@
-﻿// ---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using System.Diagnostics.CodeAnalysis;
-
 namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public interface IServiceRecord {
-    Guid Id { get; }
+    Guid Id { get; set; }
     Type ServiceType { get; }
     Type ImplementationType { get; }
     int ScopeDepth { get; }
@@ -18,7 +16,6 @@ public interface IServiceRecord {
     bool IsProviderScoped { get; }
     bool IsDisposable { get; }
     bool IsAsyncDisposable { get; }
-    bool HasFactory { get; }
-
-    bool TryGetFactory<TService>([NotNullWhen(true)] out Func<IScopedProvider, TService>? factory);
+    
+    FrozenServiceRecord ToFrozen();
 }

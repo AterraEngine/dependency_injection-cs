@@ -5,7 +5,7 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public interface IScopedProvider : IReadOnlyCollection<IServiceRecord>, IDisposable, IAsyncDisposable {
+public interface IScopedProvider : IDisposable, IAsyncDisposable {
     TService? GetService<TService>() where TService : class;
     object? GetService(Type serviceType);
 

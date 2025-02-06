@@ -23,6 +23,7 @@ public class ServiceCollectionTests {
         // Assert
         await Assert.That(provider)
             .IsNotNull()
+            .And.IsTypeOf<ScopedProvider>()
             .And.HasCount().EqualTo(1);
 
         await Assert.That(service)
@@ -47,6 +48,7 @@ public class ServiceCollectionTests {
         // Assert
         await Assert.That(provider)
             .IsNotNull()
+            .And.IsTypeOf<ScopedProvider>()
             .And.HasCount().EqualTo(2);// Expecting two services registered
 
         await Assert.That(emptyService)
@@ -69,6 +71,7 @@ public class ServiceCollectionTests {
         // Assert
         await Assert.That(provider)
             .IsNotNull()
+            .And.IsTypeOf<ScopedProvider>()
             .And.HasCount().EqualTo(1);
 
         await Assert.That(service).IsTypeOf<ScopedProviderRequiredService>();
@@ -174,13 +177,11 @@ public class ServiceCollectionTests {
         
         await Assert.That(factoryRecord).IsNotNull()
             .And.IsAssignableTo<IServiceRecord>()
-            .And.HasMember(static bool (record) => record.HasFactory).EqualTo(true).Because("Should have a factory")
             .And.HasMember(static bool (record) => record.IsTransient).EqualTo(false).Because("Should not be transient")
             .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(true).Because("Should be a singleton");
         
         await Assert.That(serviceRecord).IsNotNull()
             .And.IsAssignableTo<IServiceRecord>()
-            .And.HasMember(static bool (record) => record.HasFactory).EqualTo(true).Because("Should have a factory")
             .And.HasMember(static bool (record) => record.IsTransient).EqualTo(true).Because("Should not be transient")
             .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(false).Because("Should be a singleton");
     }
@@ -208,13 +209,11 @@ public class ServiceCollectionTests {
         
         await Assert.That(factoryRecord).IsNotNull()
             .And.IsAssignableTo<IServiceRecord>()
-            .And.HasMember(static bool (record) => record.HasFactory).EqualTo(true).Because("Should have a factory")
             .And.HasMember(static bool (record) => record.IsTransient).EqualTo(true).Because("Should be transient")
             .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(false).Because("Should not be a singleton");
         
         await Assert.That(serviceRecord).IsNotNull()
             .And.IsAssignableTo<IServiceRecord>()
-            .And.HasMember(static bool (record) => record.HasFactory).EqualTo(true).Because("Should have a factory")
             .And.HasMember(static bool (record) => record.IsTransient).EqualTo(true).Because("Should not be transient")
             .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(false).Because("Should be a singleton");
     }

@@ -1,8 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using System.Diagnostics.CodeAnalysis;
-
 namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
@@ -10,39 +8,38 @@ namespace AterraEngine.DependencyInjection;
 public record ServiceRecord<TService>(
     Type ServiceType,
     Type ImplementationType,
-    Func<IScopedProvider, TService>? ImplementationFactory,
+    Func<IScopedProvider, TService> ImplementationFactory,
     int ScopeDepth
 ) : IServiceRecord {
 
-    public Guid Id { get; } = Guid.CreateVersion7();
+    public Guid Id { get; set; } = Guid.CreateVersion7();
     public bool IsTransient { get; } = ScopeDepth == (int)DefaultScopeDepth.Transient;
     public bool IsSingleton { get; } = ScopeDepth == (int)DefaultScopeDepth.Singleton;
     public bool IsProviderScoped { get; } = ScopeDepth == (int)DefaultScopeDepth.ProviderScoped;
     public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
-    public bool HasFactory => ImplementationFactory is not null; // ImplementationFactory can be updated, so this needs to be computed on every call.
-
-    // -----------------------------------------------------------------------------------------------------------------
-    // Constructors
-    // -----------------------------------------------------------------------------------------------------------------
-    public ServiceRecord(
-        Type ServiceType,
-        Type ImplementationType,
-        Func<IScopedProvider, TService>? ImplementationFactory,
-        DefaultScopeDepth ScopeDepth
-    ) : this(ServiceType, ImplementationType, ImplementationFactory, (int)ScopeDepth) {}
     
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IScopedProvider, T>? factory) {
-        factory = null;
-        // TODO The absence of a factory at this point should raise a lot of red flags and not simply return a false.
-        if (!HasFactory) return false; // No need to do complex checks if we don't have a factory.
+    public FrozenServiceRecord ToFrozen() {
+        var depth = FrozenServiceRecord.KnownScopeDepth.Transient; // same as checking for IsTransient;
         
-        if (typeof(T) != typeof(TService)) return false;
-        if (ImplementationFactory is not Func<IScopedProvider, T> casted) return false;
+        if (IsSingleton) depth = FrozenServiceRecord.KnownScopeDepth.Singleton;
+        if (IsProviderScoped) depth = FrozenServiceRecord.KnownScopeDepth.ProviderScoped;
+        if (ScopeDepth > (int)DefaultScopeDepth.ProviderScoped) depth = FrozenServiceRecord.KnownScopeDepth.CustomScoped;
+        
+        var disposal = FrozenServiceRecord.DisposalType.None;
+        if (IsDisposable) disposal = FrozenServiceRecord.DisposalType.Disposable;
+        if (IsAsyncDisposable) disposal = FrozenServiceRecord.DisposalType.AsyncDisposable;
 
-        return (factory = casted) is not null;
+        // Create the FrozenServiceRecord using the combined flags
+        return new FrozenServiceRecord(
+            Id,
+            ImplementationFactory,
+            ScopeDepth,
+            depth,
+            disposal
+        );
     }
 }
