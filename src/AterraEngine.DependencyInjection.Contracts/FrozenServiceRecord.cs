@@ -26,6 +26,11 @@ public readonly record struct FrozenServiceRecord(
         factory = null;
         return false;
     }
+
+    public void ThrowIfDeeperScopeRequired(int targetDepth) {
+        if (ScopeDepth <= targetDepth) return;
+        throw new DeeperScopeRequiredException($"Required scope's depth {ScopeDepth} is deeper than the current scope's depth of {targetDepth}");
+    }
     
     public enum KnownScopeDepth : byte {
         Transient,

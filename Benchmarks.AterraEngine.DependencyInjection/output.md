@@ -1,8 +1,8 @@
 | Type                                | Method                                                      | Mean          | Error       | StdDev      | Ratio | RatioSD | Gen0   | Gen1   | Allocated | Alloc Ratio |
 |------------------------------------ |------------------------------------------------------------ |--------------:|------------:|------------:|------:|--------:|-------:|-------:|----------:|------------:|
-| RepeatedServiceCollectionBenchmarks | Microsoft_AddBuildAndRetrieve_SingleDependency_Transient    | 50,601.090 ns | 864.5431 ns | 721.9327 ns | 1.000 |    0.02 | 2.4414 | 1.0986 |   42607 B |       1.000 |
-| ServiceCollectionBenchmarks         | Microsoft_AddBuildAndRetrieve_SingleDependency              |      5.099 ns |   0.6865 ns |   2.0240 ns | 0.000 |    0.00 | 0.0005 | 0.0001 |       9 B |       0.000 |
-| RepeatedServiceCollectionBenchmarks | AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient | 34,565.184 ns | 412.6734 ns | 386.0150 ns | 0.683 |    0.01 | 2.3804 | 0.7324 |   40264 B |       0.945 |
-| ServiceCollectionBenchmarks         | AterraEngine_AddBuildAndRetrieve_SingleDependency           |      2.658 ns |   0.0524 ns |   0.0971 ns | 0.000 |    0.00 | 0.0005 | 0.0005 |       8 B |       0.000 |
-| RepeatedServiceCollectionBenchmarks | Microsoft_AddBuildAndRetrieve_SingleDependency_Singleton    | 14,700.809 ns | 242.1928 ns | 226.5473 ns | 0.291 |    0.01 | 0.9766 | 0.2136 |   16752 B |       0.393 |
-| RepeatedServiceCollectionBenchmarks | AterraEngine_AddBuildAndRetrieve_SingleDependency_Singleton | 34,501.283 ns | 576.0351 ns | 538.8236 ns | 0.682 |    0.01 | 0.9766 | 0.9155 |   16344 B |       0.384 |
+| RepeatedServiceCollectionBenchmarks | Microsoft_AddBuildAndRetrieve_SingleDependency_Transient    | 51,233.394 ns | 830.6474 ns | 736.3473 ns | 1.000 |    0.02 | 2.4414 | 1.0986 |   42607 B |       1.000 |
+| ServiceCollectionBenchmarks         | Microsoft_AddBuildAndRetrieve_SingleDependency              |      5.198 ns |   0.6428 ns |   1.8954 ns | 0.000 |    0.00 | 0.0005 | 0.0001 |       9 B |       0.000 |
+| RepeatedServiceCollectionBenchmarks | AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient | 32,405.574 ns | 273.7063 ns | 228.5572 ns | 0.633 |    0.01 | 2.2583 | 0.5493 |   38648 B |       0.907 |
+| ServiceCollectionBenchmarks         | AterraEngine_AddBuildAndRetrieve_SingleDependency           |      1.931 ns |   0.0356 ns |   0.0333 ns | 0.000 |    0.00 | 0.0004 | 0.0002 |       7 B |       0.000 |
+| RepeatedServiceCollectionBenchmarks | Microsoft_AddBuildAndRetrieve_SingleDependency_Singleton    | 14,735.571 ns | 133.5552 ns | 118.3932 ns | 0.288 |    0.00 | 0.9918 | 0.2441 |   16752 B |       0.393 |
+| RepeatedServiceCollectionBenchmarks | AterraEngine_AddBuildAndRetrieve_SingleDependency_Singleton | 28,725.204 ns | 555.7780 ns | 519.8751 ns | 0.561 |    0.01 | 0.8545 | 0.2747 |   14784 B |       0.347 |
