@@ -233,4 +233,28 @@ public class ScopedProviderTests {
         await Assert.That(service).IsNotNull();
         await Assert.That(service!.Service).IsNotNull();
     }
+
+    [Test]
+    public async Task ScopedProvider_ShouldUseFactoryService_WhenRegistered() {
+        // Arrange
+        IServiceCollection collection = CollectionHelper.CreateCollectionWithServices(256);
+        collection.AddSingleton<IExampleFactoryService, ExampleFactoryService>();
+        collection.AddServiceFromFactory<IFactoryCreatedService, IExampleFactoryService>((int)DefaultScopeDepth.Transient);
+        IScopedProvider provider = collection.Build();
+        
+        // Act & Assert
+        var factory = provider.GetService<IExampleFactoryService>();
+        await Assert.That(factory).IsNotNull()
+            .And.IsTypeOf<ExampleFactoryService>();
+
+        for (int i = 0; i < 10; i++) {
+            Guid expectedGuid = factory!.SpecificIds[i];
+            
+            var service = provider.GetService<IFactoryCreatedService>();
+            await Assert.That(service).IsNotNull()
+                .And.IsTypeOf<FactoryCreatedService>()
+                .And.HasMember(static Guid (s) => s!.Id).EqualTo(expectedGuid)
+                    .Because("Should have been created by the factory which uses a set of specific ids");
+        }
+    }
 }

@@ -36,10 +36,8 @@ public static class ServiceHelper {
             // Create a parameterless constructor for the class
             ConstructorBuilder _ = classBuilder.DefineDefaultConstructor(MethodAttributes.Public);
 
-            Type implementationType = classBuilder.CreateType();
-
             // Add to the list
-            interfaceImplementationPairs.Add(interfaceType, implementationType);
+            interfaceImplementationPairs.Add(interfaceType, classBuilder.CreateType());
         }
 
         return interfaceImplementationPairs;

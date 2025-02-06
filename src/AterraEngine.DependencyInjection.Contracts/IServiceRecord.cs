@@ -18,6 +18,7 @@ public interface IServiceRecord {
     bool IsProviderScoped { get; }
     bool IsDisposable { get; }
     bool IsAsyncDisposable { get; }
+    bool HasFactory { get; }
 
     bool TryGetFactory<TService>([NotNullWhen(true)] out Func<IScopedProvider, TService>? factory);
 }

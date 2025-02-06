@@ -150,4 +150,72 @@ public class ServiceCollectionTests {
                 .And.IsTypeOf(implementationType);
         }
     }
+
+    [Test]
+    public async Task Collection_AddServiceFromFactory_ShouldAddService() {
+        // Arrange
+        var collection = new ServiceCollection();
+        
+        // Act
+        collection.AddServiceFromFactory<IFactoryCreatedService, ExampleFactoryService>((int)DefaultScopeDepth.Transient, (int)DefaultScopeDepth.Singleton);
+
+        // Assert
+        Dictionary<Type, IServiceRecord> records = collection.ToDictionary(
+            static record => record.ServiceType,
+            static record => record
+        );
+        
+        await Assert.That(collection).HasCount().EqualTo(2);
+        await Assert.That(records.ContainsKey(typeof(IFactoryCreatedService))).IsTrue();
+        await Assert.That(records.ContainsKey(typeof(ExampleFactoryService))).IsTrue();
+        
+        IServiceRecord factoryRecord = records[typeof(ExampleFactoryService)];
+        IServiceRecord serviceRecord = records[typeof(IFactoryCreatedService)];
+        
+        await Assert.That(factoryRecord).IsNotNull()
+            .And.IsAssignableTo<IServiceRecord>()
+            .And.HasMember(static bool (record) => record.HasFactory).EqualTo(true).Because("Should have a factory")
+            .And.HasMember(static bool (record) => record.IsTransient).EqualTo(false).Because("Should not be transient")
+            .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(true).Because("Should be a singleton");
+        
+        await Assert.That(serviceRecord).IsNotNull()
+            .And.IsAssignableTo<IServiceRecord>()
+            .And.HasMember(static bool (record) => record.HasFactory).EqualTo(true).Because("Should have a factory")
+            .And.HasMember(static bool (record) => record.IsTransient).EqualTo(true).Because("Should not be transient")
+            .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(false).Because("Should be a singleton");
+    }
+    
+    [Test]
+    public async Task Collection_AddServiceFromFactory_ShouldAddService_SameScope() {
+        // Arrange
+        var collection = new ServiceCollection();
+        
+        // Act
+        collection.AddServiceFromFactory<IFactoryCreatedService, ExampleFactoryService>((int)DefaultScopeDepth.Transient);
+
+        // Assert
+        Dictionary<Type, IServiceRecord> records = collection.ToDictionary(
+            static record => record.ServiceType,
+            static record => record
+        );
+        
+        await Assert.That(collection).HasCount().EqualTo(2);
+        await Assert.That(records.ContainsKey(typeof(IFactoryCreatedService))).IsTrue();
+        await Assert.That(records.ContainsKey(typeof(ExampleFactoryService))).IsTrue();
+        
+        IServiceRecord factoryRecord = records[typeof(ExampleFactoryService)];
+        IServiceRecord serviceRecord = records[typeof(IFactoryCreatedService)];
+        
+        await Assert.That(factoryRecord).IsNotNull()
+            .And.IsAssignableTo<IServiceRecord>()
+            .And.HasMember(static bool (record) => record.HasFactory).EqualTo(true).Because("Should have a factory")
+            .And.HasMember(static bool (record) => record.IsTransient).EqualTo(true).Because("Should be transient")
+            .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(false).Because("Should not be a singleton");
+        
+        await Assert.That(serviceRecord).IsNotNull()
+            .And.IsAssignableTo<IServiceRecord>()
+            .And.HasMember(static bool (record) => record.HasFactory).EqualTo(true).Because("Should have a factory")
+            .And.HasMember(static bool (record) => record.IsTransient).EqualTo(true).Because("Should not be transient")
+            .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(false).Because("Should be a singleton");
+    }
 }

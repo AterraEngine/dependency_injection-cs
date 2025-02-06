@@ -1,6 +1,7 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using AterraEngine.DependencyInjection.Services;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
@@ -10,7 +11,8 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceCollection : IServiceCollection {
-    private ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
+    internal ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
+    internal ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
@@ -18,12 +20,19 @@ public class ServiceCollection : IServiceCollection {
     #region AddService
     public IServiceCollection AddService<TImplementation>(int scopeLevel) where TImplementation : class => AddService<TImplementation, TImplementation>(scopeLevel);
     public IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService {
-        Records.AddOrUpdate(
-            typeof(TService),
-            addValueFactory: _ => ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel),
-            updateValueFactory: (_, _) => ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel)
-        );
+        ServiceRecord<TService> record = ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel);
 
+        // If the service already exists, discard the old one and replace it with the new one
+        //      Yes we are pushing them to the discarded stack.
+        //      For now this just takes up memory, but will be used during Container construction
+        if (Records.ContainsKey(typeof(TService)) && Records.TryRemove(typeof(TService), out IServiceRecord? oldServiceRecord)) {
+            DiscardedRecords.Push(oldServiceRecord);
+        }
+
+        if (!Records.TryAdd(typeof(TService), record)) {
+            throw new InvalidOperationException($"Collision in service records of type {typeof(TService)}");
+        }
+        
         return this;
     }
     
@@ -32,13 +41,22 @@ public class ServiceCollection : IServiceCollection {
         return this;
     }
     
-    public IServiceCollection AddService<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class
+    public IServiceCollection AddServiceFromFactory<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class
         => AddService(new ServiceRecord<TService>(typeof(TService), typeof(TService), factory, scopeLevel));
+
+    public IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel, int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> {
+        if (!Records.ContainsKey(typeof(TFactory))) AddService<TFactory>(scopeLevelFactory ?? scopeLevel);
+        
+        return AddServiceFromFactory<TService>(
+            static provider =>  provider.GetRequiredService<TFactory>().Create(provider),
+            scopeLevel
+        );
+    }
 
     #region AddService by Type argument
     private readonly Lazy<MethodInfo> _addServiceMethod1 = new(static () => typeof(ServiceCollection)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
+        .Single(m => m is { Name: nameof(AddServiceFromFactory), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
 
     public IServiceCollection AddService(Type implementation, int scopeLevel) =>
         _addServiceMethod1.Value
@@ -71,8 +89,8 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddSingleton(Type service, Type implementation) 
         => AddService(service, implementation, (int)DefaultScopeDepth.Singleton);
 
-    public IServiceCollection AddSingleton<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class
-        => AddService(factory, (int)DefaultScopeDepth.Singleton);
+    public IServiceCollection AddSingleton<TService>(Func<IScopedProvider, TService> factory) where TService : class
+        => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Singleton);
     #endregion
 
     #region AddTransient
@@ -89,7 +107,7 @@ public class ServiceCollection : IServiceCollection {
         => AddService(service, implementation, (int)DefaultScopeDepth.Transient);
     
     public IServiceCollection AddTransient<TService>(Func<IScopedProvider, TService> factory) where TService : class 
-        => AddService(factory, (int)DefaultScopeDepth.Transient);
+        => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Transient);
     #endregion
 
     #region AddScoped
@@ -106,7 +124,7 @@ public class ServiceCollection : IServiceCollection {
         => AddService(service, implementation, (int)DefaultScopeDepth.ProviderScoped);
     
     public IServiceCollection AddScoped<TService>(Func<IScopedProvider, TService> factory) where TService : class 
-        => AddService(factory, (int)DefaultScopeDepth.ProviderScoped);
+        => AddServiceFromFactory(factory, (int)DefaultScopeDepth.ProviderScoped);
     #endregion
 
     #region ICollection<IServiceRecord>
@@ -146,5 +164,5 @@ public class ServiceCollection : IServiceCollection {
     public bool IsReadOnly => false;
     #endregion
 
-    public IScopedProvider Build() => new ScopedProvider(ServiceContainer.FromCollection(Records));
+    public IScopedProvider Build() => new ScopedProvider(ServiceContainer.FromCollection(this));
 }

@@ -1,6 +1,8 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using AterraEngine.DependencyInjection.Services;
+
 namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
@@ -10,13 +12,14 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService;
     IServiceCollection AddService(Type implementation, int scopeLevel);
     IServiceCollection AddService(Type service, Type implementation, int scopeLevel);
-    IServiceCollection AddService<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class;
-
+    IServiceCollection AddServiceFromFactory<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class;
+    IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel, int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService>  where TService : class;
+    
     IServiceCollection AddSingleton<TImplementation>() where TImplementation : class;
     IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService;
     IServiceCollection AddSingleton(Type implementation);
     IServiceCollection AddSingleton(Type service, Type implementation);
-    IServiceCollection AddSingleton<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class;
+    IServiceCollection AddSingleton<TService>(Func<IScopedProvider, TService> factory) where TService : class;
 
     IServiceCollection AddTransient<TImplementation>() where TImplementation : class;
     IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService;

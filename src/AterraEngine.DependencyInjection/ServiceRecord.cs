@@ -20,6 +20,7 @@ public record ServiceRecord<TService>(
     public bool IsProviderScoped { get; } = ScopeDepth == (int)DefaultScopeDepth.ProviderScoped;
     public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
+    public bool HasFactory => ImplementationFactory is not null; // ImplementationFactory can be updated, so this needs to be computed on every call.
 
     // -----------------------------------------------------------------------------------------------------------------
     // Constructors
@@ -36,6 +37,9 @@ public record ServiceRecord<TService>(
     // -----------------------------------------------------------------------------------------------------------------
     public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IScopedProvider, T>? factory) {
         factory = null;
+        // TODO The absence of a factory at this point should raise a lot of red flags and not simply return a false.
+        if (!HasFactory) return false; // No need to do complex checks if we don't have a factory.
+        
         if (typeof(T) != typeof(TService)) return false;
         if (ImplementationFactory is not Func<IScopedProvider, T> casted) return false;
 
