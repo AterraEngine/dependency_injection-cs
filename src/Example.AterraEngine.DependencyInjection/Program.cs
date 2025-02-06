@@ -12,7 +12,7 @@ public static class Program {
     public enum ServiceLifetime {
         Transient = -1,
         Singleton = 0,
-        Scoped = 1, 
+        Scoped = 1,
         EngineScope = 2,
         GameScope = 3,
         WorldScope = 4,

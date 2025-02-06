@@ -158,60 +158,60 @@ public class ServiceCollectionTests {
     public async Task Collection_AddServiceFromFactory_ShouldAddService() {
         // Arrange
         var collection = new ServiceCollection();
-        
+
         // Act
         collection.AddServiceFromFactory<IFactoryCreatedService, ExampleFactoryService>((int)DefaultScopeDepth.Transient, (int)DefaultScopeDepth.Singleton);
 
         // Assert
         Dictionary<Type, IServiceRecord> records = collection.ToDictionary(
-            static record => record.ServiceType,
-            static record => record
+            keySelector: static record => record.ServiceType,
+            elementSelector: static record => record
         );
-        
+
         await Assert.That(collection).HasCount().EqualTo(2);
         await Assert.That(records.ContainsKey(typeof(IFactoryCreatedService))).IsTrue();
         await Assert.That(records.ContainsKey(typeof(ExampleFactoryService))).IsTrue();
-        
+
         IServiceRecord factoryRecord = records[typeof(ExampleFactoryService)];
         IServiceRecord serviceRecord = records[typeof(IFactoryCreatedService)];
-        
+
         await Assert.That(factoryRecord).IsNotNull()
             .And.IsAssignableTo<IServiceRecord>()
             .And.HasMember(static bool (record) => record.IsTransient).EqualTo(false).Because("Should not be transient")
             .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(true).Because("Should be a singleton");
-        
+
         await Assert.That(serviceRecord).IsNotNull()
             .And.IsAssignableTo<IServiceRecord>()
             .And.HasMember(static bool (record) => record.IsTransient).EqualTo(true).Because("Should not be transient")
             .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(false).Because("Should be a singleton");
     }
-    
+
     [Test]
     public async Task Collection_AddServiceFromFactory_ShouldAddService_SameScope() {
         // Arrange
         var collection = new ServiceCollection();
-        
+
         // Act
         collection.AddServiceFromFactory<IFactoryCreatedService, ExampleFactoryService>((int)DefaultScopeDepth.Transient);
 
         // Assert
         Dictionary<Type, IServiceRecord> records = collection.ToDictionary(
-            static record => record.ServiceType,
-            static record => record
+            keySelector: static record => record.ServiceType,
+            elementSelector: static record => record
         );
-        
+
         await Assert.That(collection).HasCount().EqualTo(2);
         await Assert.That(records.ContainsKey(typeof(IFactoryCreatedService))).IsTrue();
         await Assert.That(records.ContainsKey(typeof(ExampleFactoryService))).IsTrue();
-        
+
         IServiceRecord factoryRecord = records[typeof(ExampleFactoryService)];
         IServiceRecord serviceRecord = records[typeof(IFactoryCreatedService)];
-        
+
         await Assert.That(factoryRecord).IsNotNull()
             .And.IsAssignableTo<IServiceRecord>()
             .And.HasMember(static bool (record) => record.IsTransient).EqualTo(true).Because("Should be transient")
             .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(false).Because("Should not be a singleton");
-        
+
         await Assert.That(serviceRecord).IsNotNull()
             .And.IsAssignableTo<IServiceRecord>()
             .And.HasMember(static bool (record) => record.IsTransient).EqualTo(true).Because("Should not be transient")
@@ -223,36 +223,36 @@ public class ServiceCollectionTests {
         // Arrange
         ServiceCollection collection = [];
         collection.AddSingleton<IEmptyService, EmptyService>();
-        
+
         // Act
         bool isReadOnly = collection.IsReadOnly;
-        
+
         // Assert
         await Assert.That(isReadOnly).IsFalse();
     }
-    
+
     [Test]
     public async Task Collection_IsReadOnly_Should_Return_True() {
         // Arrange
         var collection = new ServiceCollection();
         collection.AddSingleton<IEmptyService, EmptyService>();
         IScopedProvider provider = collection.Build();
-        
+
         // Act
         bool isReadOnly = collection.IsReadOnly;
-        
+
         // Assert
         await Assert.That(provider).IsNotNull();
         await Assert.That(isReadOnly).IsTrue();
     }
-    
+
     [Test]
     public async Task Collection_ShouldThrow_WhenAddingAfterBuild() {
         // Arrange
         var collection = new ServiceCollection();
         collection.AddSingleton<IEmptyService, EmptyService>();
         IScopedProvider provider = collection.Build();
-        
+
         // Act & Assert
         await Assert.That(provider).IsNotNull();
         Assert.Throws<InvalidOperationException>(() => collection.AddSingleton<IEmptyService, EmptyService>());

@@ -8,13 +8,14 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public interface IServiceCollection : ICollection<IServiceRecord> {
+    IServiceCollection AddService(IServiceRecord record);
     IServiceCollection AddService<TImplementation>(int scopeLevel) where TImplementation : class;
     IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService;
     IServiceCollection AddService(Type implementation, int scopeLevel);
     IServiceCollection AddService(Type service, Type implementation, int scopeLevel);
     IServiceCollection AddServiceFromFactory<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class;
-    IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel, int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService>  where TService : class;
-    
+    IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel, int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
+
     IServiceCollection AddSingleton<TImplementation>() where TImplementation : class;
     IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService;
     IServiceCollection AddSingleton(Type implementation);

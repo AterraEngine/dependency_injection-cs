@@ -1,5 +1,5 @@
-| Type                                | Method                                                      | Mean          | Error       | StdDev      | Ratio | RatioSD | Gen0   | Gen1   | Allocated | Alloc Ratio |
-|------------------------------------ |------------------------------------------------------------ |--------------:|------------:|------------:|------:|--------:|-------:|-------:|----------:|------------:|
+| Type                                | Method                                                      |          Mean |       Error |      StdDev | Ratio | RatioSD |   Gen0 |   Gen1 | Allocated | Alloc Ratio |
+|-------------------------------------|-------------------------------------------------------------|--------------:|------------:|------------:|------:|--------:|-------:|-------:|----------:|------------:|
 | RepeatedServiceCollectionBenchmarks | Microsoft_AddBuildAndRetrieve_SingleDependency_Transient    | 51,233.394 ns | 830.6474 ns | 736.3473 ns | 1.000 |    0.02 | 2.4414 | 1.0986 |   42607 B |       1.000 |
 | ServiceCollectionBenchmarks         | Microsoft_AddBuildAndRetrieve_SingleDependency              |      5.198 ns |   0.6428 ns |   1.8954 ns | 0.000 |    0.00 | 0.0005 | 0.0001 |       9 B |       0.000 |
 | RepeatedServiceCollectionBenchmarks | AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient | 32,405.574 ns | 273.7063 ns | 228.5572 ns | 0.633 |    0.01 | 2.2583 | 0.5493 |   38648 B |       0.907 |

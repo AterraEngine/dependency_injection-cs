@@ -13,11 +13,11 @@ public static class ServiceRecordReflectionFactory {
     private static readonly MethodInfo GetRequiredServiceMethod = typeof(IScopedProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(IScopedProvider.GetRequiredService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
-    
+
     private static readonly MethodInfo GetServiceMethod = typeof(IScopedProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(IScopedProvider.GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
-    
+
     private static readonly FrozenSet<Type> ResolveAsScopedProvider = new[] { typeof(IServiceProvider), typeof(IScopedProvider) }.ToFrozenSet();
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ public static class ServiceRecordReflectionFactory {
                 arguments[i] = parameterExpression;
                 continue;
             }
-            
+
             // Check if the parameter type is specifically T?
             //      This means we can allow for services to not always having to be implemented
             if (parameter.IsNullableReferenceType() || parameter is { HasDefaultValue: true, DefaultValue: null }) {
@@ -76,13 +76,14 @@ public static class ServiceRecordReflectionFactory {
                     parameterExpression,
                     GetServiceMethod.MakeGenericMethod(parameterType)
                 );
+
                 continue;
             }
-            
+
             arguments[i] = Expression.Call(
-                    parameterExpression,
-                    GetRequiredServiceMethod.MakeGenericMethod(parameterType)
-                );
+                parameterExpression,
+                GetRequiredServiceMethod.MakeGenericMethod(parameterType)
+            );
         }
 
         // Create a constructor call with the generated arguments
@@ -90,7 +91,7 @@ public static class ServiceRecordReflectionFactory {
 
         // Build the lambda expression for the factory
         Expression<Func<IScopedProvider, TService>> lambda = Expression.Lambda<Func<IScopedProvider, TService>>(constructorCall, parameterExpression);
-        Func<IScopedProvider, TService> compiled = lambda.Compile();// Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>, ...)
+        Func<IScopedProvider, TService> compiled = lambda.Compile(); // Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>(), ...)
 
         // Actually store the record
         return new ServiceRecord<TService>(

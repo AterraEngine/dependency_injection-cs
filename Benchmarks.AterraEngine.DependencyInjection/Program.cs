@@ -15,10 +15,10 @@ public static class Program {
         if (projectDir is null) return;
 
         ManualConfig config = DefaultConfig.Instance
-            .WithArtifactsPath(projectDir) // Set the output to the directory of the .csproj
+            .WithArtifactsPath(projectDir)// Set the output to the directory of the .csproj
             .AddExporter(MarkdownExporter.Default);
 
-        
+
         // Run all benchmarks in parallel
         var switcher = new BenchmarkSwitcher([
             typeof(RepeatedServiceCollectionBenchmarks),

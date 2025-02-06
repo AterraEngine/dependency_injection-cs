@@ -4,7 +4,6 @@
 using Microsoft.CodeAnalysis;
 
 namespace AterraEngine.DependencyInjection.Generators;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -17,15 +16,14 @@ public static class Diagnostics {
         "DependencyInjection",
         DiagnosticSeverity.Warning,
         true);
-    
-    public static Diagnostic InterfaceNotImplemented(Location location, string className, string attributeName, string serviceType) {
-        return Diagnostic.Create(
+
+    public static Diagnostic InterfaceNotImplemented(Location location, string className, string attributeName, string serviceType) =>
+        Diagnostic.Create(
             InterfaceNotImplementedDescriptor,
             location,
             className,
             attributeName,
             serviceType
         );
-    }
     #endregion
 }

@@ -18,17 +18,17 @@ public record ServiceRecord<TService>(
     public bool IsProviderScoped { get; } = ScopeDepth == (int)DefaultScopeDepth.ProviderScoped;
     public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
-    
+
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
     public FrozenServiceRecord ToFrozen() {
-        var depth = FrozenServiceRecord.KnownScopeDepth.Transient; // same as checking for IsTransient;
-        
+        var depth = FrozenServiceRecord.KnownScopeDepth.Transient;// same as checking for IsTransient;
+
         if (IsSingleton) depth = FrozenServiceRecord.KnownScopeDepth.Singleton;
         if (IsProviderScoped) depth = FrozenServiceRecord.KnownScopeDepth.ProviderScoped;
         if (ScopeDepth > (int)DefaultScopeDepth.ProviderScoped) depth = FrozenServiceRecord.KnownScopeDepth.CustomScoped;
-        
+
         var disposal = FrozenServiceRecord.DisposalType.None;
         if (IsDisposable) disposal = FrozenServiceRecord.DisposalType.Disposable;
         if (IsAsyncDisposable) disposal = FrozenServiceRecord.DisposalType.AsyncDisposable;

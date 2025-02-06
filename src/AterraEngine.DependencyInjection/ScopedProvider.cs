@@ -51,42 +51,45 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
 
         return null;// if all fails, return null
     }
-    
+
     private TService? ResolveServiceInstance<TService>(FrozenServiceRecord record)
         where TService : class {
-        
+
         switch (record.Depth) {
-            case FrozenServiceRecord.KnownScopeDepth.ProviderScoped : {
+            case FrozenServiceRecord.KnownScopeDepth.ProviderScoped: {
                 if (Instances.TryGetValue(record.Id, out object? cachedInstance)) return cachedInstance as TService;
                 if (!record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? scopedFactory)) return null;
 
                 TService instance = scopedFactory(this);
                 if (!Instances.TryAdd(record.Id, instance)) return null;
+
                 return instance;
             }
-            
+
             case FrozenServiceRecord.KnownScopeDepth.Singleton: {
                 return serviceContainer.GetSingletonService<TService>(record, this);
             }
-            
+
             case FrozenServiceRecord.KnownScopeDepth.Transient: {
                 if (!record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? transientFactory)) return null;
+
                 return transientFactory(this);
             }
 
             case FrozenServiceRecord.KnownScopeDepth.CustomScoped: {
                 // Scope deeper than current one is handled first
                 if (record.ScopeDepth != ScopeDepth) return ParentScope?.ResolveServiceInstance<TService>(record);
-                goto case FrozenServiceRecord.KnownScopeDepth.ProviderScoped; 
+
+                goto case FrozenServiceRecord.KnownScopeDepth.ProviderScoped;
             }
-            
+
             default: return null;
         }
     }
 
     public TService GetRequiredService<TService>() where TService : class {
         Type typeOfService = typeof(TService);
-        
+
         if (serviceContainer.ServiceRecords.TryGetValue(typeof(TService), out FrozenServiceRecord record)) {
             record.ThrowIfDeeperScopeRequired(ScopeDepth);
             return ResolveRequiredServiceInstance<TService>(record);
@@ -98,7 +101,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
 
         throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
     }
-    
+
     private TService ResolveRequiredServiceInstance<TService>(FrozenServiceRecord record) where TService : class {
         switch (record.Depth) {
             case FrozenServiceRecord.KnownScopeDepth.ProviderScoped:
@@ -128,7 +131,6 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
                 throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
         }
     }
-    
     #endregion
 
     #region Scope Creation
@@ -164,11 +166,13 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
             foreach ((Guid recordId, object instance) in Instances) {
                 if (serviceContainer.AsyncDisposableRecords.Contains(recordId) && instance is IAsyncDisposable asyncDisposable) {
                     asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
-                } 
+                }
+
                 if (serviceContainer.DisposableRecords.Contains(recordId) && instance is IDisposable disposable) {
                     disposable.Dispose();
-                } 
+                }
             }
+
             Instances.Clear();
 
             // Only ChildScopes should be disposed
@@ -190,11 +194,13 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
             foreach ((Guid recordId, object instance) in Instances) {
                 if (serviceContainer.AsyncDisposableRecords.Contains(recordId) && instance is IAsyncDisposable asyncDisposable) {
                     await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-                } 
+                }
+
                 if (serviceContainer.DisposableRecords.Contains(recordId) && instance is IDisposable disposable) {
                     disposable.Dispose();
-                } 
+                }
             }
+
             Instances.Clear();
 
             // Don't forget about ChildScopes!
@@ -211,7 +217,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     private void CommonCleanup() {
         // Clear collections of all references
         //      Do know that this doesn't necessarily mark all the objects to be garbage collected.
-        //      It just means that the references are no longer valid.
+        //      It just means that the references we hold are no longer valid.
         Instances.Clear();
         ChildScopes.Clear();
         ParentScope?.RemoveItemFromBag(this);// Remove this instance from the parent scope's bag, else we will leak memory

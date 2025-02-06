@@ -14,9 +14,9 @@ public class ServiceContainer : IServiceContainer {
     private ImmutableDictionary<Guid, object> SingletonInstances { get; set; } = ImmutableDictionary<Guid, object>.Empty;
     public FrozenSet<Guid> DisposableRecords { get; private init; } = FrozenSet<Guid>.Empty;
     public FrozenSet<Guid> AsyncDisposableRecords { get; private init; } = FrozenSet<Guid>.Empty;
-    
+
     private IScopedProvider? RootScopedProvider { get; set; }
-    
+
     // -----------------------------------------------------------------------------------------------------------------
     // Constructors
     // -----------------------------------------------------------------------------------------------------------------
@@ -29,8 +29,10 @@ public class ServiceContainer : IServiceContainer {
         var asyncDisposableIds = new HashSet<Guid>();
 
         FrozenDictionary<Type, FrozenServiceRecord> frozenRecords = collection.Records.ToFrozenDictionary(
-            kvp => kvp.Key,
-            kvp => {
+            keySelector: kvp => kvp.Key,
+            elementSelector: kvp => {
+                // This way we only go over the values once
+                //      Helps with reduced enu
                 FrozenServiceRecord frozenRecord = kvp.Value.ToFrozen();
 
                 switch (frozenRecord.Disposal) {
@@ -44,11 +46,12 @@ public class ServiceContainer : IServiceContainer {
             }
         );
 
-        // Construct a container with precomputed frozen sets
+        // Create the container
+        //      All should be init properties, so that w
         var container = new ServiceContainer {
             ServiceRecords = frozenRecords,
             DisposableRecords = disposableIds.ToFrozenSet(),
-            AsyncDisposableRecords = asyncDisposableIds.ToFrozenSet(),
+            AsyncDisposableRecords = asyncDisposableIds.ToFrozenSet()
         };
 
         // Log discarded records only if collection contains some and logging is enabled
@@ -72,10 +75,10 @@ public class ServiceContainer : IServiceContainer {
 
     public TService GetRequiredSingletonService<TService>(FrozenServiceRecord record, IScopedProvider serviceProvider) where TService : class {
         if (SingletonInstances.TryGetValue(record.Id, out object? instance)) return (TService)instance;
-        
+
         record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? factory);
         if (factory?.Invoke(serviceProvider) is not {} casted) throw new InvalidOperationException($"Service of type {typeof(TService)} is not registered.");
-        
+
         SingletonInstances = SingletonInstances.Add(record.Id, casted);
         return casted;
     }
@@ -83,13 +86,13 @@ public class ServiceContainer : IServiceContainer {
     private static void EnsureUniqueIds(ServiceCollection collection) {
         var seenIds = new HashSet<Guid>();
         foreach (IServiceRecord record in collection.Records.Values) {
-            while (!seenIds.Add(record.Id)) record.Id = Guid.CreateVersion7(); // Adjust IDs inline if needed to ensure uniqueness
+            while (!seenIds.Add(record.Id)) record.Id = Guid.CreateVersion7();// Adjust IDs inline if needed to ensure uniqueness
         }
     }
 
     private void TryLogDiscardedRecords(ServiceCollection collection) {
         IScopedProvider provider = GetRootScopedProvider();
-        if (provider.GetService<ILogger>() is not { } logger) return;
+        if (provider.GetService<ILogger>() is not {} logger) return;
 
         logger = logger.ForContext<ServiceContainer>();
 
@@ -98,10 +101,10 @@ public class ServiceContainer : IServiceContainer {
             logger.Debug("Discarded service: {@DiscardedRecord}", discardedRecord);
         }
     }
-
-
+    
     public IScopedProvider GetRootScopedProvider() {
         if (RootScopedProvider is not null) return RootScopedProvider;
+
         RootScopedProvider = new ScopedProvider(this);
         return RootScopedProvider;
     }

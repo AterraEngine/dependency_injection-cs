@@ -11,19 +11,32 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceCollection : IServiceCollection {
+
+    private static readonly Lazy<MethodInfo[]> ServiceCollectionMethods = new(static () => typeof(ServiceCollection).GetMethods(BindingFlags.Instance | BindingFlags.Public));
+
+    private readonly Lazy<MethodInfo> _addServiceMethodByImplementationType = new(static () => ServiceCollectionMethods.Value
+        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
+
+    private readonly Lazy<MethodInfo> _addServiceMethodByServiceAndImplementationTypes = new(static () => ServiceCollectionMethods.Value
+        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
+
     internal ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
     internal ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
 
     public int Count => Records.Count;
     public bool IsReadOnly { get; private set; }
-    
-    private static readonly Lazy<MethodInfo[]> ServiceCollectionMethods = new(static () => typeof(ServiceCollection).GetMethods(BindingFlags.Instance | BindingFlags.Public));
-    
-    private readonly Lazy<MethodInfo> _addServiceMethodByImplementationType = new(static () => ServiceCollectionMethods.Value
-        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
-    
-    private readonly Lazy<MethodInfo> _addServiceMethodByServiceAndImplementationTypes = new(static () => ServiceCollectionMethods.Value
-        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
+
+    public IScopedProvider Build() {
+        IServiceContainer container = ServiceContainer.FromCollection(this);
+        IScopedProvider provider = container.GetRootScopedProvider();
+
+        IsReadOnly = true;
+        return provider;
+    }
+
+    private void ThrowIfReadOnly() {
+        if (IsReadOnly) throw new InvalidOperationException("Collection is read only");
+    }
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
@@ -31,23 +44,23 @@ public class ServiceCollection : IServiceCollection {
     #region AddService
     public IServiceCollection AddService<TImplementation>(int scopeLevel) where TImplementation : class => AddService<TImplementation, TImplementation>(scopeLevel);
     public IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService {
-        Add(ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel)); 
+        Add(ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel));
         return this;
     }
-    
+
     public IServiceCollection AddService(IServiceRecord record) {
-        Add(record); 
+        Add(record);
         return this;
     }
-    
+
     public IServiceCollection AddServiceFromFactory<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class
         => AddService(new ServiceRecord<TService>(typeof(TService), typeof(TService), factory, scopeLevel));
 
     public IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel, int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> {
         if (!Records.ContainsKey(typeof(TFactory))) AddService<TFactory>(scopeLevelFactory ?? scopeLevel);
-        
+
         return AddServiceFromFactory<TService>(
-            static provider =>  provider.GetRequiredService<TFactory>().Create(provider),
+            factory: static provider => provider.GetRequiredService<TFactory>().Create(provider),
             scopeLevel
         );
     }
@@ -70,60 +83,60 @@ public class ServiceCollection : IServiceCollection {
     #region AddSingleton
     public IServiceCollection AddSingleton<TImplementation>() where TImplementation : class
         => AddSingleton<TImplementation, TImplementation>();
-    
-    public IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService 
+
+    public IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService
         => AddService<TService, TImplementation>((int)DefaultScopeDepth.Singleton);
-    
+
     public IServiceCollection AddSingleton(Type implementation)
         => AddService(implementation, (int)DefaultScopeDepth.Singleton);
-    
-    public IServiceCollection AddSingleton(Type service, Type implementation) 
+
+    public IServiceCollection AddSingleton(Type service, Type implementation)
         => AddService(service, implementation, (int)DefaultScopeDepth.Singleton);
 
     public IServiceCollection AddSingletonFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Singleton);
-    
+
     public IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Singleton, scopeLevelFactory);
     #endregion
 
     #region AddTransient
-    public IServiceCollection AddTransient<TImplementation>() where TImplementation : class 
+    public IServiceCollection AddTransient<TImplementation>() where TImplementation : class
         => AddTransient<TImplementation, TImplementation>();
-    
-    public IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService 
+
+    public IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService
         => AddService<TService, TImplementation>((int)DefaultScopeDepth.Transient);
-    
-    public IServiceCollection AddTransient(Type implementation) 
+
+    public IServiceCollection AddTransient(Type implementation)
         => AddService(implementation, (int)DefaultScopeDepth.Transient);
-    
-    public IServiceCollection AddTransient(Type service, Type implementation) 
+
+    public IServiceCollection AddTransient(Type service, Type implementation)
         => AddService(service, implementation, (int)DefaultScopeDepth.Transient);
-    
-    public IServiceCollection AddTransientFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class 
+
+    public IServiceCollection AddTransientFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Transient);
-    
-    public IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> 
+
+    public IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Transient, scopeLevelFactory);
     #endregion
 
     #region AddScoped
-    public IServiceCollection AddScoped<TImplementation>() where TImplementation : class 
+    public IServiceCollection AddScoped<TImplementation>() where TImplementation : class
         => AddScoped<TImplementation, TImplementation>();
-    
+
     public IServiceCollection AddScoped<TService, TImplementation>() where TImplementation : class, TService
         => AddService<TService, TImplementation>((int)DefaultScopeDepth.ProviderScoped);
-    
-    public IServiceCollection AddScoped(Type implementation) 
+
+    public IServiceCollection AddScoped(Type implementation)
         => AddService(implementation, (int)DefaultScopeDepth.ProviderScoped);
-    
-    public IServiceCollection AddScoped(Type service, Type implementation) 
+
+    public IServiceCollection AddScoped(Type service, Type implementation)
         => AddService(service, implementation, (int)DefaultScopeDepth.ProviderScoped);
-    
-    public IServiceCollection AddScopedFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class 
+
+    public IServiceCollection AddScopedFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.ProviderScoped);
-    
-    public IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> 
+
+    public IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.ProviderScoped, scopeLevelFactory);
     #endregion
 
@@ -134,7 +147,7 @@ public class ServiceCollection : IServiceCollection {
 
     public void Add(IServiceRecord item) {
         ThrowIfReadOnly();
-        
+
         // If the service already exists, discard the old one and replace it with the new one
         //      Yes we are pushing them to the discarded stack.
         //      For now this just takes up memory, but will be used during Container construction
@@ -173,16 +186,4 @@ public class ServiceCollection : IServiceCollection {
         return !Records.TryRemove(item.ServiceType, out IServiceRecord? _);
     }
     #endregion
-
-    public IScopedProvider Build() {
-        IServiceContainer container = ServiceContainer.FromCollection(this);
-        IScopedProvider provider = container.GetRootScopedProvider();
-        
-        IsReadOnly = true;
-        return provider;
-    }
-
-    private void ThrowIfReadOnly() {
-        if (IsReadOnly) throw new InvalidOperationException("Collection is read only");
-    }
 }

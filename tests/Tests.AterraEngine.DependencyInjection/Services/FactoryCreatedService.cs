@@ -5,7 +5,6 @@ using AterraEngine.DependencyInjection;
 using AterraEngine.DependencyInjection.Services;
 
 namespace Tests.AterraEngine.DependencyInjection.Services;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -18,6 +17,8 @@ public interface IFactoryCreatedService {
 }
 
 public class ExampleFactoryService : IExampleFactoryService {
+
+    private int _index;
     public Guid[] SpecificIds { get; } = [
         "02b047b2-32dc-45b2-a8fc-edf72bde24c2".ToGuid(),
         "39bf1fde-bd98-4585-b335-de9802255f46".ToGuid(),
@@ -30,9 +31,7 @@ public class ExampleFactoryService : IExampleFactoryService {
         "2b7cd190-a8e2-4e7a-86d2-bc11224d612d".ToGuid(),
         "c501072e-1c9a-4166-a538-b08bfe9c4933".ToGuid()
     ];
-    
-    private int _index = 0;
-        
+
     public IFactoryCreatedService Create(IScopedProvider scopedProvider) {
         Guid id = SpecificIds[_index++ % SpecificIds.Length];
         return new FactoryCreatedService(id);
