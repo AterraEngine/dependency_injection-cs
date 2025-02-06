@@ -14,30 +14,29 @@ public class ServiceCollection : IServiceCollection {
     internal ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
     internal ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
 
+    public int Count => Records.Count;
+    public bool IsReadOnly { get; private set; }
+    
+    private static readonly Lazy<MethodInfo[]> ServiceCollectionMethods = new(static () => typeof(ServiceCollection).GetMethods(BindingFlags.Instance | BindingFlags.Public));
+    
+    private readonly Lazy<MethodInfo> _addServiceMethodByImplementationType = new(static () => ServiceCollectionMethods.Value
+        .Single(m => m is { Name: nameof(AddServiceFromFactory), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
+    
+    private readonly Lazy<MethodInfo> _addServiceMethodByServiceAndImplementationTypes = new(static () => ServiceCollectionMethods.Value
+        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
+
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
     #region AddService
     public IServiceCollection AddService<TImplementation>(int scopeLevel) where TImplementation : class => AddService<TImplementation, TImplementation>(scopeLevel);
     public IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService {
-        ServiceRecord<TService> record = ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel);
-
-        // If the service already exists, discard the old one and replace it with the new one
-        //      Yes we are pushing them to the discarded stack.
-        //      For now this just takes up memory, but will be used during Container construction
-        if (Records.ContainsKey(typeof(TService)) && Records.TryRemove(typeof(TService), out IServiceRecord? oldServiceRecord)) {
-            DiscardedRecords.Push(oldServiceRecord);
-        }
-
-        if (!Records.TryAdd(typeof(TService), record)) {
-            throw new InvalidOperationException($"Collision in service records of type {typeof(TService)}");
-        }
-        
+        Add(ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel)); 
         return this;
     }
     
     public IServiceCollection AddService(IServiceRecord record) {
-        Records.AddOrUpdate(record.ServiceType, record, updateValueFactory: (_, _) => record);
+        Add(record); 
         return this;
     }
     
@@ -54,22 +53,14 @@ public class ServiceCollection : IServiceCollection {
     }
 
     #region AddService by Type argument
-    private readonly Lazy<MethodInfo> _addServiceMethod1 = new(static () => typeof(ServiceCollection)
-        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-        .Single(m => m is { Name: nameof(AddServiceFromFactory), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
-
     public IServiceCollection AddService(Type implementation, int scopeLevel) =>
-        _addServiceMethod1.Value
+        _addServiceMethodByImplementationType.Value
             .MakeGenericMethod(implementation)
             .Invoke(this, [scopeLevel]) as IServiceCollection
         ?? throw new InvalidOperationException();
 
-    private readonly Lazy<MethodInfo> _addServiceMethod2 = new(static () => typeof(ServiceCollection)
-        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
-
     public IServiceCollection AddService(Type service, Type implementation, int scopeLevel) =>
-        _addServiceMethod2.Value
+        _addServiceMethodByServiceAndImplementationTypes.Value
             .MakeGenericMethod(service, implementation)
             .Invoke(this, [scopeLevel]) as IServiceCollection
         ?? throw new InvalidOperationException();
@@ -133,12 +124,24 @@ public class ServiceCollection : IServiceCollection {
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public void Add(IServiceRecord item) {
-        if (Records.TryAdd(item.ServiceType, item)) return;
+        ThrowIfReadOnly();
+        
+        // If the service already exists, discard the old one and replace it with the new one
+        //      Yes we are pushing them to the discarded stack.
+        //      For now this just takes up memory, but will be used during Container construction
+        if (Records.ContainsKey(item.ServiceType) && Records.TryRemove(item.ServiceType, out IServiceRecord? oldServiceRecord)) {
+            DiscardedRecords.Push(oldServiceRecord);
+        }
 
-        throw new InvalidOperationException("Service already exists");
+        if (!Records.TryAdd(item.ServiceType, item)) {
+            throw new InvalidOperationException($"Unexpected Collision in service records of type {item.ServiceType}");
+        }
     }
 
-    public void Clear() => Records.Clear();
+    public void Clear() {
+        ThrowIfReadOnly();
+        Records.Clear();
+    }
 
     public bool Contains(IServiceRecord item) {
         if (!Records.TryGetValue(item.ServiceType, out IServiceRecord? record)) return false;
@@ -154,15 +157,23 @@ public class ServiceCollection : IServiceCollection {
     }
 
     public bool Remove(IServiceRecord item) {
+        ThrowIfReadOnly();
         if (!Records.TryGetValue(item.ServiceType, out IServiceRecord? record)) return false;
         if (record != item) return false;
 
         return !Records.TryRemove(item.ServiceType, out IServiceRecord? _);
     }
-
-    public int Count => Records.Count;
-    public bool IsReadOnly => false;
     #endregion
 
-    public IScopedProvider Build() => new ScopedProvider(ServiceContainer.FromCollection(this));
+    public IScopedProvider Build() {
+        IServiceContainer container = ServiceContainer.FromCollection(this);
+        IScopedProvider provider = container.GetRootScopedProvider();
+        
+        IsReadOnly = true;
+        return provider;
+    }
+
+    private void ThrowIfReadOnly() {
+        if (IsReadOnly) throw new InvalidOperationException("Collection is read only");
+    }
 }

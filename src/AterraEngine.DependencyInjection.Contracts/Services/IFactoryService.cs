@@ -7,5 +7,5 @@ namespace AterraEngine.DependencyInjection.Services;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public interface IFactoryService<out TService> {
-    TService Create(IScopedProvider scopedProvider);
+    TService Create(IScopedProvider provider);
 }

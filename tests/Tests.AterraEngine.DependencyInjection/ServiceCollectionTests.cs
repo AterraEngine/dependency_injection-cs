@@ -218,4 +218,44 @@ public class ServiceCollectionTests {
             .And.HasMember(static bool (record) => record.IsTransient).EqualTo(true).Because("Should not be transient")
             .And.HasMember(static bool (record) => record.IsSingleton).EqualTo(false).Because("Should be a singleton");
     }
+
+    [Test]
+    public async Task Collection_IsReadOnly_Should_Return_False() {
+        // Arrange
+        ServiceCollection collection = [];
+        collection.AddSingleton<IEmptyService, EmptyService>();
+        
+        // Act
+        bool isReadOnly = collection.IsReadOnly;
+        
+        // Assert
+        await Assert.That(isReadOnly).IsFalse();
+    }
+    
+    [Test]
+    public async Task Collection_IsReadOnly_Should_Return_True() {
+        // Arrange
+        var collection = new ServiceCollection();
+        collection.AddSingleton<IEmptyService, EmptyService>();
+        IScopedProvider provider = collection.Build();
+        
+        // Act
+        bool isReadOnly = collection.IsReadOnly;
+        
+        // Assert
+        await Assert.That(provider).IsNotNull();
+        await Assert.That(isReadOnly).IsTrue();
+    }
+    
+    [Test]
+    public async Task Collection_ShouldThrow_WhenAddingAfterBuild() {
+        // Arrange
+        var collection = new ServiceCollection();
+        collection.AddSingleton<IEmptyService, EmptyService>();
+        IScopedProvider provider = collection.Build();
+        
+        // Act & Assert
+        await Assert.That(provider).IsNotNull();
+        Assert.Throws<InvalidOperationException>(() => collection.AddSingleton<IEmptyService, EmptyService>());
+    }
 }
