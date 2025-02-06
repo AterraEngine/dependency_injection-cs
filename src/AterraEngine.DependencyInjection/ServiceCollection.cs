@@ -20,7 +20,7 @@ public class ServiceCollection : IServiceCollection {
     private static readonly Lazy<MethodInfo[]> ServiceCollectionMethods = new(static () => typeof(ServiceCollection).GetMethods(BindingFlags.Instance | BindingFlags.Public));
     
     private readonly Lazy<MethodInfo> _addServiceMethodByImplementationType = new(static () => ServiceCollectionMethods.Value
-        .Single(m => m is { Name: nameof(AddServiceFromFactory), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
+        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
     
     private readonly Lazy<MethodInfo> _addServiceMethodByServiceAndImplementationTypes = new(static () => ServiceCollectionMethods.Value
         .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
@@ -80,8 +80,11 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddSingleton(Type service, Type implementation) 
         => AddService(service, implementation, (int)DefaultScopeDepth.Singleton);
 
-    public IServiceCollection AddSingleton<TService>(Func<IScopedProvider, TService> factory) where TService : class
+    public IServiceCollection AddSingletonFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Singleton);
+    
+    public IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
+        => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Singleton, scopeLevelFactory);
     #endregion
 
     #region AddTransient
@@ -97,8 +100,11 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddTransient(Type service, Type implementation) 
         => AddService(service, implementation, (int)DefaultScopeDepth.Transient);
     
-    public IServiceCollection AddTransient<TService>(Func<IScopedProvider, TService> factory) where TService : class 
+    public IServiceCollection AddTransientFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class 
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Transient);
+    
+    public IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> 
+        => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Transient, scopeLevelFactory);
     #endregion
 
     #region AddScoped
@@ -114,8 +120,11 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddScoped(Type service, Type implementation) 
         => AddService(service, implementation, (int)DefaultScopeDepth.ProviderScoped);
     
-    public IServiceCollection AddScoped<TService>(Func<IScopedProvider, TService> factory) where TService : class 
+    public IServiceCollection AddScopedFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class 
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.ProviderScoped);
+    
+    public IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> 
+        => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.ProviderScoped, scopeLevelFactory);
     #endregion
 
     #region ICollection<IServiceRecord>

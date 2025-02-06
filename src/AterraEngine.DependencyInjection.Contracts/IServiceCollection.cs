@@ -19,19 +19,22 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     IServiceCollection AddSingleton<TService, TImplementation>() where TImplementation : class, TService;
     IServiceCollection AddSingleton(Type implementation);
     IServiceCollection AddSingleton(Type service, Type implementation);
-    IServiceCollection AddSingleton<TService>(Func<IScopedProvider, TService> factory) where TService : class;
+    IServiceCollection AddSingletonFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class;
+    IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
 
     IServiceCollection AddTransient<TImplementation>() where TImplementation : class;
     IServiceCollection AddTransient<TService, TImplementation>() where TImplementation : class, TService;
     IServiceCollection AddTransient(Type implementation);
     IServiceCollection AddTransient(Type service, Type implementation);
-    IServiceCollection AddTransient<TService>(Func<IScopedProvider, TService> factory) where TService : class;
+    IServiceCollection AddTransientFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class;
+    IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
 
     IServiceCollection AddScoped<TImplementation>() where TImplementation : class;
     IServiceCollection AddScoped<TService, TImplementation>() where TImplementation : class, TService;
     IServiceCollection AddScoped(Type implementation);
     IServiceCollection AddScoped(Type service, Type implementation);
-    IServiceCollection AddScoped<TService>(Func<IScopedProvider, TService> factory) where TService : class;
+    IServiceCollection AddScopedFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class;
+    IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
 
     IScopedProvider Build();
 }
