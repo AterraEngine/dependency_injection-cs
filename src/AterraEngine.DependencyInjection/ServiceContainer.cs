@@ -30,7 +30,10 @@ public class ServiceContainer : IServiceContainer {
     // -----------------------------------------------------------------------------------------------------------------
     public static IServiceContainer FromCollection(ServiceCollection collection) {
         // Ensure all record IDs are unique (if necessary, though this should ideally be handled on input for efficiency)
-        EnsureUniqueIds(collection);
+        var seenIds = new HashSet<Guid>();
+        foreach (IServiceRecord record in collection.Records.Values) {
+            while (!seenIds.Add(record.Id)) record.Id = Guid.CreateVersion7();// Adjust IDs inline if needed to ensure uniqueness
+        }
 
         // Combine iterations for records to populate all frozen structures in one pass
         var disposableIds = new HashSet<Guid>();
@@ -63,8 +66,17 @@ public class ServiceContainer : IServiceContainer {
         };
 
         // Log discarded records only if collection contains some and logging is enabled
-        if (!collection.DiscardedRecords.IsEmpty) container.TryLogDiscardedRecords(collection);
+        if (collection.DiscardedRecords.IsEmpty) return container;
+        
+        IScopedProvider provider = container.GetRootScopedProvider();
+        if (provider.GetService<ILogger>() is not {} logger) return container;
 
+        logger = logger.ForContext<ServiceContainer>();
+
+        logger.Debug("Discarded services count: {@DiscardedRecords}", collection.DiscardedRecords.Count);
+        foreach (IServiceRecord discardedRecord in collection.DiscardedRecords) {
+            logger.Debug("Discarded service: {@DiscardedRecord}", discardedRecord);
+        }
         return container;
     }
 
@@ -79,7 +91,9 @@ public class ServiceContainer : IServiceContainer {
         // Don't need to do complex stuff if we aren't a generic service
         if (record.GenericService == FrozenServiceRecord.GenericServiceState.None) {
             if (!record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? factory)) return null;
-            return RegisterAndReturn(record, factory(serviceProvider));
+            instance = factory(serviceProvider);
+            SingletonInstances = SingletonInstances.Add(record.Id, instance);
+            return instance as TService;
         }
         
         // Beyond this point is only really used for generic type definitions
@@ -87,7 +101,7 @@ public class ServiceContainer : IServiceContainer {
         //      Once for the newly created record
         Queue<FrozenServiceRecord> queue = QueuePool.Get(); 
         queue.Enqueue(record);
-        TService? newInstance = null;
+        
         while (queue.TryDequeue(out FrozenServiceRecord queuedRecord)) {
             // Handle open generic records
             if (queuedRecord.GenericService == FrozenServiceRecord.GenericServiceState.OpenGeneric) {
@@ -95,50 +109,31 @@ public class ServiceContainer : IServiceContainer {
                 if (!serviceType.IsGenericType) return null; 
 
                 // Resolve until we get it a ClosedGeneric
-                Type genericTypeDefinition = serviceType.GetGenericTypeDefinition();
-                if (!TryGetClosedGenericRecord(genericTypeDefinition, serviceType, out record)) return null;
+                if (!TryGetGenericRecord(serviceType, out record)) return null;
                 queue.Enqueue(record);
                 continue;
             }
             
             if (record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? factory)) {
-                newInstance = factory(serviceProvider);
+                instance = factory(serviceProvider);
                 break;
             }
 
             // ReSharper disable once InvertIf
             if (record.TryGetFactory<object>(out Func<IScopedProvider, object>? factoryOfObject)) {
                 if (factoryOfObject(serviceProvider) is not TService casted) return null;
-                newInstance = casted;
+                instance = casted;
                 break;
             }
         }
-        if (newInstance is null) return null;
-        return RegisterAndReturn(record, newInstance);
+        if (instance is null) return null;
+        SingletonInstances = SingletonInstances.Add(record.Id, instance);
+        return instance as TService;
     }
 
     public TService GetRequiredSingletonService<TService>(FrozenServiceRecord record, IScopedProvider serviceProvider) where TService : class {
         if (GetSingletonService<TService>(record, serviceProvider) is {} instance) return instance;
         throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
-    }
-
-    private static void EnsureUniqueIds(ServiceCollection collection) {
-        var seenIds = new HashSet<Guid>();
-        foreach (IServiceRecord record in collection.Records.Values) {
-            while (!seenIds.Add(record.Id)) record.Id = Guid.CreateVersion7();// Adjust IDs inline if needed to ensure uniqueness
-        }
-    }
-
-    private void TryLogDiscardedRecords(ServiceCollection collection) {
-        IScopedProvider provider = GetRootScopedProvider();
-        if (provider.GetService<ILogger>() is not {} logger) return;
-
-        logger = logger.ForContext<ServiceContainer>();
-
-        logger.Debug("Discarded services count: {@DiscardedRecords}", collection.DiscardedRecords.Count);
-        foreach (IServiceRecord discardedRecord in collection.DiscardedRecords) {
-            logger.Debug("Discarded service: {@DiscardedRecord}", discardedRecord);
-        }
     }
     
     public IScopedProvider GetRootScopedProvider() {
@@ -147,23 +142,18 @@ public class ServiceContainer : IServiceContainer {
         RootScopedProvider = new ScopedProvider(this);
         return RootScopedProvider;
     }
-    public bool TryGetClosedGenericRecord(Type genericTypeDefinition, Type typeOfService, out FrozenServiceRecord closedRecord) {
+    
+    public bool TryGetGenericRecord(Type typeOfService, out FrozenServiceRecord closedRecord) {
         // Get the open generic record first
-        if (!ServiceRecords.TryGetValue(genericTypeDefinition, out FrozenServiceRecord openRecord)) {
+        if (!ServiceRecords.TryGetValue(typeOfService.GetGenericTypeDefinition(), out FrozenServiceRecord openRecord)) {
             closedRecord = default;
             return false;
         }
         
-        // When we have this, we can proceed
+        // It could also alreadt exist in the Closed Generics
         if (ClosedGenericRecords.TryGetValue(typeOfService, out closedRecord)) return true;
         closedRecord = FrozenServiceRecordHelper.CreateClosedGenericRecord(typeOfService, openRecord);
         ClosedGenericRecords.TryAdd(typeOfService,closedRecord);
         return true;
-    }
-
-    private TService RegisterAndReturn<TService>(FrozenServiceRecord record, TService service) where TService : class {
-        SingletonInstances = SingletonInstances.Add(record.Id, service);
-        return service;
-        
     }
 }

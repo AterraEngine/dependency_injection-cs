@@ -2,9 +2,12 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 namespace AterraEngine.DependencyInjection;
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class CouldNotBeResolvedException(string? message = null, Exception? innerException = null) : Exception(message, innerException) {
-    public static CouldNotBeResolvedException Create<TService>() => new($"The required service of type '{typeof(TService)}' could not be resolved.");
+public class ExceptionHelper {
+    public static void CheckAndCouldNotBeResolvedException<T>(T? value, out T result) where T : class {
+        result = value ?? throw new CouldNotBeResolvedException($"The required service of type '{typeof(T)}' could not be resolved.");
+    }
 }

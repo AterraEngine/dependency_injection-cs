@@ -37,6 +37,8 @@ public readonly record struct FrozenServiceRecord(
         ClosedGeneric
     }
 
+    public static FrozenServiceRecord Empty { get; } = new(Guid.Empty, null!, null!, null!, 0, default!, default!, default!);
+
     public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IScopedProvider, T>? factory) {
         if (ImplementationFactory is Func<IScopedProvider, T> casted) {
             factory = casted;
@@ -45,11 +47,5 @@ public readonly record struct FrozenServiceRecord(
 
         factory = null;
         return false;
-    }
-
-    public void ThrowIfDeeperScopeRequired(int targetDepth) {
-        if (ScopeDepth <= targetDepth) return;
-
-        throw new DeeperScopeRequiredException($"Required scope's depth {ScopeDepth} is deeper than the current scope's depth of {targetDepth}");
     }
 }
