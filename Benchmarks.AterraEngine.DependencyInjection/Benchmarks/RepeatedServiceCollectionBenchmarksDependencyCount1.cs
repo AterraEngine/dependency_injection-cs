@@ -12,8 +12,7 @@ namespace Benchmarks.AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 [MemoryDiagnoser]
-// [Orderer(SummaryOrderPolicy.FastestToSlowest)]
-public class RepeatedServiceCollectionBenchmarks {
+public class RepeatedServiceCollectionBenchmarksDependencyCount1 {
     private const int Count = 1_000;
     
     [Benchmark(Baseline = true)]
@@ -21,6 +20,7 @@ public class RepeatedServiceCollectionBenchmarks {
         var collection = new ServiceCollection();
     
         collection.AddTransient<IService, Service>();
+        collection.AddTransient<INestedService, NestedService>();
     
         ServiceProvider provider = collection.BuildServiceProvider();
     
@@ -37,6 +37,7 @@ public class RepeatedServiceCollectionBenchmarks {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
     
         collection.AddTransient<IService, Service>();
+        collection.AddTransient<INestedService, NestedService>();
     
         IScopedProvider provider = collection.Build();
     
@@ -53,6 +54,7 @@ public class RepeatedServiceCollectionBenchmarks {
         var collection = new ServiceCollection();
 
         collection.AddSingleton<IService, Service>();
+        collection.AddSingleton<INestedService, NestedService>();
 
         ServiceProvider provider = collection.BuildServiceProvider();
 
@@ -69,6 +71,7 @@ public class RepeatedServiceCollectionBenchmarks {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
 
         collection.AddSingleton<IService, Service>();
+        collection.AddSingleton<INestedService, NestedService>();
 
         IScopedProvider provider = collection.Build();
 
@@ -84,7 +87,8 @@ public class RepeatedServiceCollectionBenchmarks {
     public object Microsoft_AddBuildAndRetrieve_SingleDependency_Scoped() {
         var collection = new ServiceCollection();
 
-        collection.AddScoped<IService, Service>();
+        collection.AddScoped<IService, Service>(); 
+        collection.AddScoped<INestedService, NestedService>();
 
         ServiceProvider provider = collection.BuildServiceProvider();
 
@@ -101,6 +105,7 @@ public class RepeatedServiceCollectionBenchmarks {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
 
         collection.AddScoped<IService, Service>();
+        collection.AddScoped<INestedService, NestedService>();
 
         IScopedProvider provider = collection.Build();
 
@@ -112,7 +117,12 @@ public class RepeatedServiceCollectionBenchmarks {
         return list;
     }
 
-    public interface IService {}
+    public interface IService;
 
-    public class Service : IService {}
+    public class Service(INestedService nestedService) : IService {
+        public INestedService NestedService { get; } = nestedService;
+    }
+    
+    public interface INestedService;
+    public class NestedService : INestedService {}
 }

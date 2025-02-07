@@ -24,6 +24,11 @@
       "_readme": "useful for setting a preview for an upcoming version. Will ask for a prompt of the new version string",
       "commandName": "Project",
       "commandLineArgs": "git-version-bump --section=\"manual\" --projects=\"%PROJECTS%\" --push"
+    },
+    "Generate Services" : {
+      "_readme": "just generates a file filled with services",
+      "commandName": "Project",
+      "commandLineArgs": "generate-services "
     }
   }
 }

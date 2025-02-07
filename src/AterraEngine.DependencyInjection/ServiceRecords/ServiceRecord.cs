@@ -24,7 +24,6 @@ public record ServiceRecord<TService>(
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
     public FrozenServiceRecord ToFrozen() => new(
-        Id,
         ServiceType,
         ImplementationType,
         ImplementationFactory,

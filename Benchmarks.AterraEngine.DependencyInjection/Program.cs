@@ -21,7 +21,8 @@ public static class Program {
 
         // Run all benchmarks in parallel
         var switcher = new BenchmarkSwitcher([
-            typeof(RepeatedServiceCollectionBenchmarks),
+            typeof(RepeatedServiceCollectionBenchmarksDependencyCount1),
+            // typeof(RepeatedServiceCollectionBenchmarks),
             // typeof(LargeServiceCollectionBenchmarks),
             // typeof(ServiceCollectionBenchmarks)
         ]);

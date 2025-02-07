@@ -4,6 +4,7 @@
 
 using CodeOfChaos.CliArgsParser;
 using CodeOfChaos.CliArgsParser.Library;
+using Tools.AterraEngine.DependencyInjection.Commands;
 
 namespace Tools.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
@@ -16,6 +17,7 @@ public static class Program {
         CliArgsParser parser = CliArgsBuilder.CreateFromConfig(
             config => {
                 config.AddCommandsFromAssemblyEntrypoint<IAssemblyEntry>();
+                config.AddCommand<GenerateServicesCommand>();
             }
         ).Build();
 

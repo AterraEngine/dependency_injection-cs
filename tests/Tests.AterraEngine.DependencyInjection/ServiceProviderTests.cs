@@ -255,57 +255,20 @@ public class ScopedProviderTests {
                 .Because("Should have been created by the factory which uses a set of specific ids");
         }
     }
-
+    
     [Test]
-    public async Task ScopedProvider_ShouldReturn_ServiceWithGenerics() {
+    [Arguments(LifetimeSwitch.Transient)]
+    [Arguments(LifetimeSwitch.Singleton)]
+    [Arguments(LifetimeSwitch.Scoped)]
+    public async Task ScopedProvider_ShouldReturn_RequiredServiceWithGenerics(LifetimeSwitch lifetimeSwitch) {
         // Arrange
         var collection = new ServiceCollection();
-        collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
-        IScopedProvider provider = collection.Build();
-
-        // Act 
-        var service = provider.GetService<IServiceWithGenerics<string, int>>();
-
-        // Assert
-        await Assert.That(service).IsNotNull()
-            .And.IsTypeOf<ServiceWithGenerics<string, int>>();
-    }
-
-    [Test]
-    public async Task ScopedProvider_ShouldReturn_RequiredServiceWithGenerics_Singleton() {
-        // Arrange
-        var collection = new ServiceCollection();
-        collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
-        IScopedProvider provider = collection.Build();
-
-        // Act 
-        var service = provider.GetRequiredService<IServiceWithGenerics<string, int>>();
-
-        // Assert
-        await Assert.That(service).IsNotNull()
-            .And.IsTypeOf<ServiceWithGenerics<string, int>>();
-    }
-
-    [Test]
-    public async Task ScopedProvider_ShouldReturn_RequiredServiceWithGenerics_Transient() {
-        // Arrange
-        var collection = new ServiceCollection();
-        collection.AddTransient(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
-        IScopedProvider provider = collection.Build();
-
-        // Act 
-        var service = provider.GetRequiredService<IServiceWithGenerics<string, int>>();
-
-        // Assert
-        await Assert.That(service).IsNotNull()
-            .And.IsTypeOf<ServiceWithGenerics<string, int>>();
-    }
-
-    [Test]
-    public async Task ScopedProvider_ShouldReturn_RequiredServiceWithGenerics_Scoped() {
-        // Arrange
-        var collection = new ServiceCollection();
-        collection.AddScoped(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
+        LifetimeSwitcher.On(lifetimeSwitch,
+            () => collection.AddTransient(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
+            () => collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
+            () => collection.AddScoped(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>))
+        );
+        
         IScopedProvider provider = collection.Build();
 
         // Act 

@@ -8,7 +8,6 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public record FrozenServiceRecord(
-    Guid Id,
     Type ServiceType,
     Type ImplementationType,
     Delegate ImplementationFactory,

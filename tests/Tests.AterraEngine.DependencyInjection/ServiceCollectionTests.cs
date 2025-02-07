@@ -11,10 +11,17 @@ namespace Tests.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceCollectionTests {
     [Test]
-    public async Task Collection_Should_Return_Service_Provider() {
+    [Arguments(LifetimeSwitch.Transient)]
+    [Arguments(LifetimeSwitch.Singleton)]
+    [Arguments(LifetimeSwitch.Scoped)]
+    public async Task Collection_Should_Return_Service_Provider(LifetimeSwitch lifetimeSwitch) {
         // Arrange
         var collection = new ServiceCollection();
-        collection.AddSingleton<IEmptyService, EmptyService>();
+        LifetimeSwitcher.On(lifetimeSwitch,
+            () => collection.AddTransient<IEmptyService, EmptyService>(),
+            () => collection.AddSingleton<IEmptyService, EmptyService>(),
+            () => collection.AddScoped<IEmptyService, EmptyService>()
+        );
 
         // Act
         IScopedProvider provider = collection.Build();
@@ -31,13 +38,19 @@ public class ServiceCollectionTests {
     }
 
     [Test]
-    public async Task Collection_Should_Return_Service_Provider_With_Multiple_Services() {
+    [Arguments(LifetimeSwitch.Transient)]
+    [Arguments(LifetimeSwitch.Singleton)]
+    [Arguments(LifetimeSwitch.Scoped)]
+    public async Task Collection_Should_Return_Service_Provider_With_Multiple_Services(LifetimeSwitch lifetimeSwitch) {
         // Arrange
         var collection = new ServiceCollection();
 
         // Add multiple services
-        collection.AddSingleton<IEmptyService, EmptyService>();
-        collection.AddSingleton<ISampleService, SampleService>();
+        LifetimeSwitcher.On(lifetimeSwitch,
+            () => collection.AddTransient<IEmptyService, EmptyService>().AddTransient<ISampleService, SampleService>(),
+            () => collection.AddSingleton<IEmptyService, EmptyService>().AddSingleton<ISampleService, SampleService>(),
+            () => collection.AddScoped<IEmptyService, EmptyService>().AddScoped<ISampleService, SampleService>()
+        );
 
         // Act
         IScopedProvider provider = collection.Build();
@@ -59,10 +72,17 @@ public class ServiceCollectionTests {
     }
 
     [Test]
-    public async Task Collection_Should_Handle_ScopedProvider_Service() {
+    [Arguments(LifetimeSwitch.Transient)]
+    [Arguments(LifetimeSwitch.Singleton)]
+    [Arguments(LifetimeSwitch.Scoped)]
+    public async Task Collection_Should_Handle_ScopedProvider_Service(LifetimeSwitch lifetimeSwitch) {
         // Arrange
         var collection = new ServiceCollection();
-        collection.AddSingleton<IScopedProviderRequiredService, ScopedProviderRequiredService>();
+        LifetimeSwitcher.On(lifetimeSwitch,
+            () => collection.AddTransient<IScopedProviderRequiredService, ScopedProviderRequiredService>(),
+            () => collection.AddSingleton<IScopedProviderRequiredService, ScopedProviderRequiredService>(),
+            () => collection.AddScoped<IScopedProviderRequiredService, ScopedProviderRequiredService>()
+        );
 
         // Act
         IScopedProvider provider = collection.Build();
@@ -124,10 +144,10 @@ public class ServiceCollectionTests {
         var collection = new ServiceCollection();
 
         const int serviceCount = 1000;// Number of services to generate
-        Dictionary<Type, Type> generatedServices = ServiceHelper.GenerateServices(serviceCount);
+        var data = ServiceHelper.GenerateServices(serviceCount).ToDictionary();
 
         // Register each dynamically created service in the collection
-        foreach ((Type interfaceType, Type implementationType) in generatedServices) {
+        foreach ((Type interfaceType, Type implementationType) in data) {
             // Here, adapt this to match your service registration method
             collection.AddSingleton(interfaceType, implementationType);
         }
@@ -136,7 +156,7 @@ public class ServiceCollectionTests {
         IScopedProvider provider = collection.Build();
 
         // Assert
-        foreach ((Type interfaceType, Type implementationType) in generatedServices) {
+        foreach ((Type interfaceType, Type implementationType) in data) {
             object? service = provider.GetService(interfaceType);
             await Assert.That(service)
                 .IsNotNull()
@@ -209,10 +229,17 @@ public class ServiceCollectionTests {
     }
 
     [Test]
-    public async Task Collection_IsReadOnly_Should_Return_False() {
+    [Arguments(LifetimeSwitch.Transient)]
+    [Arguments(LifetimeSwitch.Singleton)]
+    [Arguments(LifetimeSwitch.Scoped)]
+    public async Task Collection_IsReadOnly_Should_Return_False(LifetimeSwitch lifetimeSwitch) {
         // Arrange
         ServiceCollection collection = [];
-        collection.AddSingleton<IEmptyService, EmptyService>();
+        LifetimeSwitcher.On(lifetimeSwitch,
+            () => collection.AddTransient<IEmptyService, EmptyService>(),
+            () => collection.AddSingleton<IEmptyService, EmptyService>(),
+            () => collection.AddScoped<IEmptyService, EmptyService>()
+        );
 
         // Act
         bool isReadOnly = collection.IsReadOnly;
@@ -222,10 +249,17 @@ public class ServiceCollectionTests {
     }
 
     [Test]
-    public async Task Collection_IsReadOnly_Should_Return_True() {
+    [Arguments(LifetimeSwitch.Transient)]
+    [Arguments(LifetimeSwitch.Singleton)]
+    [Arguments(LifetimeSwitch.Scoped)]
+    public async Task Collection_IsReadOnly_Should_Return_True(LifetimeSwitch lifetimeSwitch) {
         // Arrange
         var collection = new ServiceCollection();
-        collection.AddSingleton<IEmptyService, EmptyService>();
+        LifetimeSwitcher.On(lifetimeSwitch,
+            () => collection.AddTransient<IEmptyService, EmptyService>(),
+            () => collection.AddSingleton<IEmptyService, EmptyService>(),
+            () => collection.AddScoped<IEmptyService, EmptyService>()
+        );
         IScopedProvider provider = collection.Build();
 
         // Act
@@ -237,50 +271,38 @@ public class ServiceCollectionTests {
     }
 
     [Test]
-    public async Task Collection_ShouldThrow_WhenAddingAfterBuild() {
+    [Arguments(LifetimeSwitch.Transient)]
+    [Arguments(LifetimeSwitch.Singleton)]
+    [Arguments(LifetimeSwitch.Scoped)]
+    public async Task Collection_ShouldThrow_WhenAddingAfterBuild(LifetimeSwitch lifetimeSwitch) {
         // Arrange
         var collection = new ServiceCollection();
-        collection.AddSingleton<IEmptyService, EmptyService>();
+        LifetimeSwitcher.On(lifetimeSwitch,
+            () => collection.AddTransient<IEmptyService, EmptyService>(),
+            () => collection.AddSingleton<IEmptyService, EmptyService>(),
+            () => collection.AddScoped<IEmptyService, EmptyService>()
+        );
         IScopedProvider provider = collection.Build();
 
         // Act & Assert
         await Assert.That(provider).IsNotNull();
         Assert.Throws<InvalidOperationException>(() => collection.AddSingleton<IEmptyService, EmptyService>());
     }
-
+    
     [Test]
-    public async Task Collection_ShouldAllow_RegisteringGenericServices_Singleton() {
+    [Arguments(LifetimeSwitch.Transient)]
+    [Arguments(LifetimeSwitch.Singleton)]
+    [Arguments(LifetimeSwitch.Scoped)]
+    public async Task Collection_ShouldAllow_RegisteringGenericServices(LifetimeSwitch lifetimeSwitch) {
         // Arrange
         var collection = new ServiceCollection();
 
         // Act
-        collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
-
-        // Assert
-        await Assert.That(collection).HasCount().EqualTo(1);
-        await Assert.That(collection.Records).ContainsKey(typeof(IServiceWithGenerics<,>));
-    }
-
-    [Test]
-    public async Task Collection_ShouldAllow_RegisteringGenericServices_Transient() {
-        // Arrange
-        var collection = new ServiceCollection();
-
-        // Act
-        collection.AddTransient(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
-
-        // Assert
-        await Assert.That(collection).HasCount().EqualTo(1);
-        await Assert.That(collection.Records).ContainsKey(typeof(IServiceWithGenerics<,>));
-    }
-
-    [Test]
-    public async Task Collection_ShouldAllow_RegisteringGenericServices_Scoped() {
-        // Arrange
-        var collection = new ServiceCollection();
-
-        // Act
-        collection.AddScoped(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
+        LifetimeSwitcher.On(lifetimeSwitch,
+            () => collection.AddTransient(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
+            () => collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
+            () => collection.AddScoped(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>))
+        );
 
         // Assert
         await Assert.That(collection).HasCount().EqualTo(1);

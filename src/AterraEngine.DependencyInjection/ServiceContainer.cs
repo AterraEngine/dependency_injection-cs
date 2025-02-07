@@ -19,8 +19,8 @@ public class ServiceContainer : IServiceContainer {
     public ConcurrentDictionary<Type, FrozenServiceRecord?> ClosedGenericRecords { get; } = new();
 
     private ConcurrentDictionary<Type, object> SingletonInstances { get; } = [];
-    public FrozenSet<Guid> DisposableRecords { get; private init; } = FrozenSet<Guid>.Empty;
-    public FrozenSet<Guid> AsyncDisposableRecords { get; private init; } = FrozenSet<Guid>.Empty;
+    public FrozenSet<Type> DisposableRecords { get; private init; } = FrozenSet<Type>.Empty;
+    public FrozenSet<Type> AsyncDisposableRecords { get; private init; } = FrozenSet<Type>.Empty;
 
     private IScopedProvider? RootScopedProvider { get; set; }
 
@@ -41,8 +41,8 @@ public class ServiceContainer : IServiceContainer {
         }
 
         // Combine iterations for records to populate all frozen structures in one pass
-        var disposableIds = new HashSet<Guid>();
-        var asyncDisposableIds = new HashSet<Guid>();
+        var disposableIds = new HashSet<Type>();
+        var asyncDisposableIds = new HashSet<Type>();
 
         FrozenDictionary<Type, FrozenServiceRecord> frozenRecords = collection.Records.ToFrozenDictionary(
             keySelector: kvp => kvp.Key,
@@ -53,9 +53,9 @@ public class ServiceContainer : IServiceContainer {
 
                 switch (frozenRecord.Disposal) {
                     case FrozenServiceRecord.DisposalType.None: break;
-                    case FrozenServiceRecord.DisposalType.Disposable: disposableIds.Add(frozenRecord.Id); break;
-                    case FrozenServiceRecord.DisposalType.AsyncDisposable: asyncDisposableIds.Add(frozenRecord.Id); break;
-                    default: throw new ArgumentOutOfRangeException(nameof(collection), $"Unknown disposal type for record with ID {frozenRecord.Id}");
+                    case FrozenServiceRecord.DisposalType.Disposable: disposableIds.Add(frozenRecord.ServiceType); break;
+                    case FrozenServiceRecord.DisposalType.AsyncDisposable: asyncDisposableIds.Add(frozenRecord.ServiceType); break;
+                    default: throw new ArgumentOutOfRangeException(nameof(collection), $"Unknown disposal type for record with {frozenRecord.ServiceType.Name}");
                 }
 
                 return frozenRecord;

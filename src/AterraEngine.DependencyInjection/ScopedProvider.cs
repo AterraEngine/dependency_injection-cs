@@ -13,9 +13,11 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     internal ScopedProvider? ParentScope { get; private set; }
     private int ScopeDepth { get; init; }
 
-    internal ConcurrentDictionary<Guid, object?> Instances { get; } = new();
+    internal ConcurrentDictionary<Type, object?> Instances { get; } = new();
     internal ConcurrentBag<IScopedProvider> ChildScopes { get; } = [];
-    private readonly ConcurrentDictionary<Guid, Delegate?> _transientFactoriesCache = new();
+    private readonly ConcurrentDictionary<Type, Delegate?> _transientFactoriesCache = new();
+    private (Type ServiceType, Delegate? factory)? LastUsedTransientService { get; set; }
+    
     internal ServiceContainer ServiceContainer { get; } = serviceContainer;
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -61,22 +63,22 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         return record.Depth switch {
             FrozenServiceRecord.KnownScopeDepth.ProviderScoped => ResolveProviderScoped<TService>(record),
             FrozenServiceRecord.KnownScopeDepth.Singleton => ServiceContainer.GetSingletonService<TService>(record, this),
-            FrozenServiceRecord.KnownScopeDepth.Transient => ResolveTransient<TService>(record),
+            FrozenServiceRecord.KnownScopeDepth.Transient => ResolveTransient<TService>(),
             FrozenServiceRecord.KnownScopeDepth.CustomScoped => ResolveCustomScoped<TService>(record),
             _ => null
         };
     }
 
     private TService? ResolveProviderScoped<TService>(FrozenServiceRecord record) where TService : class {
-        return Instances.GetOrAdd(record.Id,
-            valueFactory: static (_, provider) => {
+        return Instances.GetOrAdd(record.ServiceType,
+            valueFactory: static (type, provider) => {
                 // Logic for non-generic service
-                if (provider.ServiceContainer.ServiceRecords.TryGetValue(typeof(TService), out FrozenServiceRecord? r)) {
+                if (provider.ServiceContainer.ServiceRecords.TryGetValue(type, out FrozenServiceRecord? r)) {
                     return  r.GetFactory<TService>().Invoke(provider);
                 }
 
                 // Logic for generic service
-                if (provider.ServiceContainer.ServiceRecords.TryGetValue(typeof(TService).GetGenericTypeDefinition(), out r) && r.GenericService != FrozenServiceRecord.GenericServiceState.None) {
+                if (provider.ServiceContainer.ServiceRecords.TryGetValue(type.GetGenericTypeDefinition(), out r) && r.GenericService != FrozenServiceRecord.GenericServiceState.None) {
                     return provider.ServiceContainer.ResolveGenericService<TService>(r, provider);
                 }
                 
@@ -85,26 +87,34 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
             this) as TService;
     }
 
-    private TService? ResolveTransient<TService>(FrozenServiceRecord record) where TService : class {
-        Delegate? factory = _transientFactoriesCache.GetOrAdd(record.Id,
-            valueFactory: static (_, container) => {
+    private TService? ResolveTransient<TService>() where TService : class {
+        if (LastUsedTransientService is {ServiceType: TService, factory: {} @delegate} ) {
+            // Reuse the last used transient service
+            return @delegate.DynamicInvoke(this) as TService;
+        }
+        
+        Delegate? factory = _transientFactoriesCache.GetOrAdd(typeof(TService),
+            valueFactory: static (type, container) => {
                 // Logic for non-generic service
-                if (container.ServiceRecords.TryGetValue(typeof(TService), out FrozenServiceRecord? r)) {
+                if (container.ServiceRecords.TryGetValue(type, out FrozenServiceRecord? r)) {
                     return  r.GetFactory<TService>();
                 }
-                if (container.ServiceRecords.TryGetValue(typeof(TService).GetGenericTypeDefinition(), out FrozenServiceRecord? genericRecord) && genericRecord.GenericService != FrozenServiceRecord.GenericServiceState.None) {
+                
+                // Logic for generic service
+                if (container.ServiceRecords.TryGetValue(type.GetGenericTypeDefinition(), out FrozenServiceRecord? genericRecord) && genericRecord.GenericService != FrozenServiceRecord.GenericServiceState.None) {
                     return container.ResolveGenericServiceFactory<TService>(genericRecord);
                 }
+                
                 return null;
             },
             ServiceContainer);
-
+        
+        LastUsedTransientService = (typeof(TService), factory);
         return factory switch {
             Func<IScopedProvider, TService> directFactory => directFactory(this),
             Func<IScopedProvider, object> objectFactory => objectFactory(this) as TService,
             _ => null
         };
-
     }
 
     private TService? ResolveCustomScoped<TService>(FrozenServiceRecord record) where TService : class {
@@ -151,7 +161,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     #region Dispose
     public void Dispose() {
         try {
-            foreach ((Guid recordId, object? instance) in Instances) {
+            foreach ((Type recordId, object? instance) in Instances) {
                 if (ServiceContainer.AsyncDisposableRecords.Contains(recordId) && instance is IAsyncDisposable asyncDisposable) {
                     asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
                 }
@@ -179,7 +189,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
             // Yes I know we could do some sort of task collection and then do a Task.WhenAll()
             //      But I don't think it's worth it, because we don't expect this to be a performance bottleneck (at the moment)
 
-            foreach ((Guid recordId, object? instance) in Instances) {
+            foreach ((Type recordId, object? instance) in Instances) {
                 if (ServiceContainer.AsyncDisposableRecords.Contains(recordId) && instance is IAsyncDisposable asyncDisposable) {
                     await asyncDisposable.DisposeAsync().ConfigureAwait(false);
                 }

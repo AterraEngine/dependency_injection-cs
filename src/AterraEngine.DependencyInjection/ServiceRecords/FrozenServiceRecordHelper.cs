@@ -21,7 +21,6 @@ public static class FrozenServiceRecordHelper {
             .CreateFunc<object>(closedImplementationType);// Use the closed type
 
         return new FrozenServiceRecord(
-            Guid.CreateVersion7(),// Assign a new ID for the closed generic registration
             closedType,
             closedImplementationType,// Pass the fully closed implementation type
             closedFactory,// Factory for the closed generic

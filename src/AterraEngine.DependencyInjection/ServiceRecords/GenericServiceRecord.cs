@@ -23,7 +23,6 @@ public record GenericServiceRecord(
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
     public FrozenServiceRecord ToFrozen() => new(
-        Id,
         ServiceType,
         ImplementationType,
         (Func<IScopedProvider, object>)(static _ => throw new InvalidOperationException("Open generic types can't be instantiated directly. Use a closed type.")),
