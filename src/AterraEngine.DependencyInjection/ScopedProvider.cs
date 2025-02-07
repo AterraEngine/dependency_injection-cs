@@ -16,7 +16,6 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     internal ConcurrentDictionary<Type, object?> Instances { get; } = new();
     internal ConcurrentBag<IScopedProvider> ChildScopes { get; } = [];
     private readonly ConcurrentDictionary<Type, Delegate?> _transientFactoriesCache = new();
-    private (Type ServiceType, Delegate? factory)? LastUsedTransientService { get; set; }
     
     internal ServiceContainer ServiceContainer { get; } = serviceContainer;
 
@@ -88,11 +87,6 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     }
 
     private TService? ResolveTransient<TService>() where TService : class {
-        if (LastUsedTransientService is {ServiceType: TService, factory: {} @delegate} ) {
-            // Reuse the last used transient service
-            return @delegate.DynamicInvoke(this) as TService;
-        }
-        
         Delegate? factory = _transientFactoriesCache.GetOrAdd(typeof(TService),
             valueFactory: static (type, container) => {
                 // Logic for non-generic service
@@ -109,7 +103,6 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
             },
             ServiceContainer);
         
-        LastUsedTransientService = (typeof(TService), factory);
         return factory switch {
             Func<IScopedProvider, TService> directFactory => directFactory(this),
             Func<IScopedProvider, object> objectFactory => objectFactory(this) as TService,
