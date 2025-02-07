@@ -11,6 +11,7 @@ public record ServiceRecord<TService>(
     Func<IScopedProvider, TService> ImplementationFactory,
     int ScopeDepth
 ) : IServiceRecord {
+    public bool IsGenericService { get; } = false;
 
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public bool IsTransient { get; } = ScopeDepth == (int)DefaultScopeDepth.Transient;
@@ -18,8 +19,7 @@ public record ServiceRecord<TService>(
     public bool IsProviderScoped { get; } = ScopeDepth == (int)DefaultScopeDepth.ProviderScoped;
     public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
-    public bool IsGenericService { get; } = false;
-    
+
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
@@ -29,17 +29,17 @@ public record ServiceRecord<TService>(
         ImplementationType,
         ImplementationFactory,
         ScopeDepth,
-        Depth:this switch {
+        this switch {
             { IsSingleton: true } => FrozenServiceRecord.KnownScopeDepth.Singleton,
             { IsProviderScoped: true } => FrozenServiceRecord.KnownScopeDepth.ProviderScoped,
             { ScopeDepth: > (int)DefaultScopeDepth.ProviderScoped } => FrozenServiceRecord.KnownScopeDepth.CustomScoped,
-            _ => FrozenServiceRecord.KnownScopeDepth.Transient,
+            _ => FrozenServiceRecord.KnownScopeDepth.Transient
         },
-        Disposal: this switch {
+        this switch {
             { IsDisposable: true } => FrozenServiceRecord.DisposalType.Disposable,
             { IsAsyncDisposable: true } => FrozenServiceRecord.DisposalType.AsyncDisposable,
-            _ => FrozenServiceRecord.DisposalType.None,
+            _ => FrozenServiceRecord.DisposalType.None
         },
-        GenericService: IsGenericService ? FrozenServiceRecord.GenericServiceState.OpenGeneric : FrozenServiceRecord.GenericServiceState.None
+        IsGenericService ? FrozenServiceRecord.GenericServiceState.OpenGeneric : FrozenServiceRecord.GenericServiceState.None
     );
 }

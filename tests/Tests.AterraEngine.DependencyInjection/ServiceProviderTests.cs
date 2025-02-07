@@ -255,32 +255,32 @@ public class ScopedProviderTests {
                 .Because("Should have been created by the factory which uses a set of specific ids");
         }
     }
-    
+
     [Test]
     public async Task ScopedProvider_ShouldReturn_ServiceWithGenerics() {
         // Arrange
         var collection = new ServiceCollection();
         collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
         IScopedProvider provider = collection.Build();
-            
+
         // Act 
         var service = provider.GetService<IServiceWithGenerics<string, int>>();
-            
+
         // Assert
         await Assert.That(service).IsNotNull()
             .And.IsTypeOf<ServiceWithGenerics<string, int>>();
     }
-    
+
     [Test]
     public async Task ScopedProvider_ShouldReturn_RequiredServiceWithGenerics() {
         // Arrange
         var collection = new ServiceCollection();
         collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
         IScopedProvider provider = collection.Build();
-            
+
         // Act 
         var service = provider.GetRequiredService<IServiceWithGenerics<string, int>>();
-            
+
         // Assert
         await Assert.That(service).IsNotNull()
             .And.IsTypeOf<ServiceWithGenerics<string, int>>();

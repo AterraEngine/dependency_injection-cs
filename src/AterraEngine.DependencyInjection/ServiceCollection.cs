@@ -13,19 +13,20 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceCollection : IServiceCollection {
-    internal ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
-    internal ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
 
-    public int Count => Records.Count;
-    public bool IsReadOnly { get; private set; }
-    
     private static readonly Lazy<MethodInfo[]> ServiceCollectionMethods = new(ServiceCollectionMethodsFactory);
-    
+
     private readonly Lazy<MethodInfo> _addServiceMethodByImplementationType = new(static () => ServiceCollectionMethods.Value
         .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
 
     private readonly Lazy<MethodInfo> _addServiceMethodByServiceAndImplementationTypes = new(static () => ServiceCollectionMethods.Value
         .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
+
+    internal ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
+    internal ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
+
+    public int Count => Records.Count;
+    public bool IsReadOnly { get; private set; }
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
@@ -40,8 +41,8 @@ public class ServiceCollection : IServiceCollection {
 
     private void ThrowIfReadOnly() {
         if (IsReadOnly) throw new InvalidOperationException("Collection is read only");
-    }    
-    
+    }
+
     [RequiresDynamicCode("This method uses reflection to create a service record.")]
     private static MethodInfo[] ServiceCollectionMethodsFactory() => typeof(ServiceCollection).GetMethods(BindingFlags.Instance | BindingFlags.Public);
 
@@ -101,7 +102,6 @@ public class ServiceCollection : IServiceCollection {
             .Invoke(this, [scopeLevel]) as IServiceCollection;
 
         return result ?? throw new InvalidOperationException();
-
     }
     #endregion
     #endregion

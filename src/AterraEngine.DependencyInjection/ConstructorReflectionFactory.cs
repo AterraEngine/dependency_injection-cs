@@ -21,7 +21,7 @@ public static class ConstructorReflectionFactory {
     private static readonly FrozenSet<Type> ResolveAsScopedProvider = new[] { typeof(IServiceProvider), typeof(IScopedProvider) }.ToFrozenSet();
 
     private static readonly ParameterExpression ProviderExpression = Expression.Parameter(typeof(IScopedProvider), "provider");
-    
+
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ public static class ConstructorReflectionFactory {
             .FirstOrDefault();
 
         if (constructor is null) throw new MultipleConstructorsException($"Multiple constructors found for {implementationType.FullName} with parameters");
-        
+
         ParameterInfo[] parameters = constructor.GetParameters();
 
         // Generate constructor arguments, handling IServiceProvider specially

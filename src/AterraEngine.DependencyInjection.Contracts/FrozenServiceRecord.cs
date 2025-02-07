@@ -24,17 +24,17 @@ public readonly record struct FrozenServiceRecord(
         AsyncDisposable
     }
 
+    public enum GenericServiceState : byte {
+        None,
+        OpenGeneric,
+        ClosedGeneric
+    }
+
     public enum KnownScopeDepth : byte {
         Transient,
         Singleton,
         ProviderScoped,
         CustomScoped
-    }
-
-    public enum GenericServiceState : byte {
-        None,
-        OpenGeneric,
-        ClosedGeneric
     }
 
     public static FrozenServiceRecord Empty { get; } = new(Guid.Empty, null!, null!, null!, 0, default!, default!, default!);

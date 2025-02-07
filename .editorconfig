@@ -130,8 +130,10 @@ indent_size = 4
 tab_width = 4
 
 [*.cs]
-resharper_blank_lines_after_control_transfer_statements = 0
-resharper_blank_lines_around_block_case_section = 0
 resharper_blank_lines_after_block_statements = 0
-resharper_csharp_remove_blank_lines_near_braces_in_code = true
+resharper_blank_lines_after_control_transfer_statements = 0
+resharper_blank_lines_between_statements = 0
+
+
+
 

@@ -247,15 +247,15 @@ public class ServiceCollectionTests {
         await Assert.That(provider).IsNotNull();
         Assert.Throws<InvalidOperationException>(() => collection.AddSingleton<IEmptyService, EmptyService>());
     }
-    
+
     [Test]
     public async Task Collection_ShouldAllow_RegisteringGenericServices() {
         // Arrange
         var collection = new ServiceCollection();
-        
+
         // Act
         collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
-        
+
         // Assert
         await Assert.That(collection).HasCount().EqualTo(1);
         await Assert.That(collection.Records).ContainsKey(typeof(IServiceWithGenerics<,>));

@@ -131,7 +131,6 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         if (throwOnNull) throw CouldNotBeResolvedException.Create<TService>();
 
         return null;
-
     }
 
     private TService? ResolveCustomScoped<TService>(FrozenServiceRecord record, bool throwOnNull) where TService : class {
@@ -141,6 +140,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
 
         if (ParentScope?.ResolveServiceInstance<TService>(record, throwOnNull) is {} resolvedFromParent) return resolvedFromParent;
 
+        
         if (throwOnNull) throw new CouldNotBeResolvedException($"The service of type '{typeof(TService)}' could not be resolved in custom scope.");
 
         return null;

@@ -60,10 +60,8 @@ public class ServiceCollectorGenerator : IIncrementalGenerator {
                     // Handle non-generic attributes
                     case { AttributeClass.IsGenericType: false, ConstructorArguments : { Length: > 0 } constructorArguments }
                         when constructorArguments[0].Value is INamedTypeSymbol serviceTypeSymbol: {
-
                         // Check if the class inherits from the service type
                         if (classSymbol.InheritsFrom(serviceTypeSymbol)) {
-
                             int scopeLevel = ResolveBaseConstructorArguments(context, attributeData.AttributeClass, attributeData, classDeclaration);
 
                             validClasses.Add(new ServiceCollectorRecord(classSymbol, attributeData.AttributeClass, serviceTypeSymbol, scopeLevel));
