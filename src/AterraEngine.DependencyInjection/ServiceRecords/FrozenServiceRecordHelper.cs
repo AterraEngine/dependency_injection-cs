@@ -21,7 +21,7 @@ public static class FrozenServiceRecordHelper {
     
         // Generate a factory for this specific closed generic
         Func<IScopedProvider, object> closedFactory = ServiceRecordReflectionFactory
-            .CreateGenericFactory(closedType, closedImplementationType); // Use the closed type
+            .CreateFactory<object>(closedImplementationType); // Use the closed type
 
         return new FrozenServiceRecord(
             Id: Guid.CreateVersion7(), // Assign a new ID for the closed generic registration

@@ -21,6 +21,8 @@ public static class ServiceRecordReflectionFactory {
 
     private static readonly FrozenSet<Type> ResolveAsScopedProvider = new[] { typeof(IServiceProvider), typeof(IScopedProvider) }.ToFrozenSet();
 
+    private static readonly ParameterExpression ProviderExpression = Expression.Parameter(typeof(IScopedProvider), "provider");
+    
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
@@ -51,15 +53,25 @@ public static class ServiceRecordReflectionFactory {
         }
         #endregion
 
-        ConstructorInfo? constructor = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
-            .SingleOrDefault(info => info.GetParameters().Length > 0);
+        // Actually store the record
+        return new ServiceRecord<TService>(
+            typeof(TService),
+            typeof(TImplementation),
+            CreateFactory<TService>(type),
+            scopeDepth
+        );
+    }
 
-        if (constructor is null) throw new MultipleConstructorsException($"Multiple constructors found for {type.FullName} with parameters");
+    public static Func<IScopedProvider, TService> CreateFactory<TService>(Type implementationType) {
+        // Select the most parameterized constructor (constructor with the most parameters)
+        ConstructorInfo? constructor = implementationType
+            .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .OrderBy(c => c.GetParameters().Length)
+            .FirstOrDefault();
 
+        if (constructor is null) throw new MultipleConstructorsException($"Multiple constructors found for {implementationType.FullName} with parameters");
+        
         ParameterInfo[] parameters = constructor.GetParameters();
-
-        // Lambda generation
-        ParameterExpression parameterExpression = Expression.Parameter(typeof(IScopedProvider), "provider");
 
         // Generate constructor arguments, handling IServiceProvider specially
         var arguments = new Expression[parameters.Length];
@@ -67,7 +79,7 @@ public static class ServiceRecordReflectionFactory {
             ParameterInfo parameter = parameters[i];
             Type parameterType = parameter.ParameterType;
             if (ResolveAsScopedProvider.Contains(parameterType)) {
-                arguments[i] = parameterExpression;
+                arguments[i] = ProviderExpression;
                 continue;
             }
 
@@ -75,7 +87,7 @@ public static class ServiceRecordReflectionFactory {
             //      This means we can allow for services to not always having to be implemented
             if (parameter.IsNullableReferenceType() || parameter is { HasDefaultValue: true, DefaultValue: null }) {
                 arguments[i] = Expression.Call(
-                    parameterExpression,
+                    ProviderExpression,
                     GetServiceMethod.MakeGenericMethod(parameterType)
                 );
 
@@ -83,7 +95,7 @@ public static class ServiceRecordReflectionFactory {
             }
 
             arguments[i] = Expression.Call(
-                parameterExpression,
+                ProviderExpression,
                 GetRequiredServiceMethod.MakeGenericMethod(parameterType)
             );
         }
@@ -92,76 +104,9 @@ public static class ServiceRecordReflectionFactory {
         NewExpression constructorCall = Expression.New(constructor, arguments);
 
         // Build the lambda expression for the factory
-        Expression<Func<IScopedProvider, TService>> lambda = Expression.Lambda<Func<IScopedProvider, TService>>(constructorCall, parameterExpression);
+        Expression<Func<IScopedProvider, TService>> lambda = Expression.Lambda<Func<IScopedProvider, TService>>(constructorCall, ProviderExpression);
         Func<IScopedProvider, TService> compiled = lambda.Compile();// Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>(), ...)
 
-        // Actually store the record
-        return new ServiceRecord<TService>(
-            typeof(TService),
-            typeof(TImplementation),
-            compiled,
-            scopeDepth
-        );
-    }
-
-    public static Func<IScopedProvider, object> CreateGenericFactory(Type serviceType, Type implementationType) {
-        if (implementationType.GetConstructors(BindingFlags.Public | BindingFlags.Instance).Length == 0) {
-            throw new InvalidOperationException($"No public constructors found for {implementationType}.");
-        }
-        var constructors = implementationType.GetConstructors();
-
-        // Select the most parameterized constructor (constructor with the most parameters)
-        ConstructorInfo? constructor = implementationType
-            .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            .OrderByDescending(c => c.GetParameters().Length)
-            .FirstOrDefault();
-
-        if (constructor == null) {
-            throw new InvalidOperationException($"No valid constructors found for {implementationType}.");
-        }
-
-        ParameterInfo[] parameters = constructor.GetParameters();
-
-        // Generate a parameter expression for the service provider argument in the lambda
-        ParameterExpression providerParam = Expression.Parameter(typeof(IScopedProvider), "provider");
-
-        // Generate constructor arguments, handling IServiceProvider specially
-        var arguments = new Expression[parameters.Length];
-        for (int i = parameters.Length - 1; i >= 0; i--) {
-            ParameterInfo parameter = parameters[i];
-            Type parameterType = parameter.ParameterType;
-            if (ResolveAsScopedProvider.Contains(parameterType)) {
-                arguments[i] = providerParam;
-                continue;
-            }
-
-            // Check if the parameter type is specifically T?
-            //      This means we can allow for services to not always having to be implemented
-            if (parameter.IsNullableReferenceType() || parameter is { HasDefaultValue: true, DefaultValue: null }) {
-                arguments[i] = Expression.Call(
-                    providerParam,
-                    GetServiceMethod.MakeGenericMethod(parameterType)
-                );
-
-                continue;
-            }
-
-            arguments[i] = Expression.Call(
-                providerParam,
-                GetRequiredServiceMethod.MakeGenericMethod(parameterType)
-            );
-        }
-
-        // Create the constructor call expression
-        NewExpression constructorCall = Expression.New(constructor, arguments);
-
-        // Build the lambda expression for the factory
-        Expression<Func<IScopedProvider, object>> lambda = Expression.Lambda<Func<IScopedProvider, object>>(
-            Expression.Convert(constructorCall, typeof(object)),// Cast result to object
-            providerParam
-        );
-
-        // Compile the lambda into an executable factory function
-        return lambda.Compile();
+        return compiled;
     }
 }
