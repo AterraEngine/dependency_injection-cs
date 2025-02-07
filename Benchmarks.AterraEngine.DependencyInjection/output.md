@@ -1,8 +1,4 @@
-| Type                                | Method                                                      |          Mean |       Error |      StdDev | Ratio | RatioSD |   Gen0 |   Gen1 | Allocated | Alloc Ratio |
-|-------------------------------------|-------------------------------------------------------------|--------------:|------------:|------------:|------:|--------:|-------:|-------:|----------:|------------:|
-| RepeatedServiceCollectionBenchmarks | Microsoft_AddBuildAndRetrieve_SingleDependency_Transient    | 51,233.394 ns | 830.6474 ns | 736.3473 ns | 1.000 |    0.02 | 2.4414 | 1.0986 |   42607 B |       1.000 |
-| ServiceCollectionBenchmarks         | Microsoft_AddBuildAndRetrieve_SingleDependency              |      5.198 ns |   0.6428 ns |   1.8954 ns | 0.000 |    0.00 | 0.0005 | 0.0001 |       9 B |       0.000 |
-| RepeatedServiceCollectionBenchmarks | AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient | 32,405.574 ns | 273.7063 ns | 228.5572 ns | 0.633 |    0.01 | 2.2583 | 0.5493 |   38648 B |       0.907 |
-| ServiceCollectionBenchmarks         | AterraEngine_AddBuildAndRetrieve_SingleDependency           |      1.931 ns |   0.0356 ns |   0.0333 ns | 0.000 |    0.00 | 0.0004 | 0.0002 |       7 B |       0.000 |
-| RepeatedServiceCollectionBenchmarks | Microsoft_AddBuildAndRetrieve_SingleDependency_Singleton    | 14,735.571 ns | 133.5552 ns | 118.3932 ns | 0.288 |    0.00 | 0.9918 | 0.2441 |   16752 B |       0.393 |
-| RepeatedServiceCollectionBenchmarks | AterraEngine_AddBuildAndRetrieve_SingleDependency_Singleton | 28,725.204 ns | 555.7780 ns | 519.8751 ns | 0.561 |    0.01 | 0.8545 | 0.2747 |   14784 B |       0.347 |
+| Method                                                      | Mean     | Error    | StdDev   | Gen0   | Gen1   | Allocated |
+|------------------------------------------------------------ |---------:|---------:|---------:|-------:|-------:|----------:|
+| Microsoft_AddBuildAndRetrieve_SingleDependency_Singleton    | 15.09 us | 0.123 us | 0.115 us | 0.9918 | 0.2441 |  16.36 KB |
+| AterraEngine_AddBuildAndRetrieve_SingleDependency_Singleton | 30.85 us | 0.434 us | 0.385 us | 1.0986 | 0.3052 |  18.89 KB |

@@ -13,24 +13,25 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     internal ScopedProvider? ParentScope { get; private set; }
     private int ScopeDepth { get; init; }
 
-    internal ConcurrentDictionary<Guid, object> Instances { get; } = new();
-
+    internal ConcurrentDictionary<Guid, object?> Instances { get; } = new();
     internal ConcurrentBag<IScopedProvider> ChildScopes { get; } = [];
+    private readonly ConcurrentDictionary<Guid, Delegate?> _transientFactoriesCache = new();
+    internal ServiceContainer ServiceContainer { get; } = serviceContainer;
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------=
     #region GetService by Type argument
-    private readonly ConcurrentDictionary<Type, MethodInfo> _getServiceMethodCache = new();
+    private ConcurrentDictionary<Type, MethodInfo> GetServiceMethodCache { get; } = [];
 
-    private readonly Lazy<MethodInfo> _getServiceMethod = new(static () => typeof(ScopedProvider)
+    private static readonly Lazy<MethodInfo> GetServiceMethod = new(static () => typeof(ScopedProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
 
-    public object? GetService(Type service) =>
-        _getServiceMethodCache
-            .GetOrAdd(service, valueFactory: _ => _getServiceMethod.Value.MakeGenericMethod(service))// get or store to cache
-            .Invoke(this, null);
+    public object? GetService(Type service) {
+        MethodInfo method = GetServiceMethodCache.GetOrAdd(service, valueFactory: static type => GetServiceMethod.Value.MakeGenericMethod(type));
+        return method.Invoke(this, null);
+    }
 
     public object GetRequiredService(Type service) =>
         GetService(service) ?? throw new CouldNotBeResolvedException($"The required service of type '{service}' could not be resolved.");
@@ -38,110 +39,83 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
 
     #region GetServices by Generic Type argument
     public TService? GetService<TService>() where TService : class {
-        FrozenServiceRecord record = ResolveRecord<TService>(throwOnNull: false);
-        if (record == FrozenServiceRecord.Empty) return null;
-        if (ResolveServiceInstance<TService>(record, false) is {} instance) return instance;
+        FrozenServiceRecord? record = ServiceContainer.ResolveRecord<TService>();
+        if (record is null) return null;
+
+        // Record could be established, so try and create the instance :  IService(...args)
+        if (ResolveServiceInstance<TService>(record) is {} instance) return instance;
 
         // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
         if (typeof(TService) == typeof(IScopedProvider)) return this as TService;
-        if (typeof(TService) == typeof(IServiceContainer)) return serviceContainer as TService;
+        if (typeof(TService) == typeof(IServiceContainer)) return ServiceContainer as TService;
 
         return null;
     }
 
     public TService GetRequiredService<TService>() where TService : class {
-        FrozenServiceRecord record = ResolveRecord<TService>(throwOnNull: false);
-        if (record == FrozenServiceRecord.Empty) throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
-
-        if (ResolveServiceInstance<TService>(record, false) is {} instance) return instance;
-
-        // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
-        if (typeof(TService) == typeof(IScopedProvider)) return (this as TService)!;
-        if (typeof(TService) == typeof(IServiceContainer)) return (serviceContainer as TService)!;
-
-        throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
+        if (GetService<TService>() is {} instance) return instance;
+        throw CouldNotBeResolvedException.Create<TService>();
     }
-
-    private FrozenServiceRecord ResolveRecord<TService>(bool throwOnNull) where TService : class {
-        Type typeOfService = typeof(TService);
-        // Resolve the record and try and create the instance :  IService(...args)
-        if (serviceContainer.ServiceRecords.TryGetValue(typeOfService, out FrozenServiceRecord record)) {
-            if (record.ScopeDepth <= ScopeDepth) return record;
-
-            if (throwOnNull) throw new DeeperScopeRequiredException($"Required scope's depth {ScopeDepth} is deeper than the current scope's depth of {record.ScopeDepth}");
-
-            return FrozenServiceRecord.Empty;
-        }
-
-        // ReSharper disable once InvertIf
-        // Check for open generic services : IService<T0,.. generic args>(...args)
-        if (typeOfService.IsGenericType && serviceContainer.TryGetGenericRecord(typeOfService, out FrozenServiceRecord closedRecord)) {
-            if (closedRecord.ScopeDepth <= ScopeDepth) return closedRecord;
-
-            if (throwOnNull) throw new DeeperScopeRequiredException($"Required scope's depth {ScopeDepth} is deeper than the current scope's depth of {closedRecord.ScopeDepth}");
-
-            return FrozenServiceRecord.Empty;
-        }
-
-        // If all else has failed
-        return FrozenServiceRecord.Empty;
-    }
-
-    private TService? ResolveServiceInstance<TService>(FrozenServiceRecord record, bool throwOnNull) where TService : class {
+    
+    private TService? ResolveServiceInstance<TService>(FrozenServiceRecord record) where TService : class {
         return record.Depth switch {
-            FrozenServiceRecord.KnownScopeDepth.ProviderScoped => ResolveProviderScoped<TService>(record, throwOnNull),
-            FrozenServiceRecord.KnownScopeDepth.Singleton => ResolveSingleton<TService>(record, throwOnNull),
-            FrozenServiceRecord.KnownScopeDepth.Transient => ResolveTransient<TService>(record, throwOnNull),
-            FrozenServiceRecord.KnownScopeDepth.CustomScoped => ResolveCustomScoped<TService>(record, throwOnNull),
+            FrozenServiceRecord.KnownScopeDepth.ProviderScoped => ResolveProviderScoped<TService>(record),
+            FrozenServiceRecord.KnownScopeDepth.Singleton => ServiceContainer.GetSingletonService<TService>(record, this),
+            FrozenServiceRecord.KnownScopeDepth.Transient => ResolveTransient<TService>(record),
+            FrozenServiceRecord.KnownScopeDepth.CustomScoped => ResolveCustomScoped<TService>(record),
             _ => null
         };
     }
 
-    private TService? ResolveProviderScoped<TService>(FrozenServiceRecord record, bool throwOnNull) where TService : class {
-        if (Instances.TryGetValue(record.Id, out object? cachedInstance)) {
-            if (cachedInstance is null && throwOnNull) throw new CouldNotBeResolvedException($"The service of type '{typeof(TService)}' was cached as null.");
+    private TService? ResolveProviderScoped<TService>(FrozenServiceRecord record) where TService : class {
+        return Instances.GetOrAdd(record.Id,
+            valueFactory: static (_, provider) => {
+                // Logic for non-generic service
+                if (provider.ServiceContainer.ServiceRecords.TryGetValue(typeof(TService), out FrozenServiceRecord? r)) {
+                    return  r.GetFactory<TService>().Invoke(provider);
+                }
 
-            return cachedInstance as TService;
+                // Logic for generic service
+                if (provider.ServiceContainer.ServiceRecords.TryGetValue(typeof(TService).GetGenericTypeDefinition(), out r) && r.GenericService != FrozenServiceRecord.GenericServiceState.None) {
+                    return provider.ServiceContainer.ResolveGenericService<TService>(r, provider);
+                }
+                
+                return null;
+            },
+            this) as TService;
+    }
+
+    private TService? ResolveTransient<TService>(FrozenServiceRecord record) where TService : class {
+        Delegate? factory = _transientFactoriesCache.GetOrAdd(record.Id,
+            valueFactory: static (_, container) => {
+                // Logic for non-generic service
+                if (container.ServiceRecords.TryGetValue(typeof(TService), out FrozenServiceRecord? r)) {
+                    return  r.GetFactory<TService>();
+                }
+                if (container.ServiceRecords.TryGetValue(typeof(TService).GetGenericTypeDefinition(), out FrozenServiceRecord? genericRecord) && genericRecord.GenericService != FrozenServiceRecord.GenericServiceState.None) {
+                    return container.ResolveGenericServiceFactory<TService>(genericRecord);
+                }
+                return null;
+            },
+            ServiceContainer);
+
+        return factory switch {
+            Func<IScopedProvider, TService> directFactory => directFactory(this),
+            Func<IScopedProvider, object> objectFactory => objectFactory(this) as TService,
+            _ => null
+        };
+
+    }
+
+    private TService? ResolveCustomScoped<TService>(FrozenServiceRecord record) where TService : class {
+        ScopedProvider? currentScope = this;
+
+        while (currentScope != null) {
+            if (record.ScopeDepth == currentScope.ScopeDepth) return currentScope.ResolveProviderScoped<TService>(record);
+            if (record.ScopeDepth > currentScope.ScopeDepth) break;
+
+            currentScope = currentScope.ParentScope;
         }
-
-        if (!record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? scopedFactory)) {
-            if (throwOnNull) throw CouldNotBeResolvedException.Create<TService>();
-
-            return null;
-        }
-
-        // Re-check if the instance was added, if not, then it was already added by another thread;
-        TService instance = scopedFactory(this);
-        if (Instances.TryAdd(record.Id, instance)) return instance;
-
-        return Instances[record.Id] as TService;
-    }
-
-    private TService? ResolveSingleton<TService>(FrozenServiceRecord record, bool throwOnNull) where TService : class {
-        if (serviceContainer.GetSingletonService<TService>(record, this) is {} singleton) return singleton;
-
-        if (throwOnNull) throw CouldNotBeResolvedException.Create<TService>();
-
-        return null;
-    }
-
-    private TService? ResolveTransient<TService>(FrozenServiceRecord record, bool throwOnNull) where TService : class {
-        if (record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? transientFactory)) return transientFactory(this);
-
-        if (throwOnNull) throw CouldNotBeResolvedException.Create<TService>();
-
-        return null;
-    }
-
-    private TService? ResolveCustomScoped<TService>(FrozenServiceRecord record, bool throwOnNull) where TService : class {
-        if (record.ScopeDepth == ScopeDepth) return ResolveProviderScoped<TService>(record, throwOnNull);
-
-        if (record.ScopeDepth > ScopeDepth) throw new DeeperScopeRequiredException($"Required scope's depth {ScopeDepth} is deeper than the current scope's depth of {record.ScopeDepth}");
-
-        if (ParentScope?.ResolveServiceInstance<TService>(record, throwOnNull) is {} resolvedFromParent) return resolvedFromParent;
-
-        
-        if (throwOnNull) throw new CouldNotBeResolvedException($"The service of type '{typeof(TService)}' could not be resolved in custom scope.");
 
         return null;
     }
@@ -160,29 +134,29 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         return scopedProvider;
     }
 
-    private ScopedProvider NewScopeProvider(int scopeLevel) => new(serviceContainer) {
+    private ScopedProvider NewScopeProvider(int scopeLevel) => new(ServiceContainer) {
         ParentScope = this,
         ScopeDepth = scopeLevel
     };
     #endregion
 
     #region IEnumerable<FrozenServiceRecord>
-    public IEnumerator<FrozenServiceRecord> GetEnumerator() => serviceContainer.ServiceRecords.Values.ToBuilder().GetEnumerator();
+    public IEnumerator<FrozenServiceRecord> GetEnumerator() => ServiceContainer.ServiceRecords.Values.ToBuilder().GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public int Count => serviceContainer.ServiceRecords.Count;
+    public int Count => ServiceContainer.ServiceRecords.Count;
     #endregion
 
     #region Dispose
     public void Dispose() {
         try {
-            foreach ((Guid recordId, object instance) in Instances) {
-                if (serviceContainer.AsyncDisposableRecords.Contains(recordId) && instance is IAsyncDisposable asyncDisposable) {
+            foreach ((Guid recordId, object? instance) in Instances) {
+                if (ServiceContainer.AsyncDisposableRecords.Contains(recordId) && instance is IAsyncDisposable asyncDisposable) {
                     asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
                 }
 
-                if (serviceContainer.DisposableRecords.Contains(recordId) && instance is IDisposable disposable) {
+                if (ServiceContainer.DisposableRecords.Contains(recordId) && instance is IDisposable disposable) {
                     disposable.Dispose();
                 }
             }
@@ -205,12 +179,12 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
             // Yes I know we could do some sort of task collection and then do a Task.WhenAll()
             //      But I don't think it's worth it, because we don't expect this to be a performance bottleneck (at the moment)
 
-            foreach ((Guid recordId, object instance) in Instances) {
-                if (serviceContainer.AsyncDisposableRecords.Contains(recordId) && instance is IAsyncDisposable asyncDisposable) {
+            foreach ((Guid recordId, object? instance) in Instances) {
+                if (ServiceContainer.AsyncDisposableRecords.Contains(recordId) && instance is IAsyncDisposable asyncDisposable) {
                     await asyncDisposable.DisposeAsync().ConfigureAwait(false);
                 }
 
-                if (serviceContainer.DisposableRecords.Contains(recordId) && instance is IDisposable disposable) {
+                if (ServiceContainer.DisposableRecords.Contains(recordId) && instance is IDisposable disposable) {
                     disposable.Dispose();
                 }
             }

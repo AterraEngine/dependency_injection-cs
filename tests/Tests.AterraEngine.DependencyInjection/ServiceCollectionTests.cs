@@ -249,12 +249,38 @@ public class ServiceCollectionTests {
     }
 
     [Test]
-    public async Task Collection_ShouldAllow_RegisteringGenericServices() {
+    public async Task Collection_ShouldAllow_RegisteringGenericServices_Singleton() {
         // Arrange
         var collection = new ServiceCollection();
 
         // Act
         collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
+
+        // Assert
+        await Assert.That(collection).HasCount().EqualTo(1);
+        await Assert.That(collection.Records).ContainsKey(typeof(IServiceWithGenerics<,>));
+    }
+
+    [Test]
+    public async Task Collection_ShouldAllow_RegisteringGenericServices_Transient() {
+        // Arrange
+        var collection = new ServiceCollection();
+
+        // Act
+        collection.AddTransient(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
+
+        // Assert
+        await Assert.That(collection).HasCount().EqualTo(1);
+        await Assert.That(collection.Records).ContainsKey(typeof(IServiceWithGenerics<,>));
+    }
+
+    [Test]
+    public async Task Collection_ShouldAllow_RegisteringGenericServices_Scoped() {
+        // Arrange
+        var collection = new ServiceCollection();
+
+        // Act
+        collection.AddScoped(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
 
         // Assert
         await Assert.That(collection).HasCount().EqualTo(1);
