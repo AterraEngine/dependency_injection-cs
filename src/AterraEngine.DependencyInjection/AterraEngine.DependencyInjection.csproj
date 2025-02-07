@@ -7,7 +7,7 @@
 
         <IsPackable>true</IsPackable>
         <PackageId>AterraEngine.DependencyInjection</PackageId> <!-- Main package name -->
-        <Version>4.3.0</Version> <!-- Package version -->
+        <Version>4.4.0</Version> <!-- Package version -->
         <Authors>Anna Sas</Authors>
         <Description>A custom built Dependency Container system for AterraEngine</Description>
         <PackageProjectUrl>https://github.com/AterraEngine/dependency_injection-cs/</PackageProjectUrl>
@@ -22,23 +22,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="Tests.AterraEngine.DependencyInjection"/>
+        <InternalsVisibleTo Include="Tests.AterraEngine.DependencyInjection" />
 
-        <None Include="../../LICENSE" Pack="true" PackagePath="" Visible="false"/>
-        <None Include="../../README.md" Pack="true" PackagePath="" Visible="false"/>
-        <None Include="../../assets/icon.png" Pack="true" PackagePath="" Visible="false"/>
+        <None Include="../../LICENSE" Pack="true" PackagePath="" Visible="false" />
+        <None Include="../../README.md" Pack="true" PackagePath="" Visible="false" />
+        <None Include="../../assets/icon.png" Pack="true" PackagePath="" Visible="false" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AterraEngine.DependencyInjection.Contracts\AterraEngine.DependencyInjection.Contracts.csproj"/>
+        <ProjectReference Include="..\AterraEngine.DependencyInjection.Contracts\AterraEngine.DependencyInjection.Contracts.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CodeOfChaos.Extensions" Version="0.34.0"/>
-        <PackageReference Include="CodeOfChaos.Types.TypedValueStore" Version="0.16.0"/>
-        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0"/>
-        <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.1"/>
-        <PackageReference Include="Serilog" Version="4.2.0"/>
+        <PackageReference Include="CodeOfChaos.Extensions" Version="0.34.0" />
+        <PackageReference Include="CodeOfChaos.Types.TypedValueStore" Version="0.16.0" />
+        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
+        <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.1" />
+        <PackageReference Include="Serilog" Version="4.2.0" />
     </ItemGroup>
 
 </Project>
