@@ -92,9 +92,9 @@ public class ServiceContainer : IServiceContainer {
             // Handle open generic records
             if (queuedRecord.GenericService == FrozenServiceRecord.GenericServiceState.OpenGeneric) {
                 Type serviceType = typeof(TService);
-                if (!serviceType.IsGenericType) return null; // Resolve closed generic type
+                if (!serviceType.IsGenericType) return null; 
 
-                // Resolve until we get it
+                // Resolve until we get it a ClosedGeneric
                 Type genericTypeDefinition = serviceType.GetGenericTypeDefinition();
                 if (!TryGetClosedGenericRecord(genericTypeDefinition, serviceType, out record)) return null;
                 queue.Enqueue(record);
@@ -118,13 +118,8 @@ public class ServiceContainer : IServiceContainer {
     }
 
     public TService GetRequiredSingletonService<TService>(FrozenServiceRecord record, IScopedProvider serviceProvider) where TService : class {
-        if (SingletonInstances.TryGetValue(record.Id, out object? instance)) return (TService)instance;
-
-        record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? factory);
-        if (factory?.Invoke(serviceProvider) is not {} casted) throw new InvalidOperationException($"Service of type {typeof(TService)} is not registered.");
-
-        SingletonInstances = SingletonInstances.Add(record.Id, casted);
-        return casted;
+        if (GetSingletonService<TService>(record, serviceProvider) is {} instance) return instance;
+        throw new CouldNotBeResolvedException($"The required service of type '{typeof(TService)}' could not be resolved.");
     }
 
     private static void EnsureUniqueIds(ServiceCollection collection) {
