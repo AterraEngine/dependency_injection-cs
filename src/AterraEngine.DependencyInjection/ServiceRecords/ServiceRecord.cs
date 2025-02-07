@@ -18,7 +18,8 @@ public record ServiceRecord<TService>(
     public bool IsProviderScoped { get; } = ScopeDepth == (int)DefaultScopeDepth.ProviderScoped;
     public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
-
+    public bool IsGenericService { get; } = false;
+    
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
@@ -38,6 +39,7 @@ public record ServiceRecord<TService>(
             { IsDisposable: true } => FrozenServiceRecord.DisposalType.Disposable,
             { IsAsyncDisposable: true } => FrozenServiceRecord.DisposalType.AsyncDisposable,
             _ => FrozenServiceRecord.DisposalType.None,
-        }
+        },
+        GenericService: IsGenericService ? FrozenServiceRecord.GenericServiceState.OpenGeneric : FrozenServiceRecord.GenericServiceState.None
     );
 }

@@ -270,4 +270,19 @@ public class ScopedProviderTests {
         await Assert.That(service).IsNotNull()
             .And.IsTypeOf<ServiceWithGenerics<string, int>>();
     }
+    
+    [Test]
+    public async Task ScopedProvider_ShouldReturn_RequiredServiceWithGenerics() {
+        // Arrange
+        var collection = new ServiceCollection();
+        collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
+        IScopedProvider provider = collection.Build();
+            
+        // Act 
+        var service = provider.GetRequiredService<IServiceWithGenerics<string, int>>();
+            
+        // Assert
+        await Assert.That(service).IsNotNull()
+            .And.IsTypeOf<ServiceWithGenerics<string, int>>();
+    }
 }

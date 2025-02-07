@@ -2,15 +2,14 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using System.Collections.Frozen;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace AterraEngine.DependencyInjection.ServiceRecords;
+namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public static class ServiceRecordReflectionFactory {
+public static class ConstructorReflectionFactory {
     private static readonly MethodInfo GetRequiredServiceMethod = typeof(IScopedProvider)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(IScopedProvider.GetRequiredService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
@@ -26,43 +25,7 @@ public static class ServiceRecordReflectionFactory {
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    [RequiresDynamicCode("This method uses reflection to create a service record.")]
-    public static ServiceRecord<TService> CreateWithFactory<TService, TImplementation>(int scopeDepth) where TImplementation : class, TService {
-        Type type = typeof(TImplementation);
-        if (type.GetConstructors() is { Length: 0 }) throw new Exception("No constructors");
-
-        #region Special Constructor format cases
-        // Special case for empty constructor
-        if (type.GetConstructor([]) is {} emptyConstructor) {
-            return new ServiceRecord<TService>(
-                typeof(TService),
-                typeof(TImplementation),
-                ImplementationFactory: _ => (TService)emptyConstructor.Invoke(null),
-                scopeDepth
-            );
-        }
-
-        // special case for only a service provider
-        if (type.GetConstructor([typeof(IScopedProvider)]) is {} onlyServiceProviderConstructor) {
-            return new ServiceRecord<TService>(
-                typeof(TService),
-                typeof(TImplementation),
-                ImplementationFactory: provider => (TService)onlyServiceProviderConstructor.Invoke([provider]),
-                scopeDepth
-            );
-        }
-        #endregion
-
-        // Actually store the record
-        return new ServiceRecord<TService>(
-            typeof(TService),
-            typeof(TImplementation),
-            CreateFactory<TService>(type),
-            scopeDepth
-        );
-    }
-
-    public static Func<IScopedProvider, TService> CreateFactory<TService>(Type implementationType) {
+    public static Func<IScopedProvider, TService> CreateFunc<TService>(Type implementationType) {
         // Select the most parameterized constructor (constructor with the most parameters)
         ConstructorInfo? constructor = implementationType
             .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)

@@ -6,7 +6,7 @@ namespace AterraEngine.DependencyInjection.ServiceRecords;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public record OpenGenericServiceRecord(
+public record GenericServiceRecord(
     Type ServiceType,
     Type ImplementationType,
     int ScopeDepth
@@ -18,7 +18,8 @@ public record OpenGenericServiceRecord(
     public bool IsProviderScoped { get; } = ScopeDepth == (int)DefaultScopeDepth.ProviderScoped;
     public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
-
+    public bool IsGenericService { get; } = true;
+    
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
@@ -39,6 +40,6 @@ public record OpenGenericServiceRecord(
             { IsAsyncDisposable: true } => FrozenServiceRecord.DisposalType.AsyncDisposable,
             _ => FrozenServiceRecord.DisposalType.None,
         },
-        IsGenericService:true
+        GenericService: IsGenericService ? FrozenServiceRecord.GenericServiceState.OpenGeneric : FrozenServiceRecord.GenericServiceState.None
     );
 }

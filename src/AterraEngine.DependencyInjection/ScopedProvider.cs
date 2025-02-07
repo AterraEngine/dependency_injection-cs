@@ -1,7 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using AterraEngine.DependencyInjection.ServiceRecords;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
@@ -40,19 +39,19 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     #region GetServices by Generic Type argument
     public TService? GetService<TService>() where TService : class {
         Type typeOfService = typeof(TService);
-        // Resolve the record and try and create the instance
+        // Resolve the record and try and create the instance :  IService(...args)
         if (serviceContainer.ServiceRecords.TryGetValue(typeOfService, out FrozenServiceRecord record)) {
             record.ThrowIfDeeperScopeRequired(ScopeDepth);
             return ResolveServiceInstance<TService>(record);
         }
-        
-        // Check for open generic services
-        if (typeOfService.IsGenericType) {
-            Type genericDefinition = typeOfService.GetGenericTypeDefinition();
-            if (!serviceContainer.TryGetClosedGenericRecord(genericDefinition, typeOfService, out FrozenServiceRecord closedRecord)) return null;
+            
+
+        // Check for open generic services : IService<T0,.. generic args>(...args)
+        if (typeOfService.IsGenericType && serviceContainer.TryGetClosedGenericRecord(typeOfService.GetGenericTypeDefinition(), typeOfService, out FrozenServiceRecord closedRecord)) {
+            record.ThrowIfDeeperScopeRequired(ScopeDepth);
             return ResolveServiceInstance<TService>(closedRecord);
         }
-
+        
         // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
         if (typeOfService == typeof(IScopedProvider) || typeOfService == typeof(IScopedProvider)) return (TService)(object)this;
         if (typeOfService == typeof(IServiceContainer)) return serviceContainer as TService;
@@ -98,17 +97,15 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     public TService GetRequiredService<TService>() where TService : class {
         Type typeOfService = typeof(TService);
 
+        // Resolve the record and try and create the instance :  IService(...args)
         if (serviceContainer.ServiceRecords.TryGetValue(typeof(TService), out FrozenServiceRecord record)) {
             record.ThrowIfDeeperScopeRequired(ScopeDepth);
             return ResolveRequiredServiceInstance<TService>(record);
         }
         
-        // Check for open generic services
-        if (typeOfService.IsGenericType) {
-            Type genericDefinition = typeOfService.GetGenericTypeDefinition();
-            if (!serviceContainer.TryGetClosedGenericRecord(genericDefinition, typeOfService, out FrozenServiceRecord closedRecord)) {
-                throw new CouldNotBeResolvedException($"The required service of type '{typeOfService}' could not be resolved.");
-            }
+        // Check for open generic services : IService<T0,.. generic args>(...args)
+        if (typeOfService.IsGenericType && serviceContainer.TryGetClosedGenericRecord(typeOfService.GetGenericTypeDefinition(), typeOfService, out FrozenServiceRecord closedRecord)) {
+            record.ThrowIfDeeperScopeRequired(ScopeDepth);
             return ResolveRequiredServiceInstance<TService>(closedRecord);
         }
 
@@ -123,6 +120,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         switch (record.Depth) {
             case FrozenServiceRecord.KnownScopeDepth.ProviderScoped:
                 if (Instances.TryGetValue(record.Id, out object? cachedInstance)) return (cachedInstance as TService)!;
+
                 if (!record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? scopedFactory)) goto default;
 
                 TService instance = scopedFactory(this);

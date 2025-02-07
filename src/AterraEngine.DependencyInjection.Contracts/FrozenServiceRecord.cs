@@ -15,7 +15,7 @@ public readonly record struct FrozenServiceRecord(
     int ScopeDepth,
     FrozenServiceRecord.KnownScopeDepth Depth,
     FrozenServiceRecord.DisposalType Disposal,
-    bool IsGenericService = false
+    FrozenServiceRecord.GenericServiceState GenericService
 ) {
 
     public enum DisposalType : byte {
@@ -29,6 +29,12 @@ public readonly record struct FrozenServiceRecord(
         Singleton,
         ProviderScoped,
         CustomScoped
+    }
+
+    public enum GenericServiceState : byte {
+        None,
+        OpenGeneric,
+        ClosedGeneric
     }
 
     public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IScopedProvider, T>? factory) {

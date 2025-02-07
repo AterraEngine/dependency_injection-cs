@@ -48,7 +48,7 @@ public class ServiceCollection : IServiceCollection {
     #region AddService
     public IServiceCollection AddService<TImplementation>(int scopeLevel) where TImplementation : class => AddService<TImplementation, TImplementation>(scopeLevel);
     public IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService {
-        Add(ServiceRecordReflectionFactory.CreateWithFactory<TService, TImplementation>(scopeLevel));
+        Add(ServiceRecordHelper.CreateWithFactory<TService, TImplementation>(scopeLevel));
         return this;
     }
 
@@ -91,7 +91,7 @@ public class ServiceCollection : IServiceCollection {
         // Handle open generic type registration
         if (service.IsGenericTypeDefinition && implementation.IsGenericTypeDefinition) {
             if (!service.IsInterface) throw new InvalidOperationException($"Open generic service type '{service}' must be an interface.");
-            Add(new OpenGenericServiceRecord(service, implementation, scopeLevel));
+            Add(new GenericServiceRecord(service, implementation, scopeLevel));
             return this;
         }
 
