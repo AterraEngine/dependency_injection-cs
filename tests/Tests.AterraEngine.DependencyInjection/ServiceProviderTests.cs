@@ -255,7 +255,7 @@ public class ScopedProviderTests {
                 .Because("Should have been created by the factory which uses a set of specific ids");
         }
     }
-    
+
     [Test]
     [Arguments(LifetimeSwitch.Transient)]
     [Arguments(LifetimeSwitch.Singleton)]
@@ -264,11 +264,11 @@ public class ScopedProviderTests {
         // Arrange
         var collection = new ServiceCollection();
         LifetimeSwitcher.On(lifetimeSwitch,
-            () => collection.AddTransient(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
-            () => collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
-            () => collection.AddScoped(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>))
+            onTransient: () => collection.AddTransient(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
+            onSingleton: () => collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
+            onScoped: () => collection.AddScoped(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>))
         );
-        
+
         IScopedProvider provider = collection.Build();
 
         // Act 

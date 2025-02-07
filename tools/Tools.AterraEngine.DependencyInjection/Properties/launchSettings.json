@@ -25,7 +25,7 @@
       "commandName": "Project",
       "commandLineArgs": "git-version-bump --section=\"manual\" --projects=\"%PROJECTS%\" --push"
     },
-    "Generate Services" : {
+    "Generate Services": {
       "_readme": "just generates a file filled with services",
       "commandName": "Project",
       "commandLineArgs": "generate-services "

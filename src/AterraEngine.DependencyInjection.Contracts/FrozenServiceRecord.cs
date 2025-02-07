@@ -35,7 +35,7 @@ public record FrozenServiceRecord(
         ProviderScoped,
         CustomScoped
     }
-    
+
     public bool TryGetFactory<T>([NotNullWhen(true)] out Func<IScopedProvider, T>? factory) {
         if (ImplementationFactory is Func<IScopedProvider, T> casted) {
             factory = casted;

@@ -15,36 +15,36 @@ namespace Benchmarks.AterraEngine.DependencyInjection;
 // [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 public class RepeatedServiceCollectionBenchmarks {
     private const int Count = 1_000;
-    
+
     [Benchmark(Baseline = true)]
     public object Microsoft_AddBuildAndRetrieve_SingleDependency_Transient() {
         var collection = new ServiceCollection();
-    
+
         collection.AddTransient<IService, Service>();
-    
+
         ServiceProvider provider = collection.BuildServiceProvider();
-    
+
         var list = new List<IService>(Count);
         for (int i = 0; i < Count; i++) {
             list.Add(provider.GetRequiredService<IService>());
         }
-    
+
         return list;
     }
-    
+
     [Benchmark]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient() {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
-    
+
         collection.AddTransient<IService, Service>();
-    
+
         IScopedProvider provider = collection.Build();
-    
+
         var list = new List<IService>(Count);
         for (int i = 0; i < Count; i++) {
             list.Add(provider.GetRequiredService<IService>());
         }
-    
+
         return list;
     }
 

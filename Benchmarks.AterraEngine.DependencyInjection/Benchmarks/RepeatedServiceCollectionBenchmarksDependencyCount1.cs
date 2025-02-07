@@ -14,38 +14,38 @@ namespace Benchmarks.AterraEngine.DependencyInjection;
 [MemoryDiagnoser]
 public class RepeatedServiceCollectionBenchmarksDependencyCount1 {
     private const int Count = 1_000;
-    
+
     [Benchmark(Baseline = true)]
     public object Microsoft_AddBuildAndRetrieve_SingleDependency_Transient() {
         var collection = new ServiceCollection();
-    
+
         collection.AddTransient<IService, Service>();
         collection.AddTransient<INestedService, NestedService>();
-    
+
         ServiceProvider provider = collection.BuildServiceProvider();
-    
+
         var list = new List<IService>(Count);
         for (int i = 0; i < Count; i++) {
             list.Add(provider.GetRequiredService<IService>());
         }
-    
+
         return list;
     }
-    
+
     [Benchmark]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient() {
         var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
-    
+
         collection.AddTransient<IService, Service>();
         collection.AddTransient<INestedService, NestedService>();
-    
+
         IScopedProvider provider = collection.Build();
-    
+
         var list = new List<IService>(Count);
         for (int i = 0; i < Count; i++) {
             list.Add(provider.GetRequiredService<IService>());
         }
-    
+
         return list;
     }
 
@@ -87,7 +87,7 @@ public class RepeatedServiceCollectionBenchmarksDependencyCount1 {
     public object Microsoft_AddBuildAndRetrieve_SingleDependency_Scoped() {
         var collection = new ServiceCollection();
 
-        collection.AddScoped<IService, Service>(); 
+        collection.AddScoped<IService, Service>();
         collection.AddScoped<INestedService, NestedService>();
 
         ServiceProvider provider = collection.BuildServiceProvider();
@@ -122,7 +122,8 @@ public class RepeatedServiceCollectionBenchmarksDependencyCount1 {
     public class Service(INestedService nestedService) : IService {
         public INestedService NestedService { get; } = nestedService;
     }
-    
+
     public interface INestedService;
+
     public class NestedService : INestedService {}
 }

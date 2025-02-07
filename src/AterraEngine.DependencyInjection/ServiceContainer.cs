@@ -91,14 +91,14 @@ public class ServiceContainer : IServiceContainer {
     // -----------------------------------------------------------------------------------------------------------------
     public TService? GetSingletonService<TService>(FrozenServiceRecord record, ScopedProvider serviceProvider) where TService : class {
         return SingletonInstances.GetOrAdd(record.ServiceType,
-            static (id, provider) => {
+            valueFactory: static (type, provider) => {
                 // Logic for non-generic service
-                if (provider.ServiceContainer.ServiceRecords.TryGetValue(id, out FrozenServiceRecord? r)) {
-                    return  r.GetFactory<TService>().Invoke(provider);
+                if (provider.ServiceContainer.ServiceRecords.TryGetValue(type, out FrozenServiceRecord? r)) {
+                    return r.GetFactory<TService>().Invoke(provider);
                 }
 
                 // Logic for generic service
-                if (provider.ServiceContainer.ServiceRecords.TryGetValue(id.GetGenericTypeDefinition(), out r) && r.GenericService != FrozenServiceRecord.GenericServiceState.None) {
+                if (provider.ServiceContainer.ServiceRecords.TryGetValue(type.GetGenericTypeDefinition(), out r) && r.GenericService != FrozenServiceRecord.GenericServiceState.None) {
                     return provider.ServiceContainer.ResolveGenericService<TService>(r, provider);
                 }
 
@@ -107,15 +107,15 @@ public class ServiceContainer : IServiceContainer {
                 // One of the few, and probably only times I've fought against the null checker and said "fuck it, I'm going to do something stupid"
                 // And it works ... which is even scarier, so I used it a couple of times in this class.
                 // Yes I know this is ... wrong ... but if it works, and is tested it's a "feature" :P
-                return 0; 
+                return 0;
             },
-        serviceProvider
+            serviceProvider
         ) as TService;
     }
 
     internal object ResolveGenericService<TService>(FrozenServiceRecord record, ScopedProvider serviceProvider) where TService : class {
         if (ResolveGenericServiceFactory<TService>(record) is not {} factoryDelegate) return 0;
-        
+
         return factoryDelegate switch {
             Func<IScopedProvider, TService> directFactory => directFactory(serviceProvider),
             Func<IScopedProvider, object> objectFactory => (objectFactory(serviceProvider) as TService)!,
@@ -135,6 +135,7 @@ public class ServiceContainer : IServiceContainer {
                 if (!TryGetGenericRecord(typeof(TService), out FrozenServiceRecord? newRecord)) return null;
                 queue.Enqueue(newRecord);
             }
+
             return null;
         }
         finally {
@@ -142,16 +143,19 @@ public class ServiceContainer : IServiceContainer {
             queue.Clear();
             QueuePool.Return(queue);
         }
-    } 
+    }
 
     public bool TryGetGenericRecord(Type typeOfService, [NotNullWhen(true)] out FrozenServiceRecord? closedRecord) {
-        closedRecord = ClosedGenericRecords.GetOrAdd(typeOfService, static (type, container) => {
-            if (!container.ServiceRecords.TryGetValue(type.GetGenericTypeDefinition(), out FrozenServiceRecord? openRecord)) return null;
-            return FrozenServiceRecordHelper.CreateClosedGenericRecord(type, openRecord);
-        }, this);
+        closedRecord = ClosedGenericRecords.GetOrAdd(typeOfService,
+            valueFactory: static (type, container) => {
+                if (!container.ServiceRecords.TryGetValue(type.GetGenericTypeDefinition(), out FrozenServiceRecord? openRecord)) return null;
+                return FrozenServiceRecordHelper.CreateClosedGenericRecord(type, openRecord);
+            },
+            this);
+
         return closedRecord is not null;
     }
-    
+
     internal FrozenServiceRecord? ResolveRecord<TService>() where TService : class {
         Type typeOfService = typeof(TService);
         // Resolve the record and try and create the instance :  IService(...args)

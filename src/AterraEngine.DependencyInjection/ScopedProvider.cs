@@ -10,13 +10,13 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider, IReadOnlyCollection<FrozenServiceRecord> {
+    private readonly ConcurrentDictionary<Type, Delegate?> _transientFactoriesCache = new();
     internal ScopedProvider? ParentScope { get; private set; }
     private int ScopeDepth { get; init; }
 
     internal ConcurrentDictionary<Type, object?> Instances { get; } = new();
     internal ConcurrentBag<IScopedProvider> ChildScopes { get; } = [];
-    private readonly ConcurrentDictionary<Type, Delegate?> _transientFactoriesCache = new();
-    
+
     internal ServiceContainer ServiceContainer { get; } = serviceContainer;
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         if (GetService<TService>() is {} instance) return instance;
         throw CouldNotBeResolvedException.Create<TService>();
     }
-    
+
     private TService? ResolveServiceInstance<TService>(FrozenServiceRecord record) where TService : class {
         return record.Depth switch {
             FrozenServiceRecord.KnownScopeDepth.ProviderScoped => ResolveProviderScoped<TService>(record),
@@ -73,14 +73,14 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
             valueFactory: static (type, provider) => {
                 // Logic for non-generic service
                 if (provider.ServiceContainer.ServiceRecords.TryGetValue(type, out FrozenServiceRecord? r)) {
-                    return  r.GetFactory<TService>().Invoke(provider);
+                    return r.GetFactory<TService>().Invoke(provider);
                 }
 
                 // Logic for generic service
                 if (provider.ServiceContainer.ServiceRecords.TryGetValue(type.GetGenericTypeDefinition(), out r) && r.GenericService != FrozenServiceRecord.GenericServiceState.None) {
                     return provider.ServiceContainer.ResolveGenericService<TService>(r, provider);
                 }
-                
+
                 return null;
             },
             this) as TService;
@@ -91,18 +91,18 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
             valueFactory: static (type, container) => {
                 // Logic for non-generic service
                 if (container.ServiceRecords.TryGetValue(type, out FrozenServiceRecord? r)) {
-                    return  r.GetFactory<TService>();
+                    return r.GetFactory<TService>();
                 }
-                
+
                 // Logic for generic service
                 if (container.ServiceRecords.TryGetValue(type.GetGenericTypeDefinition(), out FrozenServiceRecord? genericRecord) && genericRecord.GenericService != FrozenServiceRecord.GenericServiceState.None) {
                     return container.ResolveGenericServiceFactory<TService>(genericRecord);
                 }
-                
+
                 return null;
             },
             ServiceContainer);
-        
+
         return factory switch {
             Func<IScopedProvider, TService> directFactory => directFactory(this),
             Func<IScopedProvider, object> objectFactory => objectFactory(this) as TService,

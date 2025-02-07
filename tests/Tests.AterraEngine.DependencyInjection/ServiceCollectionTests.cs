@@ -18,9 +18,9 @@ public class ServiceCollectionTests {
         // Arrange
         var collection = new ServiceCollection();
         LifetimeSwitcher.On(lifetimeSwitch,
-            () => collection.AddTransient<IEmptyService, EmptyService>(),
-            () => collection.AddSingleton<IEmptyService, EmptyService>(),
-            () => collection.AddScoped<IEmptyService, EmptyService>()
+            onTransient: () => collection.AddTransient<IEmptyService, EmptyService>(),
+            onSingleton: () => collection.AddSingleton<IEmptyService, EmptyService>(),
+            onScoped: () => collection.AddScoped<IEmptyService, EmptyService>()
         );
 
         // Act
@@ -47,9 +47,9 @@ public class ServiceCollectionTests {
 
         // Add multiple services
         LifetimeSwitcher.On(lifetimeSwitch,
-            () => collection.AddTransient<IEmptyService, EmptyService>().AddTransient<ISampleService, SampleService>(),
-            () => collection.AddSingleton<IEmptyService, EmptyService>().AddSingleton<ISampleService, SampleService>(),
-            () => collection.AddScoped<IEmptyService, EmptyService>().AddScoped<ISampleService, SampleService>()
+            onTransient: () => collection.AddTransient<IEmptyService, EmptyService>().AddTransient<ISampleService, SampleService>(),
+            onSingleton: () => collection.AddSingleton<IEmptyService, EmptyService>().AddSingleton<ISampleService, SampleService>(),
+            onScoped: () => collection.AddScoped<IEmptyService, EmptyService>().AddScoped<ISampleService, SampleService>()
         );
 
         // Act
@@ -79,9 +79,9 @@ public class ServiceCollectionTests {
         // Arrange
         var collection = new ServiceCollection();
         LifetimeSwitcher.On(lifetimeSwitch,
-            () => collection.AddTransient<IScopedProviderRequiredService, ScopedProviderRequiredService>(),
-            () => collection.AddSingleton<IScopedProviderRequiredService, ScopedProviderRequiredService>(),
-            () => collection.AddScoped<IScopedProviderRequiredService, ScopedProviderRequiredService>()
+            onTransient: () => collection.AddTransient<IScopedProviderRequiredService, ScopedProviderRequiredService>(),
+            onSingleton: () => collection.AddSingleton<IScopedProviderRequiredService, ScopedProviderRequiredService>(),
+            onScoped: () => collection.AddScoped<IScopedProviderRequiredService, ScopedProviderRequiredService>()
         );
 
         // Act
@@ -144,7 +144,7 @@ public class ServiceCollectionTests {
         var collection = new ServiceCollection();
 
         const int serviceCount = 1000;// Number of services to generate
-        var data = ServiceHelper.GenerateServices(serviceCount).ToDictionary();
+        Dictionary<Type, Type> data = ServiceHelper.GenerateServices(serviceCount).ToDictionary();
 
         // Register each dynamically created service in the collection
         foreach ((Type interfaceType, Type implementationType) in data) {
@@ -236,9 +236,9 @@ public class ServiceCollectionTests {
         // Arrange
         ServiceCollection collection = [];
         LifetimeSwitcher.On(lifetimeSwitch,
-            () => collection.AddTransient<IEmptyService, EmptyService>(),
-            () => collection.AddSingleton<IEmptyService, EmptyService>(),
-            () => collection.AddScoped<IEmptyService, EmptyService>()
+            onTransient: () => collection.AddTransient<IEmptyService, EmptyService>(),
+            onSingleton: () => collection.AddSingleton<IEmptyService, EmptyService>(),
+            onScoped: () => collection.AddScoped<IEmptyService, EmptyService>()
         );
 
         // Act
@@ -256,10 +256,11 @@ public class ServiceCollectionTests {
         // Arrange
         var collection = new ServiceCollection();
         LifetimeSwitcher.On(lifetimeSwitch,
-            () => collection.AddTransient<IEmptyService, EmptyService>(),
-            () => collection.AddSingleton<IEmptyService, EmptyService>(),
-            () => collection.AddScoped<IEmptyService, EmptyService>()
+            onTransient: () => collection.AddTransient<IEmptyService, EmptyService>(),
+            onSingleton: () => collection.AddSingleton<IEmptyService, EmptyService>(),
+            onScoped: () => collection.AddScoped<IEmptyService, EmptyService>()
         );
+
         IScopedProvider provider = collection.Build();
 
         // Act
@@ -278,17 +279,18 @@ public class ServiceCollectionTests {
         // Arrange
         var collection = new ServiceCollection();
         LifetimeSwitcher.On(lifetimeSwitch,
-            () => collection.AddTransient<IEmptyService, EmptyService>(),
-            () => collection.AddSingleton<IEmptyService, EmptyService>(),
-            () => collection.AddScoped<IEmptyService, EmptyService>()
+            onTransient: () => collection.AddTransient<IEmptyService, EmptyService>(),
+            onSingleton: () => collection.AddSingleton<IEmptyService, EmptyService>(),
+            onScoped: () => collection.AddScoped<IEmptyService, EmptyService>()
         );
+
         IScopedProvider provider = collection.Build();
 
         // Act & Assert
         await Assert.That(provider).IsNotNull();
         Assert.Throws<InvalidOperationException>(() => collection.AddSingleton<IEmptyService, EmptyService>());
     }
-    
+
     [Test]
     [Arguments(LifetimeSwitch.Transient)]
     [Arguments(LifetimeSwitch.Singleton)]
@@ -299,9 +301,9 @@ public class ServiceCollectionTests {
 
         // Act
         LifetimeSwitcher.On(lifetimeSwitch,
-            () => collection.AddTransient(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
-            () => collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
-            () => collection.AddScoped(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>))
+            onTransient: () => collection.AddTransient(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
+            onSingleton: () => collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>)),
+            onScoped: () => collection.AddScoped(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>))
         );
 
         // Assert
