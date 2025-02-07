@@ -1,6 +1,7 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using AterraEngine.DependencyInjection.ServiceRecords;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
@@ -43,6 +44,13 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         if (serviceContainer.ServiceRecords.TryGetValue(typeOfService, out FrozenServiceRecord record)) {
             record.ThrowIfDeeperScopeRequired(ScopeDepth);
             return ResolveServiceInstance<TService>(record);
+        }
+        
+        // Check for open generic services
+        if (typeOfService.IsGenericType) {
+            Type genericDefinition = typeOfService.GetGenericTypeDefinition();
+            if (!serviceContainer.TryGetClosedGenericRecord(genericDefinition, typeOfService, out FrozenServiceRecord closedRecord)) return null;
+            return ResolveServiceInstance<TService>(closedRecord);
         }
 
         // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
@@ -93,6 +101,15 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         if (serviceContainer.ServiceRecords.TryGetValue(typeof(TService), out FrozenServiceRecord record)) {
             record.ThrowIfDeeperScopeRequired(ScopeDepth);
             return ResolveRequiredServiceInstance<TService>(record);
+        }
+        
+        // Check for open generic services
+        if (typeOfService.IsGenericType) {
+            Type genericDefinition = typeOfService.GetGenericTypeDefinition();
+            if (!serviceContainer.TryGetClosedGenericRecord(genericDefinition, typeOfService, out FrozenServiceRecord closedRecord)) {
+                throw new CouldNotBeResolvedException($"The required service of type '{typeOfService}' could not be resolved.");
+            }
+            return ResolveRequiredServiceInstance<TService>(closedRecord);
         }
 
         // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container

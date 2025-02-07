@@ -8,13 +8,14 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public readonly record struct FrozenServiceRecord(
-    // Type ServiceType,
-    // Type ImplementationType,
     Guid Id,
+    Type ServiceType,
+    Type ImplementationType,
     object ImplementationFactory,
     int ScopeDepth,
     FrozenServiceRecord.KnownScopeDepth Depth,
-    FrozenServiceRecord.DisposalType Disposal
+    FrozenServiceRecord.DisposalType Disposal,
+    bool IsGenericService = false
 ) {
 
     public enum DisposalType : byte {

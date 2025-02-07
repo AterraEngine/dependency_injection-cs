@@ -1,6 +1,7 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using AterraEngine.DependencyInjection.ServiceRecords;
 using AterraEngine.DependencyInjection.Services;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -77,11 +78,31 @@ public class ServiceCollection : IServiceCollection {
         ?? throw new InvalidOperationException();
 
     [RequiresDynamicCode("This method uses reflection to create a service record.")]
-    public IServiceCollection AddService(Type service, Type implementation, int scopeLevel) =>
-        _addServiceMethodByServiceAndImplementationTypes.Value
+    public IServiceCollection AddService(Type service, Type implementation, int scopeLevel) {
+        ThrowIfReadOnly();
+
+        // Verify the type arguments are either both open or closed
+        if (implementation.IsGenericTypeDefinition != service.IsGenericTypeDefinition) {
+            throw new InvalidOperationException(
+                "Cannot register a closed implementation type with an open service type, or vice versa."
+            );
+        }
+
+        // Handle open generic type registration
+        if (service.IsGenericTypeDefinition && implementation.IsGenericTypeDefinition) {
+            if (!service.IsInterface) throw new InvalidOperationException($"Open generic service type '{service}' must be an interface.");
+            Add(new OpenGenericServiceRecord(service, implementation, scopeLevel));
+            return this;
+        }
+
+        // Handle normal registration for closed types
+        var result = _addServiceMethodByServiceAndImplementationTypes.Value
             .MakeGenericMethod(service, implementation)
-            .Invoke(this, [scopeLevel]) as IServiceCollection
-        ?? throw new InvalidOperationException();
+            .Invoke(this, [scopeLevel]) as IServiceCollection;
+
+        return result ?? throw new InvalidOperationException();
+
+    }
     #endregion
     #endregion
 

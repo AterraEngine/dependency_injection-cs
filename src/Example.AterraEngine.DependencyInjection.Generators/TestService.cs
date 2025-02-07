@@ -5,6 +5,7 @@
 // ReSharper disable UnusedTypeParameter
 
 using AterraEngine.DependencyInjection;
+using AterraEngine.DependencyInjection.ServiceRecords;
 
 namespace Example.AterraEngine.DependencyInjection.Generators;
 // ---------------------------------------------------------------------------------------------------------------------

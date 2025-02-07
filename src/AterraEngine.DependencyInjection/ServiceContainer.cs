@@ -1,7 +1,9 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using AterraEngine.DependencyInjection.ServiceRecords;
 using Serilog;
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Collections.Immutable;
 
@@ -11,6 +13,8 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceContainer : IServiceContainer {
     public FrozenDictionary<Type, FrozenServiceRecord> ServiceRecords { get; private init; } = FrozenDictionary<Type, FrozenServiceRecord>.Empty;
+    public ConcurrentDictionary<Type, FrozenServiceRecord> ClosedGenericRecords { get; } = new();
+
     private ImmutableDictionary<Guid, object> SingletonInstances { get; set; } = ImmutableDictionary<Guid, object>.Empty;
     public FrozenSet<Guid> DisposableRecords { get; private init; } = FrozenSet<Guid>.Empty;
     public FrozenSet<Guid> AsyncDisposableRecords { get; private init; } = FrozenSet<Guid>.Empty;
@@ -64,13 +68,35 @@ public class ServiceContainer : IServiceContainer {
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
     public TService? GetSingletonService<TService>(FrozenServiceRecord record, IScopedProvider serviceProvider) where TService : class {
-        if (SingletonInstances.TryGetValue(record.Id, out object? instance)) return instance as TService;
+        // TODO make checks and balacnes for the while(true)
+        while (true) {
+            if (SingletonInstances.TryGetValue(record.Id, out object? instance)) return instance as TService;
 
-        record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? factory);
-        if (factory?.Invoke(serviceProvider) is not {} casted) return null;
+            // Handle open generic records
+            if (record.IsGenericService) {
+                Type serviceType = typeof(TService);
+                if (!serviceType.IsGenericType) return null; // Resolve closed generic type
 
-        SingletonInstances = SingletonInstances.Add(record.Id, casted);
-        return casted;
+                // Resolve until we get it
+                Type genericTypeDefinition = serviceType.GetGenericTypeDefinition();
+                if (!TryGetClosedGenericRecord(genericTypeDefinition, serviceType, out record)) return null;
+                continue;
+            }
+
+            TService newInstance;
+            if (record.TryGetFactory<TService>(out Func<IScopedProvider, TService>? factory)) {
+                newInstance = factory(serviceProvider);
+            } else if (record.TryGetFactory<object>(out Func<IScopedProvider, object>? factoryOfObject)) {
+                if (factoryOfObject(serviceProvider) is not TService casted) return null;
+                newInstance = casted;
+            } else {
+                return null;
+            }
+
+
+            SingletonInstances = SingletonInstances.Add(record.Id, newInstance);
+            return newInstance;
+        }
     }
 
     public TService GetRequiredSingletonService<TService>(FrozenServiceRecord record, IScopedProvider serviceProvider) where TService : class {
@@ -107,5 +133,18 @@ public class ServiceContainer : IServiceContainer {
 
         RootScopedProvider = new ScopedProvider(this);
         return RootScopedProvider;
+    }
+    public bool TryGetClosedGenericRecord(Type genericTypeDefinition, Type typeOfService, out FrozenServiceRecord closedRecord) {
+        // Get the open generic record first
+        if (!ServiceRecords.TryGetValue(genericTypeDefinition, out FrozenServiceRecord openRecord)) {
+            closedRecord = default;
+            return false;
+        }
+        
+        // When we have this, we can proceed
+        if (ClosedGenericRecords.TryGetValue(typeOfService, out closedRecord)) return true;
+        closedRecord = FrozenServiceRecordHelper.CreateClosedGenericRecord(typeOfService, openRecord);
+        ClosedGenericRecords.TryAdd(typeOfService,closedRecord);
+        return true;
     }
 }

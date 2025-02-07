@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace AterraEngine.DependencyInjection;
+namespace AterraEngine.DependencyInjection.ServiceRecords;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ public static class ServiceRecordReflectionFactory {
 
         // Build the lambda expression for the factory
         Expression<Func<IScopedProvider, TService>> lambda = Expression.Lambda<Func<IScopedProvider, TService>>(constructorCall, parameterExpression);
-        Func<IScopedProvider, TService> compiled = lambda.Compile(); // Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>(), ...)
+        Func<IScopedProvider, TService> compiled = lambda.Compile();// Compiles into (provider) => new TImplementation(provider.GetRequiredService<TArg>(), ...)
 
         // Actually store the record
         return new ServiceRecord<TService>(
@@ -102,5 +102,66 @@ public static class ServiceRecordReflectionFactory {
             compiled,
             scopeDepth
         );
+    }
+
+    public static Func<IScopedProvider, object> CreateGenericFactory(Type serviceType, Type implementationType) {
+        if (implementationType.GetConstructors(BindingFlags.Public | BindingFlags.Instance).Length == 0) {
+            throw new InvalidOperationException($"No public constructors found for {implementationType}.");
+        }
+        var constructors = implementationType.GetConstructors();
+
+        // Select the most parameterized constructor (constructor with the most parameters)
+        ConstructorInfo? constructor = implementationType
+            .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .OrderByDescending(c => c.GetParameters().Length)
+            .FirstOrDefault();
+
+        if (constructor == null) {
+            throw new InvalidOperationException($"No valid constructors found for {implementationType}.");
+        }
+
+        ParameterInfo[] parameters = constructor.GetParameters();
+
+        // Generate a parameter expression for the service provider argument in the lambda
+        ParameterExpression providerParam = Expression.Parameter(typeof(IScopedProvider), "provider");
+
+        // Generate constructor arguments, handling IServiceProvider specially
+        var arguments = new Expression[parameters.Length];
+        for (int i = parameters.Length - 1; i >= 0; i--) {
+            ParameterInfo parameter = parameters[i];
+            Type parameterType = parameter.ParameterType;
+            if (ResolveAsScopedProvider.Contains(parameterType)) {
+                arguments[i] = providerParam;
+                continue;
+            }
+
+            // Check if the parameter type is specifically T?
+            //      This means we can allow for services to not always having to be implemented
+            if (parameter.IsNullableReferenceType() || parameter is { HasDefaultValue: true, DefaultValue: null }) {
+                arguments[i] = Expression.Call(
+                    providerParam,
+                    GetServiceMethod.MakeGenericMethod(parameterType)
+                );
+
+                continue;
+            }
+
+            arguments[i] = Expression.Call(
+                providerParam,
+                GetRequiredServiceMethod.MakeGenericMethod(parameterType)
+            );
+        }
+
+        // Create the constructor call expression
+        NewExpression constructorCall = Expression.New(constructor, arguments);
+
+        // Build the lambda expression for the factory
+        Expression<Func<IScopedProvider, object>> lambda = Expression.Lambda<Func<IScopedProvider, object>>(
+            Expression.Convert(constructorCall, typeof(object)),// Cast result to object
+            providerParam
+        );
+
+        // Compile the lambda into an executable factory function
+        return lambda.Compile();
     }
 }
