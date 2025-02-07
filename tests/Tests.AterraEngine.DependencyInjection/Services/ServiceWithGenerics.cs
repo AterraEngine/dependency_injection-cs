@@ -5,9 +5,9 @@ namespace Tests.AterraEngine.DependencyInjection.Services;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class ServiceWithGenerics : IServiceWithGenerics<int, string> {
-    public int Key { get; set; } = 1;
-    public string Value { get; set; } = string.Empty;
+public class ServiceWithGenerics<T0, T1> : IServiceWithGenerics<T0, T1> {
+    public T0 Key { get; } = default;
+    public T1 Value { get; } = default;
 }
 
 public interface IServiceWithGenerics<out T0, out T1> {

@@ -79,16 +79,6 @@ public class ServiceCollectionTests {
     }
 
     [Test]
-    public async Task Collection_Should_Throw_ServicesWithGenerics() {
-        // Arrange
-        var collection = new ServiceCollection();
-
-        // Act & Assert
-        await Assert.ThrowsAsync(() => Task.FromResult(collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics))));
-        // TODO find a way to make services with generics be auto created through a factory system?
-    }
-
-    [Test]
     public async Task Collection_Should_Handle_Scopes() {
         // Arrange
         var collection = new ServiceCollection();
@@ -256,5 +246,18 @@ public class ServiceCollectionTests {
         // Act & Assert
         await Assert.That(provider).IsNotNull();
         Assert.Throws<InvalidOperationException>(() => collection.AddSingleton<IEmptyService, EmptyService>());
+    }
+    
+    [Test]
+    public async Task Collection_ShouldAllow_RegisteringGenericServices() {
+        // Arrange
+        var collection = new ServiceCollection();
+        
+        // Act
+        collection.AddSingleton(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics<,>));
+        
+        // Assert
+        await Assert.That(collection).HasCount().EqualTo(1);
+        await Assert.That(collection.Records).ContainsKey(typeof(IServiceWithGenerics<,>));
     }
 }
