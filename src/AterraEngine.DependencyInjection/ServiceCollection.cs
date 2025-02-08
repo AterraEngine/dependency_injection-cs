@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------------------------------------------------
 using AterraEngine.DependencyInjection.ServiceRecords;
 using AterraEngine.DependencyInjection.Services;
+using Serilog;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -24,7 +25,7 @@ public class ServiceCollection : IServiceCollection {
         .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
 
     internal ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
-    internal ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
+    private ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
     internal bool HasDisposalRecords { get; private set; }
     internal bool HasAsyncDisposalRecords { get; private set; }
 
@@ -37,8 +38,19 @@ public class ServiceCollection : IServiceCollection {
     public IScopedProvider Build() {
         IServiceContainer container = ServiceContainer.FromCollection(this);
         IScopedProvider provider = container.GetRootScopedProvider();
-
         IsReadOnly = true;
+        
+        // ReSharper disable once InvertIf
+        // Log discarded records only if collection contains some and logging is enabled
+        if (DiscardedRecords.IsEmpty && container.GetRootScopedProvider().GetService<ILogger>() is {} logger) {
+            logger = logger.ForContext<ServiceContainer>();
+
+            logger.Debug("Discarded services count: {@DiscardedRecords}", DiscardedRecords.Count);
+            foreach (IServiceRecord discardedRecord in DiscardedRecords) {
+                logger.Debug("Discarded service: {@DiscardedRecord}", discardedRecord);
+            }
+        }
+
         return provider;
     }
 

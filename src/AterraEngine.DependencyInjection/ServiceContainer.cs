@@ -37,20 +37,8 @@ public class ServiceContainer : IServiceContainer {
 
         // The following lazies need the container to work correctly
         container.RootScopedProvider = new Lazy<IScopedProvider>(() => new ScopedProvider(container));
-        
         if (collection.HasDisposalRecords) container.DisposableRecords = new Lazy<FrozenSet<Guid>>(() => container.ServiceRecords.Values.Where(record => record.Disposal is FrozenServiceRecord.DisposalType.Disposable).Select(record => record.Id).ToFrozenSet());
         if (collection.HasAsyncDisposalRecords) container.AsyncDisposableRecords = new Lazy<FrozenSet<Guid>>(() => container.ServiceRecords.Values.Where(record => record.Disposal is FrozenServiceRecord.DisposalType.AsyncDisposable).Select(record => record.Id).ToFrozenSet());
-
-        // ReSharper disable once InvertIf
-        // Log discarded records only if collection contains some and logging is enabled
-        if (!collection.DiscardedRecords.IsEmpty && container.GetRootScopedProvider().GetService<ILogger>() is {} logger) {
-            logger = logger.ForContext<ServiceContainer>();
-
-            logger.Debug("Discarded services count: {@DiscardedRecords}", collection.DiscardedRecords.Count);
-            foreach (IServiceRecord discardedRecord in collection.DiscardedRecords) {
-                logger.Debug("Discarded service: {@DiscardedRecord}", discardedRecord);
-            }
-        }
 
         return container;
     }
