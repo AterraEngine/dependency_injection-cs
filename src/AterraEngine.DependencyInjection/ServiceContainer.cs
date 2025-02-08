@@ -13,15 +13,14 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceContainer : IServiceContainer {
-    public FrozenDictionary<Type, FrozenServiceRecord> ServiceRecords { get; private init; } = FrozenDictionary<Type, FrozenServiceRecord>.Empty;
+    private FrozenDictionary<Type, FrozenServiceRecord> ServiceRecords { get; init; } = FrozenDictionary<Type, FrozenServiceRecord>.Empty;
     private ConcurrentDictionary<Type, FrozenServiceRecord> ClosedGenericRecords { get; } = new();
-
     private ConcurrentDictionary<Type, object> SingletonInstances { get; } = [];
+    private ConcurrentDictionary<Type, Delegate> TransientFactoriesCache { get; } = new(); 
+    private Lazy<IScopedProvider> RootScopedProvider { get; set; } = null!; 
+    
     public Lazy<FrozenSet<Type>> DisposableRecords { get; private set; } = null!;
     public Lazy<FrozenSet<Type>> AsyncDisposableRecords { get; private set; } = null!;
-
-    private Lazy<IScopedProvider> RootScopedProvider { get; set; } = null!; // set in FromCollection
-
     // -----------------------------------------------------------------------------------------------------------------
     // Constructors
     // -----------------------------------------------------------------------------------------------------------------
@@ -60,27 +59,43 @@ public class ServiceContainer : IServiceContainer {
     
     public TService GetSingletonService<TService>(FrozenServiceRecord record) where TService : class {
         return (TService)SingletonInstances.GetOrAdd(record.ServiceType,
-            valueFactory: static (type, container) => {
-                // Logic for non-generic service
-                if (container.ServiceRecords.TryGetValue(type, out FrozenServiceRecord? record))
-                    return record.GetFactory<TService>().Invoke(container.RootScopedProvider.Value);
-                
-                // Logic for generic service
-                FrozenServiceRecord genericRecord = container.ServiceRecords[type.GetGenericTypeDefinition()];
-                return container.ResolveGenericService<TService>(genericRecord, container.RootScopedProvider.Value);
-            },
+            valueFactory: static (_, container) => container.CreateInstance<TService>(container.RootScopedProvider.Value),
             factoryArgument: this
         );
     }
 
-    internal TService ResolveGenericService<TService>(FrozenServiceRecord record, IScopedProvider serviceProvider) where TService : class 
-        => ResolveGenericServiceFactory<TService>(record) switch {
+    public TService GetTransientService<TService>(FrozenServiceRecord record) where TService : class {
+        Delegate factory = TransientFactoriesCache.GetOrAdd(
+            record.ServiceType,
+            valueFactory: static (_, container) => container.GetFactory<TService>(),
+            factoryArgument: this
+        );
+        return factory switch {
+            Func<IScopedProvider, TService> directFactory => directFactory(RootScopedProvider.Value),
+            Func<IScopedProvider, object> objectFactory => (TService)objectFactory(RootScopedProvider.Value),
+            _ => throw new InvalidOperationException("Could not resolve factory for generic service.")
+        };
+    }
+
+    public TService CreateInstance<TService>(IScopedProvider serviceProvider) where TService : class {
+        return GetFactory<TService>() switch {
             Func<IScopedProvider, TService> directFactory => directFactory(serviceProvider),
             Func<IScopedProvider, object> objectFactory => (TService)objectFactory(serviceProvider),
             _ => throw new InvalidOperationException("Could not resolve factory for generic service.")
         };
+    }
 
-    internal Delegate ResolveGenericServiceFactory<TService>(FrozenServiceRecord record) {
+    private Delegate GetFactory<TService>() where TService : class {
+        // Logic for non-generic service
+        if (ServiceRecords.TryGetValue(typeof(TService), out FrozenServiceRecord? record))
+            return record.GetFactory<TService>();
+                
+        // Logic for generic service
+        FrozenServiceRecord genericRecord = ServiceRecords[typeof(TService).GetGenericTypeDefinition()];
+        return ResolveGenericServiceFactory<TService>(genericRecord);
+    }
+
+    private Delegate ResolveGenericServiceFactory<TService>(FrozenServiceRecord record) {
         if (record.GenericService == FrozenServiceRecord.GenericServiceState.ClosedGeneric) return record.ImplementationFactory;
         return GetGenericRecord(typeof(TService)).ImplementationFactory;
     }
