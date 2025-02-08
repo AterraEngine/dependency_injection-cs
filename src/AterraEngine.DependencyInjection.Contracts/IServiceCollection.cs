@@ -25,7 +25,7 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
 
     IServiceCollection AddServiceFromFactory<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class;
 
-    IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel, int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
+    IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel, int? scopeLevelFactory = null, bool autoAssignFactory = false) where TFactory : class, IFactoryService<TService> where TService : class;
     #endregion
 
     #region AddSingleton
@@ -41,7 +41,7 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
 
     IServiceCollection AddSingletonFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class;
 
-    IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
+    IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null, bool autoAssignFactory = false) where TFactory : class, IFactoryService<TService> where TService : class;
     #endregion
 
     #region AddTransient
@@ -57,7 +57,7 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
 
     IServiceCollection AddTransientFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class;
 
-    IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
+    IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null, bool autoAssignFactory = false) where TFactory : class, IFactoryService<TService> where TService : class;
     #endregion
 
     #region AddScoped
@@ -73,6 +73,6 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
 
     IServiceCollection AddScopedFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class;
 
-    IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
+    IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null, bool autoAssignFactory = false) where TFactory : class, IFactoryService<TService> where TService : class;
     #endregion
 }
