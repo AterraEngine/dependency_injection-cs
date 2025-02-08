@@ -10,8 +10,6 @@ public record GenericServiceRecord(
     Type ImplementationType,
     int ScopeDepth
 ) : IServiceRecord {
-    public bool IsGenericService { get; } = true;
-
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public bool IsTransient { get; } = ScopeDepth == (int)DefaultScopeDepth.Transient;
     public bool IsSingleton { get; } = ScopeDepth == (int)DefaultScopeDepth.Singleton;
@@ -38,6 +36,6 @@ public record GenericServiceRecord(
             { IsAsyncDisposable: true } => FrozenServiceRecord.DisposalType.AsyncDisposable,
             _ => FrozenServiceRecord.DisposalType.None
         },
-        IsGenericService ? FrozenServiceRecord.GenericServiceState.OpenGeneric : FrozenServiceRecord.GenericServiceState.None
+        FrozenServiceRecord.GenericServiceState.OpenGeneric
     );
 }

@@ -11,8 +11,6 @@ public record ServiceRecord<TService>(
     Func<IScopedProvider, TService> ImplementationFactory,
     int ScopeDepth
 ) : IServiceRecord {
-    public bool IsGenericService { get; } = false;
-
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public bool IsTransient { get; } = ScopeDepth == (int)DefaultScopeDepth.Transient;
     public bool IsSingleton { get; } = ScopeDepth == (int)DefaultScopeDepth.Singleton;
@@ -39,6 +37,6 @@ public record ServiceRecord<TService>(
             { IsAsyncDisposable: true } => FrozenServiceRecord.DisposalType.AsyncDisposable,
             _ => FrozenServiceRecord.DisposalType.None
         },
-        IsGenericService ? FrozenServiceRecord.GenericServiceState.OpenGeneric : FrozenServiceRecord.GenericServiceState.None
+        FrozenServiceRecord.GenericServiceState.None
     );
 }

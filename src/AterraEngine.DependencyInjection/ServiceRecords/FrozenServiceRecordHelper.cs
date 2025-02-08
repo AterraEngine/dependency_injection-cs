@@ -16,18 +16,14 @@ public static class FrozenServiceRecordHelper {
         Type closedImplementationType = openRecord.ImplementationType
             .MakeGenericType(closedType.GetGenericArguments());// Close the generic type
 
-        // Generate a factory for this specific closed generic
-        Func<IScopedProvider, object> closedFactory = ConstructorReflectionFactory
-            .CreateFunc<object>(closedImplementationType);// Use the closed type
-
         return new FrozenServiceRecord(
             closedType,
             closedImplementationType,// Pass the fully closed implementation type
-            closedFactory,// Factory for the closed generic
+            ConstructorReflectionFactory.CreateFunc<object>(closedImplementationType),// Factory for the closed generic
             openRecord.ScopeDepth,
             openRecord.Depth,
             openRecord.Disposal,
-            FrozenServiceRecord.GenericServiceState.ClosedGeneric// It's no longer open generic
+            FrozenServiceRecord.GenericServiceState.ClosedGeneric // It's no longer open, unresolved, generic
         );
     }
 }

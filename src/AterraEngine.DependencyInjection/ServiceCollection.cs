@@ -49,7 +49,12 @@ public class ServiceCollection : IServiceCollection {
     #region AddService
     public IServiceCollection AddService<TImplementation>(int scopeLevel) where TImplementation : class => AddService<TImplementation, TImplementation>(scopeLevel);
     public IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService {
-        Add(ServiceRecordHelper.CreateWithFactory<TService, TImplementation>(scopeLevel));
+        Add(new ServiceRecord<TService>(
+            typeof(TService),
+            typeof(TImplementation),
+            ConstructorReflectionFactory.CreateFunc<TService>(typeof(TImplementation)),
+            scopeLevel
+        ));
         return this;
     }
 

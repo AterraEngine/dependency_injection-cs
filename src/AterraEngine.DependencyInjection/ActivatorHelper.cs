@@ -1,7 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using AterraEngine.DependencyInjection.ServiceRecords;
 using System.Diagnostics.CodeAnalysis;
 
 namespace AterraEngine.DependencyInjection;
@@ -14,7 +13,6 @@ public static class ActivatorHelper {
     public static T CreateInstance<T>(IScopedProvider scopedProvider) where T : class {
         // Very "easy" approach in doing this, might need a lot more lifting in the future for edge cases ike creating structs, etc...
         // TODO: This requires a lot of testing to make valid code.
-        ServiceRecord<T> record = ServiceRecordHelper.CreateWithFactory<T, T>((int)DefaultScopeDepth.Transient);
-        return record.ImplementationFactory.Invoke(scopedProvider);
+        return ConstructorReflectionFactory.CreateFunc<T>(typeof(T)).Invoke(scopedProvider);
     }
 }
