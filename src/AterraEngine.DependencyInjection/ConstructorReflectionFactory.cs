@@ -1,7 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using System.Collections.Frozen;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -25,7 +24,7 @@ public static class ConstructorReflectionFactory {
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public static Func<IScopedProvider, TService> CreateFunc<TService>(Type implementationType) {        
+    public static Func<IScopedProvider, TService> CreateFunc<TService>(Type implementationType) {
         // Select the most parameterized constructor (constructor with the most parameters)
         ConstructorInfo? constructor = implementationType
             .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)

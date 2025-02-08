@@ -11,6 +11,12 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider {
+
+    private static readonly FrozenDictionary<Type, Func<ScopedProvider, object>> SpecialTypeResolvers = new Dictionary<Type, Func<ScopedProvider, object>> {
+        { typeof(IScopedProvider), static provider => provider },
+        { typeof(IServiceContainer), static provider => provider.ServiceContainer }
+    }.ToFrozenDictionary();
+
     internal ScopedProvider? ParentScope { get; private set; }
     private int ScopeDepth { get; init; }
 
@@ -18,11 +24,6 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     internal ConcurrentBag<IScopedProvider> ChildScopes { get; } = [];
 
     private ServiceContainer ServiceContainer { get; } = serviceContainer;
-    
-    private static readonly FrozenDictionary<Type, Func<ScopedProvider, object>> SpecialTypeResolvers = new Dictionary<Type, Func<ScopedProvider, object>> {
-        { typeof(IScopedProvider), static provider => provider },
-        { typeof(IServiceContainer), static provider => provider.ServiceContainer }
-    }.ToFrozenDictionary();
 
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -36,7 +37,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
 
     public object? GetService(Type service) {
-        MethodInfo method = GetServiceMethodCache.GetOrAdd(service, static type => GetServiceMethod.Value.MakeGenericMethod(type));
+        MethodInfo method = GetServiceMethodCache.GetOrAdd(service, valueFactory: static type => GetServiceMethod.Value.MakeGenericMethod(type));
         return method.Invoke(this, null);
     }
 
@@ -46,7 +47,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
 
     #region GetServices by Generic Type argument
     public TService? GetService<TService>() where TService : class {
-        if (ServiceContainer.TryResolveRecord<TService>(out FrozenServiceRecord record)) {
+        if (ServiceContainer.TryResolveRecord<TService>(out FrozenServiceRecord? record)) {
             return ResolveServiceByScope<TService>(record);
         }
 
@@ -56,7 +57,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     }
 
     public TService GetRequiredService<TService>() where TService : class {
-        if (ServiceContainer.TryResolveRecord<TService>(out FrozenServiceRecord record)) {
+        if (ServiceContainer.TryResolveRecord<TService>(out FrozenServiceRecord? record)) {
             return ResolveServiceByScope<TService>(record);
         }
 
@@ -65,7 +66,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         throw CouldNotBeResolvedException.Create<TService>();
     }
 
-    private TService ResolveServiceByScope<TService>(FrozenServiceRecord record) where TService : class 
+    private TService ResolveServiceByScope<TService>(FrozenServiceRecord record) where TService : class
         => record.Depth switch {
             FrozenServiceRecord.KnownScopeDepth.ProviderScoped => ResolveProviderScoped<TService>(record),
             FrozenServiceRecord.KnownScopeDepth.Singleton => ServiceContainer.GetSingletonService<TService>(record),
@@ -74,7 +75,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
             _ => throw new ArgumentOutOfRangeException(nameof(record))
         };
 
-    private TService ResolveProviderScoped<TService>(FrozenServiceRecord record) where TService : class 
+    private TService ResolveProviderScoped<TService>(FrozenServiceRecord record) where TService : class
         => (TService)Instances.GetOrAdd(
             record.ServiceType,
             valueFactory: static (_, box) => box.Item1.ServiceContainer.CreateInstance<TService>(box.Item2, box.Item1),

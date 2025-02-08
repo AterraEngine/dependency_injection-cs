@@ -5,7 +5,6 @@ using AterraEngine.DependencyInjection;
 using AterraEngine.DependencyInjection.Services;
 
 namespace Tests.AterraEngine.DependencyInjection.EdgeCases;
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
@@ -19,8 +18,9 @@ public class ServiceFromInterfaceFactoryTests {
             var factory = new Factory(provider);
             return factory;
         });
+
         IScopedProvider provider = collection.Build();
-        
+
         // Act
         var service = provider.GetRequiredService<IService>();
 
@@ -29,13 +29,15 @@ public class ServiceFromInterfaceFactoryTests {
         await Assert.That(service).IsTypeOf<Service>();
     }
 
-    #pragma warning disable CS9113 // Parameter is unread.
+    #pragma warning disable CS9113// Parameter is unread.
     public interface IService;
+
     public interface IFactory : IFactoryService<IService>;
-    
+
     public class Service : IService;
+
     public class Factory(IScopedProvider provider) : IFactory {
         public IService Create(IScopedProvider _) => new Service();
     }
-    #pragma warning restore CS9113 // Parameter is unread.
+    #pragma warning restore CS9113// Parameter is unread.
 }

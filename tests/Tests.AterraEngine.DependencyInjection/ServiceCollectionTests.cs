@@ -91,7 +91,7 @@ public class ServiceCollectionTests {
         IScopedProvider provider = collection.Build();
         var container = provider.GetService<IServiceContainer>();
         var service = provider.GetService<IScopedProviderRequiredService>();
-        
+
         // Assert
         await Assert.That(container)
             .IsNotNull()

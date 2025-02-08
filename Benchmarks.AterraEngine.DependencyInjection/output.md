@@ -1,5 +1,5 @@
-| Method                                                      | Mean      | Error    | StdDev    | Median    | Ratio | RatioSD | Gen0   | Gen1   | Allocated | Alloc Ratio |
-|------------------------------------------------------------ |----------:|---------:|----------:|----------:|------:|--------:|-------:|-------:|----------:|------------:|
+| Method                                                      |      Mean |    Error |    StdDev |    Median | Ratio | RatioSD |   Gen0 |   Gen1 | Allocated | Alloc Ratio |
+|-------------------------------------------------------------|----------:|---------:|----------:|----------:|------:|--------:|-------:|-------:|----------:|------------:|
 | Microsoft_AddBuildAndRetrieve_SingleDependency_Transient    |  48.55 us | 0.207 us |  0.184 us |  48.52 us |  1.00 |    0.01 | 2.4414 | 1.0986 |  41.61 KB |        1.00 |
 | AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient |  69.08 us | 0.567 us |  0.531 us |  69.04 us |  1.42 |    0.01 | 2.8076 | 2.6855 |   46.6 KB |        1.12 |
 | Microsoft_AddBuildAndRetrieve_SingleDependency_Singleton    |  15.14 us | 0.226 us |  0.211 us |  15.11 us |  0.31 |    0.00 | 0.9918 | 0.2441 |  16.36 KB |        0.39 |

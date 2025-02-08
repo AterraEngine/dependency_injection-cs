@@ -30,7 +30,7 @@ public class ServiceCollection : IServiceCollection {
 
     public int Count => Records.Count;
     public bool IsReadOnly { get; private set; }
-    
+
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ public class ServiceCollection : IServiceCollection {
     private void ThrowIfReadOnly() {
         if (IsReadOnly) throw new InvalidOperationException("Collection is read only");
     }
-    
+
     #region AddService
     public IServiceCollection AddService<TImplementation>(int scopeLevel) where TImplementation : class => AddService<TImplementation, TImplementation>(scopeLevel);
     public IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService {
@@ -55,6 +55,7 @@ public class ServiceCollection : IServiceCollection {
             ConstructorReflectionFactory.CreateFunc<TService>(typeof(TImplementation)),
             scopeLevel
         ));
+
         return this;
     }
 
@@ -66,7 +67,7 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddServiceFromFactory<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class
         => AddService(new ServiceRecord<TService>(typeof(TService), typeof(TService), factory, scopeLevel));
 
-    public IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel) where TService : class where TFactory : class, IFactoryService<TService> 
+    public IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService>(
             factory: static provider => provider.GetRequiredService<TFactory>().Create(provider),
             scopeLevel
@@ -125,8 +126,8 @@ public class ServiceCollection : IServiceCollection {
 
     public IServiceCollection AddSingletonFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Singleton);
-    
-    public IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> 
+
+    public IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Singleton);
     #endregion
 
@@ -148,7 +149,7 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddTransientFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Transient);
 
-    public IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> 
+    public IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Transient);
     #endregion
 
@@ -170,7 +171,7 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddScopedFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.ProviderScoped);
 
-    public IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> 
+    public IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.ProviderScoped);
     #endregion
 
@@ -192,7 +193,7 @@ public class ServiceCollection : IServiceCollection {
         if (!Records.TryAdd(item.ServiceType, item)) {
             throw new InvalidOperationException($"Unexpected Collision in service records of type {item.ServiceType}");
         }
-        
+
         HasDisposalRecords |= item.IsDisposable;
         HasAsyncDisposalRecords |= item.IsAsyncDisposable;
     }

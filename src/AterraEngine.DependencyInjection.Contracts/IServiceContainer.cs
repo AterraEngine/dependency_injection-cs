@@ -7,6 +7,6 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public interface IServiceContainer: IReadOnlyCollection<FrozenServiceRecord> {
+public interface IServiceContainer : IReadOnlyCollection<FrozenServiceRecord> {
     IScopedProvider GetRootScopedProvider();
 }

@@ -20,22 +20,22 @@ public record GenericServiceRecord(
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public FrozenServiceRecord ToFrozen() => new(
-        ServiceType,
-        ImplementationType,
-        (Func<IScopedProvider, object>)(static _ => throw new InvalidOperationException("Open generic types can't be instantiated directly. Use a closed type.")),
-        ScopeDepth,
-        this switch {
+    public FrozenServiceRecord ToFrozen() => new() {
+        ServiceType = ServiceType,
+        ImplementationType = ImplementationType,
+        ImplementationFactory = (Func<IScopedProvider, object>)(static _ => throw new InvalidOperationException("Open generic types can't be instantiated directly. Use a closed type.")),
+        ScopeDepth = ScopeDepth,
+        Depth = this switch {
             { IsSingleton: true } => FrozenServiceRecord.KnownScopeDepth.Singleton,
             { IsProviderScoped: true } => FrozenServiceRecord.KnownScopeDepth.ProviderScoped,
             { ScopeDepth: > (int)DefaultScopeDepth.ProviderScoped } => FrozenServiceRecord.KnownScopeDepth.CustomScoped,
             _ => FrozenServiceRecord.KnownScopeDepth.Transient
         },
-        this switch {
+        Disposal = this switch {
             { IsDisposable: true } => FrozenServiceRecord.DisposalType.Disposable,
             { IsAsyncDisposable: true } => FrozenServiceRecord.DisposalType.AsyncDisposable,
             _ => FrozenServiceRecord.DisposalType.None
         },
-        FrozenServiceRecord.GenericServiceState.OpenGeneric
-    );
+        GenericService = FrozenServiceRecord.GenericServiceState.OpenGeneric
+    };
 }

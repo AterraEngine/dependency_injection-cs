@@ -21,22 +21,22 @@ public record ServiceRecord<TService>(
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public FrozenServiceRecord ToFrozen() => new(
-        ServiceType,
-        ImplementationType,
-        ImplementationFactory,
-        ScopeDepth,
-        this switch {
+    public FrozenServiceRecord ToFrozen() => new() {
+        ServiceType = ServiceType,
+        ImplementationType = ImplementationType,
+        ImplementationFactory = ImplementationFactory,
+        ScopeDepth = ScopeDepth,
+        Depth = this switch {
             { IsSingleton: true } => FrozenServiceRecord.KnownScopeDepth.Singleton,
             { IsProviderScoped: true } => FrozenServiceRecord.KnownScopeDepth.ProviderScoped,
             { ScopeDepth: > (int)DefaultScopeDepth.ProviderScoped } => FrozenServiceRecord.KnownScopeDepth.CustomScoped,
             _ => FrozenServiceRecord.KnownScopeDepth.Transient
         },
-        this switch {
+        Disposal = this switch {
             { IsDisposable: true } => FrozenServiceRecord.DisposalType.Disposable,
             { IsAsyncDisposable: true } => FrozenServiceRecord.DisposalType.AsyncDisposable,
             _ => FrozenServiceRecord.DisposalType.None
         },
-        FrozenServiceRecord.GenericServiceState.None
-    );
+        GenericService = FrozenServiceRecord.GenericServiceState.None
+    };
 }
