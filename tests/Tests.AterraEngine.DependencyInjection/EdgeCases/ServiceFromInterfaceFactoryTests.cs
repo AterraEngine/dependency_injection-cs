@@ -29,6 +29,7 @@ public class ServiceFromInterfaceFactoryTests {
         await Assert.That(service).IsTypeOf<Service>();
     }
 
+    #pragma warning disable CS9113 // Parameter is unread.
     public interface IService;
     public interface IFactory : IFactoryService<IService>;
     
@@ -36,4 +37,5 @@ public class ServiceFromInterfaceFactoryTests {
     public class Factory(IScopedProvider provider) : IFactory {
         public IService Create(IScopedProvider _) => new Service();
     }
+    #pragma warning restore CS9113 // Parameter is unread.
 }

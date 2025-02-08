@@ -126,7 +126,7 @@ public class ServiceCollection : IServiceCollection {
 
     public IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null, bool autoAssignFactory = false) where TService : class where TFactory : class, IFactoryService<TService> {
         // Instead of trying and doing this with a complicated reflection, we can just do it this way
-        if (scopeLevelFactory is null) AddSingletonFromFactory<TService>(static provider => provider.GetRequiredService<TFactory>().Create(provider));
+        if (!autoAssignFactory) AddSingletonFromFactory<TService>(static provider => provider.GetRequiredService<TFactory>().Create(provider));
         return AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Singleton, scopeLevelFactory, autoAssignFactory);
     }
     #endregion
@@ -151,7 +151,7 @@ public class ServiceCollection : IServiceCollection {
 
     public IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null, bool autoAssignFactory = false) where TService : class where TFactory : class, IFactoryService<TService> {
         // Instead of trying and doing this with a complicated reflection, we can just do it this way
-        if (scopeLevelFactory is null) AddTransientFromFactory<TService>(static provider => provider.GetRequiredService<TFactory>().Create(provider));
+        if (!autoAssignFactory) AddTransientFromFactory<TService>(static provider => provider.GetRequiredService<TFactory>().Create(provider));
         return AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Transient, scopeLevelFactory, autoAssignFactory);
     }
     #endregion
@@ -176,7 +176,7 @@ public class ServiceCollection : IServiceCollection {
 
     public IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null, bool autoAssignFactory = false) where TService : class where TFactory : class, IFactoryService<TService> {
         // Instead of trying and doing this with a complicated reflection, we can just do it this way
-        if (scopeLevelFactory is null) AddScopedFromFactory<TService>(static provider => provider.GetRequiredService<TFactory>().Create(provider));
+        if (!autoAssignFactory) AddScopedFromFactory<TService>(static provider => provider.GetRequiredService<TFactory>().Create(provider));
         return AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.ProviderScoped, scopeLevelFactory, autoAssignFactory);
     }
     #endregion
