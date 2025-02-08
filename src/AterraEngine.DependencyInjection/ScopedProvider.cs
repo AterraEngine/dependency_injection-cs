@@ -20,7 +20,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     internal ScopedProvider? ParentScope { get; private set; }
     private int ScopeDepth { get; init; }
 
-    internal ConcurrentDictionary<Type, object> Instances { get; } = new();
+    internal ConcurrentDictionary<Guid, object> Instances { get; } = new();
     internal ConcurrentBag<IScopedProvider> ChildScopes { get; } = [];
 
     private ServiceContainer ServiceContainer { get; } = serviceContainer;
@@ -69,17 +69,17 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     private TService ResolveServiceByScope<TService>(FrozenServiceRecord record) where TService : class
         => record.Depth switch {
             FrozenServiceRecord.KnownScopeDepth.ProviderScoped => ResolveProviderScoped<TService>(record),
-            FrozenServiceRecord.KnownScopeDepth.Singleton => ServiceContainer.GetSingletonService<TService>(record),
-            FrozenServiceRecord.KnownScopeDepth.Transient => ServiceContainer.GetTransientService<TService>(record),
+            FrozenServiceRecord.KnownScopeDepth.Singleton => ServiceContainer.GetSingletonService<TService>(record.Id),
+            FrozenServiceRecord.KnownScopeDepth.Transient => ServiceContainer.GetTransientService<TService>(record.Id),
             FrozenServiceRecord.KnownScopeDepth.CustomScoped => ResolveCustomScoped<TService>(record),
             _ => throw new ArgumentOutOfRangeException(nameof(record))
         };
 
     private TService ResolveProviderScoped<TService>(FrozenServiceRecord record) where TService : class
         => (TService)Instances.GetOrAdd(
-            record.ServiceType,
-            valueFactory: static (_, box) => box.Item1.ServiceContainer.CreateInstance<TService>(box.Item2, box.Item1),
-            new ValueTuple<ScopedProvider, FrozenServiceRecord>(this, record)
+            record.Id,
+            valueFactory: static (id, provider) => provider.ServiceContainer.CreateInstance<TService>(id, provider),
+            this
         );
 
     private TService ResolveCustomScoped<TService>(FrozenServiceRecord record) where TService : class {
@@ -118,7 +118,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     #region Dispose
     public void Dispose() {
         try {
-            foreach ((Type recordId, object? instance) in Instances) {
+            foreach ((Guid recordId, object? instance) in Instances) {
                 if (ServiceContainer.AsyncDisposableRecords.Value.Contains(recordId) && instance is IAsyncDisposable asyncDisposable) {
                     asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
                 }
@@ -146,7 +146,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
             // Yes I know we could do some sort of task collection and then do a Task.WhenAll()
             //      But I don't think it's worth it, because we don't expect this to be a performance bottleneck (at the moment)
 
-            foreach ((Type recordId, object? instance) in Instances) {
+            foreach ((Guid recordId, object? instance) in Instances) {
                 if (ServiceContainer.AsyncDisposableRecords.Value.Contains(recordId) && instance is IAsyncDisposable asyncDisposable) {
                     await asyncDisposable.DisposeAsync().ConfigureAwait(false);
                 }

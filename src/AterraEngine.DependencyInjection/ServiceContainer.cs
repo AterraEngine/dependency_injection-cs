@@ -13,14 +13,15 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceContainer : IServiceContainer {
-    private FrozenDictionary<Type, FrozenServiceRecord> ServiceRecords { get; init; } = FrozenDictionary<Type, FrozenServiceRecord>.Empty;
+    private FrozenDictionary<Type, FrozenServiceRecord> ServiceRecords { get; init; } = null!;
     private ConcurrentDictionary<Type, FrozenServiceRecord> ClosedGenericServiceRecords { get; } = new();
-    private ConcurrentDictionary<Type, object> SingletonInstances { get; } = [];
-    private ConcurrentDictionary<Type, Delegate> FactoriesCache { get; } = new();
+    private ConcurrentDictionary<Guid, object> SingletonInstances { get; } = [];
+    private ConcurrentDictionary<Guid, Delegate> FactoriesCache { get; } = new();
     private Lazy<IScopedProvider> RootScopedProvider { get; set; } = null!;
 
-    public Lazy<FrozenSet<Type>> DisposableRecords { get; private set; } = new(static () => FrozenSet<Type>.Empty);
-    public Lazy<FrozenSet<Type>> AsyncDisposableRecords { get; private set; } = new(static () => FrozenSet<Type>.Empty);
+    public Lazy<FrozenSet<Guid>> DisposableRecords { get; private set; } = new(static () => FrozenSet<Guid>.Empty);
+    public Lazy<FrozenSet<Guid>> AsyncDisposableRecords { get; private set; } = new(static () => FrozenSet<Guid>.Empty);
+    
     
     // -----------------------------------------------------------------------------------------------------------------
     // Constructors
@@ -36,8 +37,9 @@ public class ServiceContainer : IServiceContainer {
 
         // The following lazies need the container to work correctly
         container.RootScopedProvider = new Lazy<IScopedProvider>(() => new ScopedProvider(container));
-        if (collection.HasDisposalRecords) container.DisposableRecords = new Lazy<FrozenSet<Type>>(() => container.ServiceRecords.Values.Where(record => record.Disposal is FrozenServiceRecord.DisposalType.Disposable).Select(record => record.ServiceType).ToFrozenSet());
-        if (collection.HasAsyncDisposalRecords) container.AsyncDisposableRecords = new Lazy<FrozenSet<Type>>(() => container.ServiceRecords.Values.Where(record => record.Disposal is FrozenServiceRecord.DisposalType.AsyncDisposable).Select(record => record.ServiceType).ToFrozenSet());
+        
+        if (collection.HasDisposalRecords) container.DisposableRecords = new Lazy<FrozenSet<Guid>>(() => container.ServiceRecords.Values.Where(record => record.Disposal is FrozenServiceRecord.DisposalType.Disposable).Select(record => record.Id).ToFrozenSet());
+        if (collection.HasAsyncDisposalRecords) container.AsyncDisposableRecords = new Lazy<FrozenSet<Guid>>(() => container.ServiceRecords.Values.Where(record => record.Disposal is FrozenServiceRecord.DisposalType.AsyncDisposable).Select(record => record.Id).ToFrozenSet());
 
         // ReSharper disable once InvertIf
         // Log discarded records only if collection contains some and logging is enabled
@@ -59,36 +61,36 @@ public class ServiceContainer : IServiceContainer {
     public IScopedProvider GetRootScopedProvider() 
         => RootScopedProvider.Value;
 
-    public TService GetSingletonService<TService>(FrozenServiceRecord record) where TService : class
-        => (TService)SingletonInstances.GetOrAdd(record.ServiceType,
-            valueFactory: static (_, box) => box.Item1.CreateInstance<TService>(box.Item2, box.Item1.RootScopedProvider.Value),
-            new ValueTuple<ServiceContainer, FrozenServiceRecord>(this, record)
+    public TService GetSingletonService<TService>(Guid id) where TService : class
+        => (TService)SingletonInstances.GetOrAdd(id,
+            valueFactory: static (id, container) => container.CreateInstance<TService>(id, container.RootScopedProvider.Value),
+            this
         );
 
-    public TService GetTransientService<TService>(FrozenServiceRecord record) where TService : class
-        => GetFactory<TService>(record) switch {
+    public TService GetTransientService<TService>(Guid id) where TService : class
+        => GetFactory<TService>(id) switch {
             Func<IScopedProvider, TService> directFactory => directFactory(RootScopedProvider.Value),
             Func<IScopedProvider, object> objectFactory => (TService)objectFactory(RootScopedProvider.Value),
             _ => throw new InvalidOperationException("Could not resolve factory for generic service.")
         };
 
-    public TService CreateInstance<TService>(FrozenServiceRecord record, IScopedProvider serviceProvider) where TService : class
-        => GetFactory<TService>(record) switch {
+    public TService CreateInstance<TService>(Guid id, IScopedProvider serviceProvider) where TService : class
+        => GetFactory<TService>(id) switch {
             Func<IScopedProvider, TService> directFactory => directFactory(serviceProvider),
             Func<IScopedProvider, object> objectFactory => (TService)objectFactory(serviceProvider),
             _ => throw new InvalidOperationException("Could not resolve factory for generic service.")
         };
 
-    private Delegate GetFactory<TService>(FrozenServiceRecord record) where TService : class
+    private Delegate GetFactory<TService>(Guid id) where TService : class
         => FactoriesCache.GetOrAdd(
-            record.ServiceType,
-            valueFactory: static (_, box) => {
-                if (box.Item2.GenericService is FrozenServiceRecord.GenericServiceState.None) return box.Item2.GetFactory<TService>();
-                FrozenServiceRecord genericRecord = box.Item1.ServiceRecords[typeof(TService).GetGenericTypeDefinition()];
+            id,
+            valueFactory: static (_, container) => {
+                if (container.ServiceRecords.TryGetValue(typeof(TService), out FrozenServiceRecord? foundRecord) && foundRecord.GenericService is FrozenServiceRecord.GenericServiceState.None) return foundRecord.GetFactory<TService>();
+                FrozenServiceRecord genericRecord = container.ServiceRecords[typeof(TService).GetGenericTypeDefinition()];
                 if (genericRecord.GenericService is FrozenServiceRecord.GenericServiceState.ClosedGeneric) return genericRecord.ImplementationFactory;
-                return box.Item1.GetGenericRecord(typeof(TService)).ImplementationFactory;
+                return container.GetGenericRecord(typeof(TService)).ImplementationFactory;
             },
-            new ValueTuple<ServiceContainer, FrozenServiceRecord>(this, record)
+            this
         );
 
     private FrozenServiceRecord GetGenericRecord(Type typeOfService)
