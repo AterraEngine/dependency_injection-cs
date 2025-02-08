@@ -17,11 +17,12 @@ public class ScopedProviderTests {
 
         // Act
         IScopedProvider provider = collection.Build();
+        var container = provider.GetService<IServiceContainer>();
 
         // Assert
-        await Assert.That(provider)
+        await Assert.That(container)
             .IsNotNull()
-            .And.IsTypeOf<ScopedProvider>()
+            .And.IsTypeOf<ServiceContainer>()
             .And.HasCount().EqualTo(0);
     }
 
@@ -49,11 +50,13 @@ public class ScopedProviderTests {
 
         // Act
         IScopedProvider provider = collection.Build();
+        var container = provider.GetService<IServiceContainer>();
+
 
         // Assert
-        await Assert.That(provider)
+        await Assert.That(container)
             .IsNotNull()
-            .And.IsTypeOf<ScopedProvider>()
+            .And.IsTypeOf<ServiceContainer>()
             .And.HasCount().EqualTo(count);
     }
 

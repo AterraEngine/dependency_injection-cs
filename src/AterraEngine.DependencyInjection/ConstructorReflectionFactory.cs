@@ -18,7 +18,7 @@ public static class ConstructorReflectionFactory {
         .GetMethods(BindingFlags.Instance | BindingFlags.Public)
         .Single(m => m is { Name: nameof(IScopedProvider.GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1);
 
-    private static readonly FrozenSet<Type> ResolveAsScopedProvider = new[] { typeof(IServiceProvider), typeof(IScopedProvider) }.ToFrozenSet();
+    private static readonly Type ResolveAsScopedProvider = typeof(IScopedProvider);
 
     private static readonly ParameterExpression ProviderExpression = Expression.Parameter(typeof(IScopedProvider), "provider");
 
@@ -41,7 +41,7 @@ public static class ConstructorReflectionFactory {
         for (int i = parameters.Length - 1; i >= 0; i--) {
             ParameterInfo parameter = parameters[i];
             Type parameterType = parameter.ParameterType;
-            if (ResolveAsScopedProvider.Contains(parameterType)) {
+            if (ResolveAsScopedProvider == parameterType) {
                 arguments[i] = ProviderExpression;
                 continue;
             }

@@ -14,7 +14,8 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceCollection : IServiceCollection {
 
-    private static readonly Lazy<MethodInfo[]> ServiceCollectionMethods = new(ServiceCollectionMethodsFactory);
+    private static readonly Lazy<MethodInfo[]> ServiceCollectionMethods = new(() => typeof(ServiceCollection)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public));
 
     private readonly Lazy<MethodInfo> _addServiceMethodByImplementationType = new(static () => ServiceCollectionMethods.Value
         .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
@@ -27,7 +28,7 @@ public class ServiceCollection : IServiceCollection {
 
     public int Count => Records.Count;
     public bool IsReadOnly { get; private set; }
-
+    
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
@@ -42,10 +43,7 @@ public class ServiceCollection : IServiceCollection {
     private void ThrowIfReadOnly() {
         if (IsReadOnly) throw new InvalidOperationException("Collection is read only");
     }
-
-    [RequiresDynamicCode("This method uses reflection to create a service record.")]
-    private static MethodInfo[] ServiceCollectionMethodsFactory() => typeof(ServiceCollection).GetMethods(BindingFlags.Instance | BindingFlags.Public);
-
+    
     #region AddService
     public IServiceCollection AddService<TImplementation>(int scopeLevel) where TImplementation : class => AddService<TImplementation, TImplementation>(scopeLevel);
     public IServiceCollection AddService<TService, TImplementation>(int scopeLevel) where TImplementation : class, TService {
@@ -199,11 +197,7 @@ public class ServiceCollection : IServiceCollection {
         Records.Clear();
     }
 
-    public bool Contains(IServiceRecord item) {
-        if (!Records.TryGetValue(item.ServiceType, out IServiceRecord? record)) return false;
-
-        return record == item;
-    }
+    public bool Contains(IServiceRecord item) => Records.TryGetValue(item.ServiceType, out IServiceRecord? record) && record == item;
 
     public void CopyTo(IServiceRecord[] array, int arrayIndex) {
         ArgumentOutOfRangeException.ThrowIfNegative(arrayIndex);

@@ -26,11 +26,12 @@ public class ServiceCollectionTests {
         // Act
         IScopedProvider provider = collection.Build();
         var service = provider.GetService<IEmptyService>();
+        var container = provider.GetService<IServiceContainer>();
 
         // Assert
-        await Assert.That(provider)
+        await Assert.That(container)
             .IsNotNull()
-            .And.IsTypeOf<ScopedProvider>()
+            .And.IsTypeOf<ServiceContainer>()
             .And.HasCount().EqualTo(1);
 
         await Assert.That(service)
@@ -57,11 +58,12 @@ public class ServiceCollectionTests {
 
         var emptyService = provider.GetService<IEmptyService>();
         var sampleService = provider.GetService<ISampleService>();
+        var container = provider.GetService<IServiceContainer>();
 
         // Assert
-        await Assert.That(provider)
+        await Assert.That(container)
             .IsNotNull()
-            .And.IsTypeOf<ScopedProvider>()
+            .And.IsTypeOf<ServiceContainer>()
             .And.HasCount().EqualTo(2);// Expecting two services registered
 
         await Assert.That(emptyService)
@@ -86,12 +88,13 @@ public class ServiceCollectionTests {
 
         // Act
         IScopedProvider provider = collection.Build();
+        var container = provider.GetService<IServiceContainer>();
         var service = provider.GetService<IScopedProviderRequiredService>();
-
+        
         // Assert
-        await Assert.That(provider)
+        await Assert.That(container)
             .IsNotNull()
-            .And.IsTypeOf<ScopedProvider>()
+            .And.IsTypeOf<ServiceContainer>()
             .And.HasCount().EqualTo(1);
 
         await Assert.That(service).IsTypeOf<ScopedProviderRequiredService>();
