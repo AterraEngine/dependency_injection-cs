@@ -25,6 +25,8 @@ public class ServiceCollection : IServiceCollection {
 
     internal ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
     internal ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
+    internal bool HasDisposalRecords { get; private set; }
+    internal bool HasAsyncDisposalRecords { get; private set; }
 
     public int Count => Records.Count;
     public bool IsReadOnly { get; private set; }
@@ -190,6 +192,9 @@ public class ServiceCollection : IServiceCollection {
         if (!Records.TryAdd(item.ServiceType, item)) {
             throw new InvalidOperationException($"Unexpected Collision in service records of type {item.ServiceType}");
         }
+        
+        HasDisposalRecords |= item.IsDisposable;
+        HasAsyncDisposalRecords |= item.IsAsyncDisposable;
     }
 
     public void Clear() {

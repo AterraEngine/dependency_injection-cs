@@ -2,6 +2,7 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Reflection;
 
 namespace AterraEngine.DependencyInjection;
@@ -16,6 +17,12 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     internal ConcurrentBag<IScopedProvider> ChildScopes { get; } = [];
 
     private ServiceContainer ServiceContainer { get; } = serviceContainer;
+    
+    private static readonly FrozenDictionary<Type, Func<ScopedProvider, object>> SpecialTypeResolvers = new Dictionary<Type, Func<ScopedProvider, object>> {
+        { typeof(IScopedProvider), static provider => provider },
+        { typeof(IServiceContainer), static provider => provider.ServiceContainer }
+    }.ToFrozenDictionary();
+
 
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
@@ -28,7 +35,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         .Single(m => m is { Name: nameof(GetService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
 
     public object? GetService(Type service) {
-        MethodInfo method = GetServiceMethodCache.GetOrAdd(service, valueFactory: static type => GetServiceMethod.Value.MakeGenericMethod(type));
+        MethodInfo method = GetServiceMethodCache.GetOrAdd(service, static type => GetServiceMethod.Value.MakeGenericMethod(type));
         return method.Invoke(this, null);
     }
 
@@ -43,19 +50,8 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         }
 
         // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
-        if (typeof(TService) == typeof(IScopedProvider)) return this as TService;
-        if (typeof(TService) == typeof(IServiceContainer)) return ServiceContainer as TService;
+        if (SpecialTypeResolvers.TryGetValue(typeof(TService), out Func<ScopedProvider, object>? func)) return (TService)func(this);
         return null;
-    }
-    
-    private TService ResolveServiceByScope<TService>(FrozenServiceRecord record) where TService : class {
-        return record.Depth switch {
-            FrozenServiceRecord.KnownScopeDepth.ProviderScoped => ResolveProviderScoped<TService>(record),
-            FrozenServiceRecord.KnownScopeDepth.Singleton => ServiceContainer.GetSingletonService<TService>(record),
-            FrozenServiceRecord.KnownScopeDepth.Transient => ServiceContainer.GetTransientService<TService>(record),
-            FrozenServiceRecord.KnownScopeDepth.CustomScoped => ResolveCustomScoped<TService>(record),
-            _ => throw new ArgumentOutOfRangeException(nameof(record))
-        };
     }
 
     public TService GetRequiredService<TService>() where TService : class {
@@ -64,16 +60,25 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         }
 
         // Record could not be established, so try and see if we are looking in calling some specific types which aren't in the container
-        if (typeof(TService) == typeof(IScopedProvider)) return (TService)(object)this;
-        if (typeof(TService) == typeof(IServiceContainer)) return (TService)(object)ServiceContainer;
+        if (SpecialTypeResolvers.TryGetValue(typeof(TService), out Func<ScopedProvider, object>? func)) return (TService)func(this);
         throw CouldNotBeResolvedException.Create<TService>();
     }
 
-    private TService ResolveProviderScoped<TService>(FrozenServiceRecord record) where TService : class {
-        return (TService)Instances.GetOrAdd(record.ServiceType,
-            valueFactory: static (_, provider) => provider.ServiceContainer.CreateInstance<TService>(provider),
-            this);
-    }
+    private TService ResolveServiceByScope<TService>(FrozenServiceRecord record) where TService : class 
+        => record.Depth switch {
+            FrozenServiceRecord.KnownScopeDepth.ProviderScoped => ResolveProviderScoped<TService>(record),
+            FrozenServiceRecord.KnownScopeDepth.Singleton => ServiceContainer.GetSingletonService<TService>(record),
+            FrozenServiceRecord.KnownScopeDepth.Transient => ServiceContainer.GetTransientService<TService>(record),
+            FrozenServiceRecord.KnownScopeDepth.CustomScoped => ResolveCustomScoped<TService>(record),
+            _ => throw new ArgumentOutOfRangeException(nameof(record))
+        };
+
+    private TService ResolveProviderScoped<TService>(FrozenServiceRecord record) where TService : class 
+        => (TService)Instances.GetOrAdd(
+            record.ServiceType,
+            valueFactory: static (_, box) => box.Item1.ServiceContainer.CreateInstance<TService>(box.Item2, box.Item1),
+            new ValueTuple<ScopedProvider, FrozenServiceRecord>(this, record)
+        );
 
     private TService ResolveCustomScoped<TService>(FrozenServiceRecord record) where TService : class {
         ScopedProvider? currentScope = this;
