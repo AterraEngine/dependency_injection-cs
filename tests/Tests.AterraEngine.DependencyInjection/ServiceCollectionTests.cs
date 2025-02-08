@@ -170,7 +170,8 @@ public class ServiceCollectionTests {
         var collection = new ServiceCollection();
 
         // Act
-        collection.AddServiceFromFactory<IFactoryCreatedService, ExampleFactoryService>((int)DefaultScopeDepth.Transient, (int)DefaultScopeDepth.Singleton, autoAssignFactory:true);
+        collection.AddService<ExampleFactoryService>((int)DefaultScopeDepth.Singleton);
+        collection.AddServiceFromFactory<IFactoryCreatedService, ExampleFactoryService>((int)DefaultScopeDepth.Transient);
 
         // Assert
         Dictionary<Type, IServiceRecord> records = collection.ToDictionary(
@@ -202,7 +203,8 @@ public class ServiceCollectionTests {
         var collection = new ServiceCollection();
 
         // Act
-        collection.AddServiceFromFactory<IFactoryCreatedService, ExampleFactoryService>((int)DefaultScopeDepth.Transient, autoAssignFactory:true);
+        collection.AddService<ExampleFactoryService>((int)DefaultScopeDepth.Transient);
+        collection.AddServiceFromFactory<IFactoryCreatedService, ExampleFactoryService>((int)DefaultScopeDepth.Transient);
 
         // Assert
         Dictionary<Type, IServiceRecord> records = collection.ToDictionary(

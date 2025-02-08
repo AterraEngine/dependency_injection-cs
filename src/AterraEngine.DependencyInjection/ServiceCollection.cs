@@ -66,14 +66,11 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddServiceFromFactory<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class
         => AddService(new ServiceRecord<TService>(typeof(TService), typeof(TService), factory, scopeLevel));
 
-    public IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel, int? scopeLevelFactory = null, bool autoAssignFactory = false) where TService : class where TFactory : class, IFactoryService<TService> {
-        if (autoAssignFactory && !Records.ContainsKey(typeof(TFactory))) AddService<TFactory>(scopeLevelFactory ?? scopeLevel);
-
-        return AddServiceFromFactory<TService>(
+    public IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel) where TService : class where TFactory : class, IFactoryService<TService> 
+        => AddServiceFromFactory<TService>(
             factory: static provider => provider.GetRequiredService<TFactory>().Create(provider),
             scopeLevel
         );
-    }
 
     #region AddService by Type argument
     [RequiresDynamicCode("This method uses reflection to create a service record.")]
@@ -128,12 +125,9 @@ public class ServiceCollection : IServiceCollection {
 
     public IServiceCollection AddSingletonFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Singleton);
-
-    public IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null, bool autoAssignFactory = false) where TService : class where TFactory : class, IFactoryService<TService> {
-        // Instead of trying and doing this with a complicated reflection, we can just do it this way
-        if (!autoAssignFactory) AddSingletonFromFactory<TService>(static provider => provider.GetRequiredService<TFactory>().Create(provider));
-        return AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Singleton, scopeLevelFactory, autoAssignFactory);
-    }
+    
+    public IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> 
+        => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Singleton);
     #endregion
 
     #region AddTransient
@@ -154,11 +148,8 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddTransientFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.Transient);
 
-    public IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null, bool autoAssignFactory = false) where TService : class where TFactory : class, IFactoryService<TService> {
-        // Instead of trying and doing this with a complicated reflection, we can just do it this way
-        if (!autoAssignFactory) AddTransientFromFactory<TService>(static provider => provider.GetRequiredService<TFactory>().Create(provider));
-        return AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Transient, scopeLevelFactory, autoAssignFactory);
-    }
+    public IServiceCollection AddTransientFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> 
+        => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Transient);
     #endregion
 
     #region AddScoped
@@ -179,11 +170,8 @@ public class ServiceCollection : IServiceCollection {
     public IServiceCollection AddScopedFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultScopeDepth.ProviderScoped);
 
-    public IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null, bool autoAssignFactory = false) where TService : class where TFactory : class, IFactoryService<TService> {
-        // Instead of trying and doing this with a complicated reflection, we can just do it this way
-        if (!autoAssignFactory) AddScopedFromFactory<TService>(static provider => provider.GetRequiredService<TFactory>().Create(provider));
-        return AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.ProviderScoped, scopeLevelFactory, autoAssignFactory);
-    }
+    public IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService> 
+        => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.ProviderScoped);
     #endregion
 
     #region ICollection<IServiceRecord>
