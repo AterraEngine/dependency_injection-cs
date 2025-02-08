@@ -1,6 +1,7 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using AterraEngine.DependencyInjection.ServiceRecords;
 using AterraEngine.DependencyInjection.Services;
 using System.Diagnostics.CodeAnalysis;
 

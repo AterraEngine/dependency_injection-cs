@@ -1,13 +1,11 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using System.Diagnostics.CodeAnalysis;
-
-namespace AterraEngine.DependencyInjection;
+namespace AterraEngine.DependencyInjection.ServiceRecords;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public record FrozenServiceRecord(
+public readonly record struct FrozenServiceRecord(
     Type ServiceType,
     Type ImplementationType,
     Delegate ImplementationFactory,

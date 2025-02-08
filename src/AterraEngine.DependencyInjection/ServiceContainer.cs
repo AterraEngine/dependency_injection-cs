@@ -97,9 +97,16 @@ public class ServiceContainer : IServiceContainer {
             factoryArgument: this
         );
 
-    internal bool TryResolveRecord<TService>([NotNullWhen(true)] out FrozenServiceRecord? record) where TService : class 
-        => ServiceRecords.TryGetValue(typeof(TService), out record) 
-        || typeof(TService).IsGenericType && (record = GetGenericRecord(typeof(TService))) is not null;
+    internal bool TryResolveRecord<TService>(out FrozenServiceRecord record) where TService : class {
+        if (ServiceRecords.TryGetValue(typeof(TService), out record)) return true;
+        if (typeof(TService).IsGenericType) {
+            record = GetGenericRecord(typeof(TService));
+            return true;
+        }
+        
+        record = default;
+        return false;
+    }
 
 
     #region IEnumerable<FrozenServiceRecord>

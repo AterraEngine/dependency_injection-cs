@@ -1,6 +1,7 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using AterraEngine.DependencyInjection.ServiceRecords;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Reflection;
@@ -45,7 +46,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
 
     #region GetServices by Generic Type argument
     public TService? GetService<TService>() where TService : class {
-        if (ServiceContainer.TryResolveRecord<TService>(out FrozenServiceRecord? record)) {
+        if (ServiceContainer.TryResolveRecord<TService>(out FrozenServiceRecord record)) {
             return ResolveServiceByScope<TService>(record);
         }
 
@@ -55,7 +56,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     }
 
     public TService GetRequiredService<TService>() where TService : class {
-        if (ServiceContainer.TryResolveRecord<TService>(out FrozenServiceRecord? record)) {
+        if (ServiceContainer.TryResolveRecord<TService>(out FrozenServiceRecord record)) {
             return ResolveServiceByScope<TService>(record);
         }
 
