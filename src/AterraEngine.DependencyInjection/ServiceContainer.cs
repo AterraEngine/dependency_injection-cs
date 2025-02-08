@@ -14,7 +14,7 @@ namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 public class ServiceContainer : IServiceContainer {
     private FrozenDictionary<Type, FrozenServiceRecord> ServiceRecords { get; init; } = FrozenDictionary<Type, FrozenServiceRecord>.Empty;
-    private ConcurrentDictionary<Type, FrozenServiceRecord> ClosedGenericRecords { get; } = new();
+    private ConcurrentDictionary<Type, FrozenServiceRecord> ClosedGenericServiceRecords { get; } = new();
     private ConcurrentDictionary<Type, object> SingletonInstances { get; } = [];
     private ConcurrentDictionary<Type, Delegate> FactoriesCache { get; } = new(); 
     private Lazy<IScopedProvider> RootScopedProvider { get; set; } = null!; 
@@ -33,7 +33,7 @@ public class ServiceContainer : IServiceContainer {
             )
         };
         
-        // The following lazy's need the container to work correctly
+        // The following lazies need the container to work correctly
         container.RootScopedProvider = new Lazy<IScopedProvider>(() => new ScopedProvider(container));
         if (collection.HasDisposalRecords) container.DisposableRecords = new Lazy<FrozenSet<Type>>(() => container.ServiceRecords.Values.Where(record => record.Disposal is FrozenServiceRecord.DisposalType.Disposable).Select(record => record.ServiceType).ToFrozenSet());
         if (collection.HasAsyncDisposalRecords) container.AsyncDisposableRecords = new Lazy<FrozenSet<Type>>(() => container.ServiceRecords.Values.Where(record => record.Disposal is FrozenServiceRecord.DisposalType.AsyncDisposable).Select(record => record.ServiceType).ToFrozenSet());
@@ -48,7 +48,6 @@ public class ServiceContainer : IServiceContainer {
                 logger.Debug("Discarded service: {@DiscardedRecord}", discardedRecord);
             }
         }
-        
         return container;
     }
 
@@ -90,7 +89,7 @@ public class ServiceContainer : IServiceContainer {
         );
     
     private FrozenServiceRecord GetGenericRecord(Type typeOfService) 
-        => ClosedGenericRecords.GetOrAdd(typeOfService,
+        => ClosedGenericServiceRecords.GetOrAdd(typeOfService,
             valueFactory: static (type, container) => FrozenServiceRecordHelper.CreateClosedGenericRecord(
                 type, 
                 container.ServiceRecords[type.GetGenericTypeDefinition()]
