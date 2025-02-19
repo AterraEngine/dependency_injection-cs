@@ -29,7 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CodeOfChaos.Types.TypedValueStore" Version="0.16.0" />
+        <PackageReference Include="CodeOfChaos.Types.TypedValueStore" Version="0.20.0" />
     </ItemGroup>
 
 </Project>

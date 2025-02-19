@@ -87,11 +87,20 @@ public class ServiceCollection : IServiceCollection {
 
     #region AddService by Type argument
     [RequiresDynamicCode("This method uses reflection to create a service record.")]
-    public IServiceCollection AddService(Type implementation, int scopeLevel) =>
-        _addServiceMethodByImplementationType.Value
+    public IServiceCollection AddService(Type implementation, int scopeLevel) {
+        // Handle open generic type registration
+        if (implementation.IsGenericTypeDefinition) {
+            Add(new GenericServiceRecord(implementation, implementation, scopeLevel));
+            return this;
+        }
+        
+        // Handle normal registration for closed types
+        var result = _addServiceMethodByServiceAndImplementationTypes.Value
             .MakeGenericMethod(implementation)
-            .Invoke(this, [scopeLevel]) as IServiceCollection
-        ?? throw new InvalidOperationException();
+            .Invoke(this, [scopeLevel]) as IServiceCollection;
+
+        return result ?? throw new InvalidOperationException();
+    }
 
     [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public IServiceCollection AddService(Type service, Type implementation, int scopeLevel) {

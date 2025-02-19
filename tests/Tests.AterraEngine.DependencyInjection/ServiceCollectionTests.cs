@@ -316,4 +316,24 @@ public class ServiceCollectionTests {
         await Assert.That(collection).HasCount().EqualTo(1);
         await Assert.That(collection.Records).ContainsKey(typeof(IServiceWithGenerics<,>));
     }
+    
+    [Test]
+    [Arguments(LifetimeSwitch.Transient)]
+    [Arguments(LifetimeSwitch.Singleton)]
+    [Arguments(LifetimeSwitch.Scoped)]
+    public async Task Collection_ShouldAllow_RegisteringGenericServices_ImplementationOnly(LifetimeSwitch lifetimeSwitch) {
+        // Arrange
+        var collection = new ServiceCollection();
+
+        // Act
+        LifetimeSwitcher.On(lifetimeSwitch,
+            onTransient: () => collection.AddTransient(typeof(ServiceWithGenerics<,>)),
+            onSingleton: () => collection.AddSingleton(typeof(ServiceWithGenerics<,>)),
+            onScoped: () => collection.AddScoped(typeof(ServiceWithGenerics<,>))
+        );
+
+        // Assert
+        await Assert.That(collection).HasCount().EqualTo(1);
+        await Assert.That(collection.Records).ContainsKey(typeof(ServiceWithGenerics<,>));
+    }
 }

@@ -281,4 +281,27 @@ public class ScopedProviderTests {
         await Assert.That(service).IsNotNull()
             .And.IsTypeOf<ServiceWithGenerics<string, int>>();
     }
+
+    [Test]
+    [Arguments(LifetimeSwitch.Transient)]
+    [Arguments(LifetimeSwitch.Singleton)]
+    [Arguments(LifetimeSwitch.Scoped)]
+    public async Task ScopedProvider_ShouldReturn_RequiredServiceWithGenerics_ImplementationOnly(LifetimeSwitch lifetimeSwitch) {
+        // Arrange
+        var collection = new ServiceCollection();
+        LifetimeSwitcher.On(lifetimeSwitch,
+            onTransient: () => collection.AddTransient(typeof(ServiceWithGenerics<,>)),
+            onSingleton: () => collection.AddSingleton(typeof(ServiceWithGenerics<,>)),
+            onScoped: () => collection.AddScoped(typeof(ServiceWithGenerics<,>))
+        );
+
+        IScopedProvider provider = collection.Build();
+
+        // Act 
+        var service = provider.GetService<ServiceWithGenerics<string, int>>();
+
+        // Assert
+        await Assert.That(service).IsNotNull()
+            .And.IsTypeOf<ServiceWithGenerics<string, int>>();
+    }
 }
