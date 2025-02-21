@@ -2,7 +2,6 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using AterraEngine.DependencyInjection.ServiceRecords;
-using Serilog;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
@@ -17,6 +16,7 @@ public class ServiceContainer : IServiceContainer {
     private ConcurrentDictionary<Type, FrozenServiceRecord> ClosedGenericServiceRecords { get; } = new();
     private ConcurrentDictionary<Guid, object> SingletonInstances { get; } = [];
     private ConcurrentDictionary<Guid, Delegate> FactoriesCache { get; } = new();
+    internal Lazy<IScopedProvider> ContainerProvider { get; set; } = null!;
     private Lazy<IScopedProvider> RootScopedProvider { get; set; } = null!;
 
     public Lazy<FrozenSet<Guid>> DisposableRecords { get; private set; } = new(static () => FrozenSet<Guid>.Empty);
@@ -36,6 +36,7 @@ public class ServiceContainer : IServiceContainer {
         };
 
         // The following lazies need the container to work correctly
+        container.ContainerProvider = new Lazy<IScopedProvider>(() => new ServiceContainerScopedProvider(container));
         container.RootScopedProvider = new Lazy<IScopedProvider>(() => new ScopedProvider(container));
         if (collection.HasDisposalRecords) container.DisposableRecords = new Lazy<FrozenSet<Guid>>(() => container.ServiceRecords.Values.Where(record => record.Disposal is FrozenServiceRecord.DisposalType.Disposable).Select(record => record.Id).ToFrozenSet());
         if (collection.HasAsyncDisposalRecords) container.AsyncDisposableRecords = new Lazy<FrozenSet<Guid>>(() => container.ServiceRecords.Values.Where(record => record.Disposal is FrozenServiceRecord.DisposalType.AsyncDisposable).Select(record => record.Id).ToFrozenSet());
@@ -46,19 +47,19 @@ public class ServiceContainer : IServiceContainer {
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public IScopedProvider GetRootScopedProvider() 
+    public IScopedProvider GetRootScopedProvider()
         => RootScopedProvider.Value;
-
+    
     public TService GetSingletonService<TService>(Guid id) where TService : class
         => (TService)SingletonInstances.GetOrAdd(id,
-            valueFactory: static (id, container) => container.CreateInstance<TService>(id, container.RootScopedProvider.Value),
+            valueFactory: static (id, container) => container.CreateInstance<TService>(id, container.ContainerProvider.Value),
             this
         );
 
     public TService GetTransientService<TService>(Guid id) where TService : class
         => GetFactory<TService>(id) switch {
-            Func<IScopedProvider, TService> directFactory => directFactory(RootScopedProvider.Value),
-            Func<IScopedProvider, object> objectFactory => (TService)objectFactory(RootScopedProvider.Value),
+            Func<IScopedProvider, TService> directFactory => directFactory(ContainerProvider.Value),
+            Func<IScopedProvider, object> objectFactory => (TService)objectFactory(ContainerProvider.Value),
             _ => throw new InvalidOperationException("Could not resolve factory for generic service.")
         };
 
@@ -100,7 +101,6 @@ public class ServiceContainer : IServiceContainer {
         record = null;
         return false;
     }
-
 
     #region IEnumerable<FrozenServiceRecord>
     public IEnumerator<FrozenServiceRecord> GetEnumerator()

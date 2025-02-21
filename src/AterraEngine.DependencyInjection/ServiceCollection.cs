@@ -37,7 +37,6 @@ public class ServiceCollection : IServiceCollection {
     // -----------------------------------------------------------------------------------------------------------------
     public IScopedProvider Build() {
         IServiceContainer container = ServiceContainer.FromCollection(this);
-        IScopedProvider provider = container.GetRootScopedProvider();
         IsReadOnly = true;
         
         // ReSharper disable once InvertIf
@@ -50,8 +49,10 @@ public class ServiceCollection : IServiceCollection {
                 logger.Debug("Discarded service: {@DiscardedRecord}", discardedRecord);
             }
         }
-
-        return provider;
+        
+        // If we just return "provider" this will be the container's ROOT provider
+        //      This is something we don't want as that one should only be used to resolve transients and singletons
+        return container.GetRootScopedProvider();
     }
 
     private void ThrowIfReadOnly() {

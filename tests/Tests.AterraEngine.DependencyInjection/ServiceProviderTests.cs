@@ -81,7 +81,6 @@ public class ScopedProviderTests {
     [Arguments(typeof(IIdService), typeof(IdService))]
     [Arguments(typeof(IEmptyService), typeof(EmptyService))]
     [Arguments(typeof(IScopedProviderRequiredService), typeof(ScopedProviderRequiredService))]
-    // [Arguments(typeof(IServiceWithGenerics<,>), typeof(ServiceWithGenerics))] // TODO can only be tested when these types of generics are implemented
     public async Task ScopedProvider_GetService_ReturnsValidImplementation(Type serviceType, Type implementationType) {
         // Arrange
         var collection = new ServiceCollection();
@@ -303,5 +302,18 @@ public class ScopedProviderTests {
         // Assert
         await Assert.That(service).IsNotNull()
             .And.IsTypeOf<ServiceWithGenerics<string, int>>();
+    }
+
+    [Test]
+    public async Task ScopedProvider_ShouldThrow_MismatchLifetime() {
+        // Arrange
+        var collection = new ServiceCollection();
+        collection.AddSingleton<ISampleService, SampleService>();
+        collection.AddScoped<IEmptyService, EmptyService>();
+
+        IScopedProvider provider = collection.Build();
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Task.FromResult(provider.GetRequiredService<ISampleService>()));
     }
 }

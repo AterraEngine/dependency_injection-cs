@@ -11,6 +11,7 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider {
+    public bool IsRootScopedProvider { private get; init; }
 
     private static readonly FrozenDictionary<Type, Func<ScopedProvider, object>> SpecialTypeResolvers = new Dictionary<Type, Func<ScopedProvider, object>> {
         { typeof(IScopedProvider), static provider => provider },
@@ -66,7 +67,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         throw CouldNotBeResolvedException.Create<TService>();
     }
 
-    private TService ResolveServiceByScope<TService>(FrozenServiceRecord record) where TService : class
+    protected virtual TService ResolveServiceByScope<TService>(FrozenServiceRecord record) where TService : class
         => record.Depth switch {
             FrozenServiceRecord.KnownScopeDepth.ProviderScoped => ResolveProviderScoped<TService>(record),
             FrozenServiceRecord.KnownScopeDepth.Singleton => ServiceContainer.GetSingletonService<TService>(record.Id),
@@ -97,19 +98,19 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     #endregion
 
     #region Scope Creation
-    public IScopedProvider CreateNewScope() {
+    public virtual IScopedProvider CreateNewScope() {
         ScopedProvider scopedProvider = NewScopeProvider(ScopeDepth);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
 
-    public IScopedProvider CreateNewDeeperScope() {
+    public virtual IScopedProvider CreateNewDeeperScope() {
         ScopedProvider scopedProvider = NewScopeProvider(ScopeDepth + 1);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
 
-    private ScopedProvider NewScopeProvider(int scopeLevel) => new(ServiceContainer) {
+    private  ScopedProvider NewScopeProvider(int scopeLevel) => new(ServiceContainer) {
         ParentScope = this,
         ScopeDepth = scopeLevel
     };

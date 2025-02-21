@@ -99,7 +99,11 @@ public class ServiceCollectionTests {
             .And.HasCount().EqualTo(1);
 
         await Assert.That(service).IsTypeOf<ScopedProviderRequiredService>();
-        await Assert.That(service).HasMember(p => p!.ScopedProvider).EqualTo(provider);
+        if (lifetimeSwitch == LifetimeSwitch.Scoped) {
+            await Assert.That(service).HasMember(p => p!.ScopedProvider).EqualTo(provider);
+        } else {
+            await Assert.That(service).HasMember(p => p!.ScopedProvider).EqualTo(((ServiceContainer)container!).ContainerProvider.Value);
+        }
     }
 
     [Test]
