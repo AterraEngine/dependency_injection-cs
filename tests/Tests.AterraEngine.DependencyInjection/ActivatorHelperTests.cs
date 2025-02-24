@@ -2,6 +2,8 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using AterraEngine.DependencyInjection;
+using JetBrains.Annotations;
+using System.Diagnostics.CodeAnalysis;
 using Tests.AterraEngine.DependencyInjection.Helpers;
 using Tests.AterraEngine.DependencyInjection.Services;
 
@@ -9,6 +11,7 @@ namespace Tests.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
+[SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Global")]
 public class ActivatorHelperTests {
 
     private IScopedProvider BuildServiceProvider(LifetimeSwitch lifetimeSwitch) {
@@ -54,7 +57,8 @@ public class ActivatorHelperTests {
         await Assert.That(instance).IsNotNull();
     }
 
-    public class CustomClass(IEmptyService service);
-
-    public class CustomClass2(IEmptyService service, ISampleService sampleService);
+    #pragma warning disable CS9113 // Parameter is unread.
+    [UsedImplicitly] private class CustomClass(IEmptyService service);
+    [UsedImplicitly] private class CustomClass2(IEmptyService service, ISampleService sampleService);
+    #pragma warning restore CS9113 // Parameter is unread.
 }

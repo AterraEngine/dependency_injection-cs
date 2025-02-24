@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------------------------------------------------
 using AterraEngine.DependencyInjection;
 using AterraEngine.DependencyInjection.ServiceRecords;
+using System.Diagnostics.CodeAnalysis;
 using Tests.AterraEngine.DependencyInjection.Helpers;
 using Tests.AterraEngine.DependencyInjection.Services;
 
@@ -10,6 +11,7 @@ namespace Tests.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
+[SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Global")]
 public class ServiceCollectionTests {
     [Test]
     [Arguments(LifetimeSwitch.Transient)]
@@ -339,5 +341,19 @@ public class ServiceCollectionTests {
         // Assert
         await Assert.That(collection).HasCount().EqualTo(1);
         await Assert.That(collection.Records).ContainsKey(typeof(ServiceWithGenerics<,>));
+    }
+    
+    [Test]
+    public async Task Collection_Singleton_AddFromInstance() {
+        // Arrange
+        var collection = new ServiceCollection();
+        var instance = new EmptyService();
+        
+        // Act
+        collection.AddSingleton(instance);
+        
+        //Assert
+        await Assert.That(collection).HasCount().EqualTo(1);
+        await Assert.That(collection.Records).ContainsKey(typeof(EmptyService));
     }
 }

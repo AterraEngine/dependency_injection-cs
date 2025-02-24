@@ -2,6 +2,7 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 using AterraEngine.DependencyInjection;
+using System.Diagnostics.CodeAnalysis;
 using Tests.AterraEngine.DependencyInjection.Helpers;
 using Tests.AterraEngine.DependencyInjection.Services;
 
@@ -9,6 +10,7 @@ namespace Tests.AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
+[SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Global")]
 public class ScopedProviderTests {
     [Test]
     public async Task ScopedProvider_Should_Return_Service_Provider_Empty() {
@@ -315,5 +317,21 @@ public class ScopedProviderTests {
         
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => Task.FromResult(provider.GetRequiredService<ISampleService>()));
+    }
+    
+    [Test]
+    public async Task ScopedProvider_ShouldReturnSameInstance_WhenInstanceIsRegistered() {
+        // Arrange
+        var collection = new ServiceCollection();
+        var instance = new EmptyService();
+        collection.AddSingleton(instance);
+        IScopedProvider provider = collection.Build();
+
+        // Act
+        var service = provider.GetRequiredService<EmptyService>();
+
+        // Assert
+        await Assert.That(service.Id).IsEqualTo(instance.Id);
+        await Assert.That(service).IsEqualTo(instance);
     }
 }

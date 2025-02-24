@@ -86,6 +86,11 @@ public class ServiceCollection : IServiceCollection {
             scopeLevel
         );
 
+    public IServiceCollection AddService<TService>(TService instance, int scopeLevel) where TService : class {
+        if (scopeLevel is not (int)DefaultScopeDepth.Singleton) throw new InvalidOperationException("Scope level must be Singleton for it to be registered from an object instance.");
+        return AddService(new InstanceServiceRecord<TService>(instance, scopeLevel));
+    }
+
     #region AddService by Type argument
     [RequiresDynamicCode("This method uses reflection to create a service record.")]
     public IServiceCollection AddService(Type implementation, int scopeLevel) {
@@ -151,6 +156,9 @@ public class ServiceCollection : IServiceCollection {
 
     public IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.Singleton);
+    
+    public IServiceCollection AddSingleton<TService>(TService instance) where TService : class 
+        => AddService(instance, (int)DefaultScopeDepth.Singleton);
     #endregion
 
     #region AddTransient
