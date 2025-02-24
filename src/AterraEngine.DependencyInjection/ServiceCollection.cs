@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------------------------------------------------
 using AterraEngine.DependencyInjection.ServiceRecords;
 using AterraEngine.DependencyInjection.Services;
-using Serilog;
+using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -17,15 +17,16 @@ public class ServiceCollection : IServiceCollection {
 
     private static readonly Lazy<MethodInfo[]> ServiceCollectionMethods = new(() => typeof(ServiceCollection)
         .GetMethods(BindingFlags.Instance | BindingFlags.Public));
-
-    private readonly Lazy<MethodInfo> _addServiceMethodByImplementationType = new(static () => ServiceCollectionMethods.Value
-        .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 1));
-
+    
     private readonly Lazy<MethodInfo> _addServiceMethodByServiceAndImplementationTypes = new(static () => ServiceCollectionMethods.Value
         .Single(m => m is { Name: nameof(AddService), IsGenericMethodDefinition: true } && m.GetGenericArguments().Length == 2));
 
     internal ConcurrentDictionary<Type, IServiceRecord> Records { get; } = new();
-    private ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
+
+    #if DEBUG
+    [UsedImplicitly] internal ConcurrentStack<IServiceRecord> DiscardedRecords { get; } = new();
+    #endif
+    
     internal bool HasDisposalRecords { get; private set; }
     internal bool HasAsyncDisposalRecords { get; private set; }
 
@@ -38,17 +39,6 @@ public class ServiceCollection : IServiceCollection {
     public IScopedProvider Build() {
         IServiceContainer container = ServiceContainer.FromCollection(this);
         IsReadOnly = true;
-        
-        // ReSharper disable once InvertIf
-        // Log discarded records only if collection contains some and logging is enabled
-        if (DiscardedRecords.IsEmpty && container.GetRootScopedProvider().GetService<ILogger>() is {} logger) {
-            logger = logger.ForContext<ServiceContainer>();
-
-            logger.Debug("Discarded services count: {@DiscardedRecords}", DiscardedRecords.Count);
-            foreach (IServiceRecord discardedRecord in DiscardedRecords) {
-                logger.Debug("Discarded service: {@DiscardedRecord}", discardedRecord);
-            }
-        }
         
         // If we just return "provider" this will be the container's ROOT provider
         //      This is something we don't want as that one should only be used to resolve transients and singletons
@@ -213,19 +203,22 @@ public class ServiceCollection : IServiceCollection {
     public void Add(IServiceRecord item) {
         ThrowIfReadOnly();
 
-        // If the service already exists, discard the old one and replace it with the new one
-        //      Yes we are pushing them to the discarded stack.
-        //      For now this just takes up memory, but will be used during Container construction
-        if (Records.ContainsKey(item.ServiceType) && Records.TryRemove(item.ServiceType, out IServiceRecord? oldServiceRecord)) {
-            DiscardedRecords.Push(oldServiceRecord);
-        }
+        Records.AddOrUpdate(item.ServiceType, 
+            // Add case: when the key does not exist, insert the new item
+            _ => item, 
 
-        if (!Records.TryAdd(item.ServiceType, item)) {
-            throw new InvalidOperationException($"Unexpected Collision in service records of type {item.ServiceType}");
-        }
+            // Update case: when the key already exists, handle the old value
+            (_, [UsedImplicitly] oldServiceRecord) => {
+                #if DEBUG
+                DiscardedRecords.Push(oldServiceRecord);
+                #endif
+                return item; // Replace with the new item
+            });
 
+        // Update the disposal flags
         HasDisposalRecords |= item.IsDisposable;
         HasAsyncDisposalRecords |= item.IsAsyncDisposable;
+
     }
 
     public void Clear() {
