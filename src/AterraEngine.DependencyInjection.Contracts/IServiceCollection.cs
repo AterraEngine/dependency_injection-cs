@@ -27,6 +27,8 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     IServiceCollection AddServiceFromFactory<TService>(Func<IScopedProvider, TService> factory, int scopeLevel) where TService : class;
 
     IServiceCollection AddServiceFromFactory<TService, TFactory>(int scopeLevel) where TFactory : class, IFactoryService<TService> where TService : class;
+
+    IServiceCollection AddService<TService>(TService instance, int scopeLevel) where TService : class;
     #endregion
 
     #region AddSingleton
@@ -43,6 +45,8 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     IServiceCollection AddSingletonFromFactory<TService>(Func<IScopedProvider, TService> factory) where TService : class;
 
     IServiceCollection AddSingletonFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
+
+    IServiceCollection AddSingleton<TService>(TService instance) where TService : class;
     #endregion
 
     #region AddTransient
