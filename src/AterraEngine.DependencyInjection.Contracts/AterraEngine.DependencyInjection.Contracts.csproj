@@ -28,8 +28,4 @@
         <None Include="../../assets/icon.png" Pack="true" PackagePath="" Visible="false" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="CodeOfChaos.Types.TypedValueStore" Version="0.21.0" />
-    </ItemGroup>
-
 </Project>
