@@ -195,6 +195,47 @@ public class ServiceCollection : IServiceCollection {
         => AddServiceFromFactory<TService, TFactory>((int)DefaultScopeDepth.ProviderScoped);
     #endregion
 
+    #region AddEnumerableService
+    public IServiceCollection AddEnumerableService<TService, TImplementation>(int scopeDepth) where TImplementation : class, TService {
+        // The partial record can be added directly
+        Add(new PartialEnumerableServiceRecord<TImplementation>(
+            ConstructorReflectionFactory.CreateFunc<TImplementation>(typeof(TImplementation)),
+            scopeDepth
+        ));
+        
+        // The actual enumerable service is a little bit more complicated
+        //      Instead of relying on Add() method, this implements its own
+        Records.AddOrUpdate(
+            typeof(IEnumerable<TService>),
+            // Add case: when the key does not exist, insert the new item
+            _ => {
+                var record = new EnumerableServiceRecord<TService>(scopeDepth);
+                record.AddService<TImplementation>();
+                return record;
+            },
+
+            // Update case: when the key already exists, handle the old value
+            (_, record) => {
+                if (record is not EnumerableServiceRecord<TService> enumerableRecord) throw new InvalidOperationException("The record is not an enumerable record.");
+                if (record.ScopeDepth != scopeDepth) throw new InvalidOperationException("The record's scope depth does not match the partial record's scope depth.");
+                enumerableRecord.AddService<TImplementation>();
+                return record;
+            }
+        );
+
+        return this;
+    }
+    
+    public IServiceCollection AddEnumerableSingleton<TService, TImplementation>() where TImplementation : class, TService
+        => AddEnumerableService<TService, TImplementation>((int)DefaultScopeDepth.Singleton);
+    
+    public IServiceCollection AddEnumerableTransient<TService, TImplementation>() where TImplementation : class, TService
+        => AddEnumerableService<TService, TImplementation>((int)DefaultScopeDepth.Transient);
+    
+    public IServiceCollection AddEnumerableScoped<TService, TImplementation>() where TImplementation : class, TService
+        => AddEnumerableService<TService, TImplementation>((int)DefaultScopeDepth.ProviderScoped);
+    #endregion
+    
     #region ICollection<IServiceRecord>
     public IEnumerator<IServiceRecord> GetEnumerator() => Records.Values.GetEnumerator();
 

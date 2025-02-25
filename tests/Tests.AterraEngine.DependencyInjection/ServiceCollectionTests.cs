@@ -356,4 +356,37 @@ public class ServiceCollectionTests {
         await Assert.That(collection).HasCount().EqualTo(1);
         await Assert.That(collection.Records).ContainsKey(typeof(EmptyService));
     }
+
+    [Test]
+    public async Task Collection_ShouldAddEnumerableService() {
+        // Arrange
+        var collection = new ServiceCollection();
+        
+        // Act
+        collection.AddEnumerableService<IEnumerableCommonInterface, EnumerableService1>((int)DefaultScopeDepth.Singleton);
+        collection.AddEnumerableService<IEnumerableCommonInterface, EnumerableService2>((int)DefaultScopeDepth.Singleton);
+
+        // Assert
+        await Assert.That(collection).HasCount().EqualTo(3);
+        await Assert.That(collection.Records)
+            .ContainsKey(typeof(IEnumerable<IEnumerableCommonInterface>))
+            .And.ContainsKey(typeof(EnumerableService1))
+            .And.ContainsKey(typeof(EnumerableService2));
+    }
+    
+    [Test]
+    public Task Collection_ShouldThrow_AddEnumerableService_DifferentScope() {
+        // Arrange
+        var collection = new ServiceCollection();
+        
+        // Act
+        collection.AddEnumerableService<IEnumerableCommonInterface, EnumerableService1>((int)DefaultScopeDepth.Singleton);
+        
+        // Assert
+        Assert.Throws<InvalidOperationException>(() => {
+            collection.AddEnumerableService<IEnumerableCommonInterface, EnumerableService2>(1000);
+        });
+
+        return Task.CompletedTask;
+    }
 }

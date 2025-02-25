@@ -80,4 +80,14 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
 
     IServiceCollection AddScopedFromFactory<TService, TFactory>(int? scopeLevelFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
     #endregion
+    
+    #region AddEnumerableService
+    IServiceCollection AddEnumerableService<TService, TImplementation>(int scopeDepth) where TImplementation : class, TService;
+
+    IServiceCollection AddEnumerableSingleton<TService, TImplementation>() where TImplementation : class, TService;
+
+    IServiceCollection AddEnumerableTransient<TService, TImplementation>() where TImplementation : class, TService;
+
+    IServiceCollection AddEnumerableScoped<TService, TImplementation>() where TImplementation : class, TService;
+    #endregion
 }

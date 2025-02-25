@@ -4,6 +4,7 @@
 using AterraEngine.DependencyInjection;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using ServiceCollection=Microsoft.Extensions.DependencyInjection.ServiceCollection;
 using ServiceProvider=Microsoft.Extensions.DependencyInjection.ServiceProvider;
 

@@ -334,4 +334,21 @@ public class ScopedProviderTests {
         await Assert.That(service.Id).IsEqualTo(instance.Id);
         await Assert.That(service).IsEqualTo(instance);
     }
+
+    [Test]
+    public async Task ScopedProvider_ShouldReturnEnumerableServices() {
+        // Arrange
+        var collection = new ServiceCollection();
+        collection.AddEnumerableService<IEnumerableCommonInterface, EnumerableService1>((int)DefaultScopeDepth.Singleton);
+        collection.AddEnumerableService<IEnumerableCommonInterface, EnumerableService2>((int)DefaultScopeDepth.Singleton);
+        IScopedProvider provider = collection.Build();
+        
+        // Act
+        IEnumerableCommonInterface[] services = provider.GetRequiredService<IEnumerable<IEnumerableCommonInterface>>().ToArray();
+
+        // Assert
+        await Assert.That(services).HasCount().EqualTo(2);
+        await Assert.That(services.First()).IsTypeOf<EnumerableService1>();
+        await Assert.That(services.Last()).IsTypeOf<EnumerableService2>();
+    }
 }
