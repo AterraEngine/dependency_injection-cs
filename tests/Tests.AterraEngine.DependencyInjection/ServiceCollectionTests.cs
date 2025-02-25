@@ -389,4 +389,22 @@ public class ServiceCollectionTests {
 
         return Task.CompletedTask;
     }
+
+    [Test]
+    public async Task AddEnumerableService_Succeeds_WhenServiceIsInstance() {
+        // Arrange
+        var collection = new ServiceCollection();
+        var instance = new EnumerableService1();
+        var instance2 = new EnumerableService2();
+        
+        // Act
+        collection.AddEnumerableService<IEnumerableCommonInterface,EnumerableService1>(instance, (int)DefaultScopeDepth.Singleton);
+        collection.AddEnumerableService<IEnumerableCommonInterface,EnumerableService2>(instance2, (int)DefaultScopeDepth.Singleton);
+
+        // Assert
+        await Assert.That(collection).HasCount().EqualTo(3);
+        await Assert.That(collection.Records)
+            .ContainsKey(typeof(IEnumerable<IEnumerableCommonInterface>))
+            .And.ContainsKey(typeof(EnumerableService1));
+    }
 }

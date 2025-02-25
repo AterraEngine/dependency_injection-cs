@@ -84,7 +84,11 @@ public interface IServiceCollection : ICollection<IServiceRecord> {
     #region AddEnumerableService
     IServiceCollection AddEnumerableService<TService, TImplementation>(int scopeDepth) where TImplementation : class, TService;
 
+    IServiceCollection AddEnumerableService<TService, TImplementation>(TImplementation instance, int scopeDepth) where TImplementation : class, TService;
+    
     IServiceCollection AddEnumerableSingleton<TService, TImplementation>() where TImplementation : class, TService;
+    
+    IServiceCollection AddEnumerableSingleton<TService, TImplementation>(TImplementation instance) where TImplementation : class, TService;
 
     IServiceCollection AddEnumerableTransient<TService, TImplementation>() where TImplementation : class, TService;
 
