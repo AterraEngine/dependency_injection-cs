@@ -4,7 +4,28 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+
+        <IsPackable>true</IsPackable>
+        <PackageId>AterraEngine.DependencyInjection.Bridges.Microsoft</PackageId> <!-- Main package name -->
+        <Version>4.12.0</Version> <!-- Package version -->
+        <Authors>Anna Sas</Authors>
+        <Description>A bridging tool to use Microsofts DI on AterraEngine.DependencyInjection</Description>
+        <PackageProjectUrl>https://github.com/AterraEngine/dependency_injection-cs/</PackageProjectUrl>
+        <PackageTags>dependency-injection di</PackageTags>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <DebugType>embedded</DebugType>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../../LICENSE" Pack="true" PackagePath="" Visible="false" />
+        <None Include="../../README.md" Pack="true" PackagePath="" Visible="false" />
+        <None Include="../../assets/icon.png" Pack="true" PackagePath="" Visible="false" />
+    </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />

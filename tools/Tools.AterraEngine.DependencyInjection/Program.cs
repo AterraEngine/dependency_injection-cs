@@ -26,6 +26,7 @@ public static class Program {
         //      Code is the true saviour
         string projects = string.Join(";",
             "AterraEngine.DependencyInjection",
+            "AterraEngine.DependencyInjection.Bridges.Microsoft",
             "AterraEngine.DependencyInjection.Generators",
             "AterraEngine.DependencyInjection.Contracts"
         );
