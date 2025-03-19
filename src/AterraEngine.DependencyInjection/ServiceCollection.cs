@@ -36,7 +36,7 @@ public class ServiceCollection : IServiceCollection {
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------
-    public IScopedProvider Build() {
+    public virtual IScopedProvider Build() {
         IServiceContainer container = ServiceContainer.FromCollection(this);
         IsReadOnly = true;
         

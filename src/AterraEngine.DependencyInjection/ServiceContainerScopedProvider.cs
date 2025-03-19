@@ -18,6 +18,5 @@ public class ServiceContainerScopedProvider(ServiceContainer serviceContainer) :
         return base.ResolveServiceByScope<TService>(record);
     }
 
-    public override IScopedProvider CreateNewScope() => throw new InvalidOperationException("Cannot create a new scope from the container root scope.");
-    public override IScopedProvider CreateNewDeeperScope() => throw new InvalidOperationException("Cannot create a new scope from the container root scope.");
+    protected override IScopedProvider NewScopeProvider(int scopeLevel) =>  throw new InvalidOperationException("Cannot create a new scope from the container root scope.");
 }

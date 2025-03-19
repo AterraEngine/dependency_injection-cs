@@ -11,22 +11,19 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider {
-    public bool IsRootScopedProvider { private get; init; }
-
-    private static readonly FrozenDictionary<Type, Func<ScopedProvider, object>> SpecialTypeResolvers = new Dictionary<Type, Func<ScopedProvider, object>> {
+    protected static readonly FrozenDictionary<Type, Func<ScopedProvider, object>> SpecialTypeResolvers = new Dictionary<Type, Func<ScopedProvider, object>> {
         { typeof(IScopedProvider), static provider => provider },
         { typeof(IServiceContainer), static provider => provider.ServiceContainer }
     }.ToFrozenDictionary();
 
-    internal ScopedProvider? ParentScope { get; private set; }
-    private int ScopeDepth { get; init; }
+    internal protected ScopedProvider? ParentScope { get; protected set; }
+    protected int ScopeDepth { get; init; }
 
     internal ConcurrentDictionary<Guid, object> Instances { get; } = new();
     internal ConcurrentBag<IScopedProvider> ChildScopes { get; } = [];
 
-    private ServiceContainer ServiceContainer { get; } = serviceContainer;
-
-
+    protected ServiceContainer ServiceContainer { get; } = serviceContainer;
+    
     // -----------------------------------------------------------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------------------------------------------------------=
@@ -47,7 +44,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     #endregion
 
     #region GetServices by Generic Type argument
-    public TService? GetService<TService>() where TService : class {
+    public virtual TService? GetService<TService>() where TService : class {
         if (ServiceContainer.TryResolveRecord<TService>(out FrozenServiceRecord? record)) {
             return ResolveServiceByScope<TService>(record);
         }
@@ -57,7 +54,7 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
         return null;
     }
 
-    public TService GetRequiredService<TService>() where TService : class {
+    public virtual TService GetRequiredService<TService>() where TService : class {
         if (ServiceContainer.TryResolveRecord<TService>(out FrozenServiceRecord? record)) {
             return ResolveServiceByScope<TService>(record);
         }
@@ -98,19 +95,19 @@ public class ScopedProvider(ServiceContainer serviceContainer) : IScopedProvider
     #endregion
 
     #region Scope Creation
-    public virtual IScopedProvider CreateNewScope() {
-        ScopedProvider scopedProvider = NewScopeProvider(ScopeDepth);
+    public IScopedProvider CreateNewScope() {
+        IScopedProvider scopedProvider = NewScopeProvider(ScopeDepth);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
 
-    public virtual IScopedProvider CreateNewDeeperScope() {
-        ScopedProvider scopedProvider = NewScopeProvider(ScopeDepth + 1);
+    public IScopedProvider CreateNewDeeperScope() {
+        IScopedProvider scopedProvider = NewScopeProvider(ScopeDepth + 1);
         ChildScopes.Add(scopedProvider);
         return scopedProvider;
     }
 
-    private  ScopedProvider NewScopeProvider(int scopeLevel) => new(ServiceContainer) {
+    protected virtual IScopedProvider NewScopeProvider(int scopeLevel) => new ScopedProvider(ServiceContainer) {
         ParentScope = this,
         ScopeDepth = scopeLevel
     };

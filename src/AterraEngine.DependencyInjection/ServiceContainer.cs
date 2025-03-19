@@ -17,11 +17,10 @@ public class ServiceContainer : IServiceContainer {
     private ConcurrentDictionary<Guid, object> SingletonInstances { get; } = [];
     private ConcurrentDictionary<Guid, Delegate> FactoriesCache { get; } = new();
     internal Lazy<IScopedProvider> ContainerProvider { get; set; } = null!;
-    private Lazy<IScopedProvider> RootScopedProvider { get; set; } = null!;
+    public Lazy<IScopedProvider> RootScopedProvider { get; set; } = null!;
 
     public Lazy<FrozenSet<Guid>> DisposableRecords { get; private set; } = new(static () => FrozenSet<Guid>.Empty);
     public Lazy<FrozenSet<Guid>> AsyncDisposableRecords { get; private set; } = new(static () => FrozenSet<Guid>.Empty);
-    
     
     // -----------------------------------------------------------------------------------------------------------------
     // Constructors
@@ -63,12 +62,14 @@ public class ServiceContainer : IServiceContainer {
             _ => throw new InvalidOperationException("Could not resolve factory for generic service.")
         };
 
-    public TService CreateInstance<TService>(Guid id, IScopedProvider serviceProvider) where TService : class
-        => GetFactory<TService>(id) switch {
+    public TService CreateInstance<TService>(Guid id, IScopedProvider serviceProvider) where TService : class {
+        var factory = GetFactory<TService>(id);
+        return factory switch {
             Func<IScopedProvider, TService> directFactory => directFactory(serviceProvider),
             Func<IScopedProvider, object> objectFactory => (TService)objectFactory(serviceProvider),
             _ => throw new InvalidOperationException("Could not resolve factory for generic service.")
         };
+    }
 
     private Delegate GetFactory<TService>(Guid id) where TService : class
         => FactoriesCache.GetOrAdd(
@@ -91,7 +92,7 @@ public class ServiceContainer : IServiceContainer {
             this
         );
 
-    internal bool TryResolveRecord<TService>([NotNullWhen(true)] out FrozenServiceRecord? record) where TService : class {
+    public bool TryResolveRecord<TService>([NotNullWhen(true)] out FrozenServiceRecord? record) where TService : class {
         if (ServiceRecords.TryGetValue(typeof(TService), out record)) return true;
         if (typeof(TService).IsGenericType) {
             record = GetGenericRecord(typeof(TService));
