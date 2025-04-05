@@ -32,7 +32,7 @@ public interface ITestService2;
 
 public class GeneratorTest {
     public void Foo() {
-        var collection = new ServiceCollection();
+        var collection = new TieredServiceCollection();
 
         // What should be generated =>
         //      static implementation factory calls

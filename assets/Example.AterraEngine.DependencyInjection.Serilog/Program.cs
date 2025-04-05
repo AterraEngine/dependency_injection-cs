@@ -16,7 +16,7 @@ namespace Example.AterraEngine.DependencyInjection.Serilog;
 public static class Program {
 
     public static void Main(string[] args) {
-        var collection = new MsBridgeServiceCollection();
+        var collection = new MsBridgeTieredServiceCollection();
         
         Log.Logger = new LoggerConfiguration()
             .Enrich.FromLogContext()
@@ -24,7 +24,7 @@ public static class Program {
             .CreateLogger();
 
         collection.MsServiceCollection.AddLogging(builder => builder.AddSerilog());
-        IScopedProvider provider = collection.Build();
+        ITieredServiceProvider provider = collection.Build();
         
         ILogger logger = provider.GetRequiredService<ILogger<LoggerConfiguration>>();
         logger.LogInformation("Hello World!");

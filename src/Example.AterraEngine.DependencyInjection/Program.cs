@@ -20,13 +20,13 @@ public static class Program {
     }
 
     public static Task Main(string[] args) {
-        var collection = new ServiceCollection();
+        var collection = new TieredServiceCollection();
 
         collection.AddSingleton<IService, Service>();
         collection.AddSingleton<IServiceRez, ServiceRez>();
         collection.AddTransient<ITransient, Transient>();
 
-        using IScopedProvider disposable = collection.Build();
+        using ITieredServiceProvider disposable = collection.Build();
 
         var service = disposable.GetService<IService>();
         Console.WriteLine(service?.Name);
@@ -70,8 +70,8 @@ public static class Program {
         ITransient Transient { get; }
     }
 
-    public class ServiceRez(IService service, IService service1, ITransient transient, IScopedProvider provider) : IServiceRez {
-        public IScopedProvider Provider { get; } = provider;
+    public class ServiceRez(IService service, IService service1, ITransient transient, ITieredServiceProvider provider) : IServiceRez {
+        public ITieredServiceProvider Provider { get; } = provider;
         public IService Service { get; } = service;
         public IService Service1 { get; } = service1;
         public ITransient Transient { get; } = transient;

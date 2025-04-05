@@ -62,9 +62,9 @@ public class ServiceCollectorGenerator : IIncrementalGenerator {
                         when constructorArguments[0].Value is INamedTypeSymbol serviceTypeSymbol: {
                         // Check if the class inherits from the service type
                         if (classSymbol.InheritsFrom(serviceTypeSymbol)) {
-                            int scopeLevel = ResolveBaseConstructorArguments(context, attributeData.AttributeClass, attributeData, classDeclaration);
+                            int ServiceDepth = ResolveBaseConstructorArguments(context, attributeData.AttributeClass, attributeData, classDeclaration);
 
-                            validClasses.Add(new ServiceCollectorRecord(classSymbol, attributeData.AttributeClass, serviceTypeSymbol, scopeLevel));
+                            validClasses.Add(new ServiceCollectorRecord(classSymbol, attributeData.AttributeClass, serviceTypeSymbol, ServiceDepth));
                             continue;
                         }
 
@@ -120,7 +120,7 @@ public class ServiceCollectorGenerator : IIncrementalGenerator {
                             public const string ServiceName = "{{className}}";
                             public const string Attribute = "{{attributeName}}";
                             public const string ServiceType = "{{serviceTypeName}}";
-                            public const int ScopeLevel = {{collectorRecord.scopeLevel}};
+                            public const int ServiceDepth = {{collectorRecord.ServiceDepth}};
                         }
                     }
                     """,
@@ -144,8 +144,8 @@ public class ServiceCollectorGenerator : IIncrementalGenerator {
 
                 // Resolve the value of the second argument
                 string secondArgument = baseArguments[1].ToString();// You can refine this step with semantic analysis
-                int scopeLevel = int.TryParse(secondArgument, out int l) ? l : 0;
-                return scopeLevel;
+                int ServiceDepth = int.TryParse(secondArgument, out int l) ? l : 0;
+                return ServiceDepth;
             }
         }
 

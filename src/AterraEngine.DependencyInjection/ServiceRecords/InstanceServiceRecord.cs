@@ -10,10 +10,10 @@ namespace AterraEngine.DependencyInjection.ServiceRecords;
 // ---------------------------------------------------------------------------------------------------------------------
 public record InstanceServiceRecord<TService>(
     [UsedImplicitly] TService Instance,
-    int ScopeDepth
+    int ServiceDepth
 ) : ServiceRecord<TService>(
     typeof(TService),
     typeof(TService),
     _ => Instance,
-    ScopeDepth
+    ServiceDepth
     );

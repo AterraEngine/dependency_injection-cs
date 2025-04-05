@@ -27,11 +27,11 @@ public class ServiceCollectionBenchmarks {
 
     [Benchmark(OperationsPerInvoke = 1000)]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency() {
-        var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
+        var collection = new global::AterraEngine.DependencyInjection.TieredServiceCollection();
 
         collection.AddSingleton<IService, Service>();
 
-        IScopedProvider provider = collection.Build();
+        ITieredServiceProvider provider = collection.Build();
 
         return provider.GetRequiredService<IService>();
     }

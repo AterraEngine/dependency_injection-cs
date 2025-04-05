@@ -8,13 +8,13 @@ namespace AterraEngine.DependencyInjection.ServiceRecords;
 public record ServiceRecord<TService>(
     Type ServiceType,
     Type ImplementationType,
-    Func<IScopedProvider, TService> ImplementationFactory,
-    int ScopeDepth
+    Func<ITieredServiceProvider, TService> ImplementationFactory,
+    int ServiceDepth
 ) : IServiceRecord {
     public Guid Id { get; set; } = Guid.CreateVersion7();
-    public bool IsTransient { get; } = ScopeDepth == (int)DefaultScopeDepth.Transient;
-    public bool IsSingleton { get; } = ScopeDepth == (int)DefaultScopeDepth.Singleton;
-    public bool IsProviderScoped { get; } = ScopeDepth == (int)DefaultScopeDepth.ProviderScoped;
+    public bool IsTransient { get; } = ServiceDepth == (int)DefaultServiceDepth.Transient;
+    public bool IsSingleton { get; } = ServiceDepth == (int)DefaultServiceDepth.Singleton;
+    public bool IsProviderScoped { get; } = ServiceDepth == (int)DefaultServiceDepth.ProviderScoped;
     public bool IsDisposable { get; } = typeof(IDisposable).IsAssignableFrom(ImplementationType);
     public bool IsAsyncDisposable { get; } = typeof(IAsyncDisposable).IsAssignableFrom(ImplementationType);
 
@@ -25,12 +25,12 @@ public record ServiceRecord<TService>(
         ServiceType,
         ImplementationType,
         ImplementationFactory,
-        ScopeDepth,
+        ServiceDepth,
         this switch {
-            { IsSingleton: true } => FrozenServiceRecord.KnownScopeDepth.Singleton,
-            { IsProviderScoped: true } => FrozenServiceRecord.KnownScopeDepth.ProviderScoped,
-            { ScopeDepth: > (int)DefaultScopeDepth.ProviderScoped } => FrozenServiceRecord.KnownScopeDepth.CustomScoped,
-            _ => FrozenServiceRecord.KnownScopeDepth.Transient
+            { IsSingleton: true } => FrozenServiceRecord.KnownServiceDepth.Singleton,
+            { IsProviderScoped: true } => FrozenServiceRecord.KnownServiceDepth.ProviderScoped,
+            { ServiceDepth: > (int)DefaultServiceDepth.ProviderScoped } => FrozenServiceRecord.KnownServiceDepth.CustomTier,
+            _ => FrozenServiceRecord.KnownServiceDepth.Transient
         },
         this switch {
             { IsDisposable: true } => FrozenServiceRecord.DisposalType.Disposable,

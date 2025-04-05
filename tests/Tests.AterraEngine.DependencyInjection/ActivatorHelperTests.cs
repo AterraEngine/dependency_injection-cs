@@ -14,15 +14,15 @@ namespace Tests.AterraEngine.DependencyInjection;
 [SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Global")]
 public class ActivatorHelperTests {
 
-    private IScopedProvider BuildServiceProvider(LifetimeSwitch lifetimeSwitch) {
-        var collection = new ServiceCollection();
+    private ITieredServiceProvider BuildServiceProvider(LifetimeSwitch lifetimeSwitch) {
+        var collection = new TieredServiceCollection();
         LifetimeSwitcher.On(lifetimeSwitch,
             onTransient: () => collection.AddTransient<IEmptyService, EmptyService>().AddTransient<ISampleService, SampleService>(),
             onSingleton: () => collection.AddSingleton<IEmptyService, EmptyService>().AddSingleton<ISampleService, SampleService>(),
             onScoped: () => collection.AddScoped<IEmptyService, EmptyService>().AddScoped<ISampleService, SampleService>()
         );
 
-        IScopedProvider provider = collection.Build();
+        ITieredServiceProvider provider = collection.Build();
         return provider;
     }
 
@@ -33,7 +33,7 @@ public class ActivatorHelperTests {
     [Arguments(LifetimeSwitch.Scoped)]
     public async Task CreateInstance_ShouldReturnInstance_SingleDependencyDepth(LifetimeSwitch lifetimeSwitch) {
         // Arrange
-        IScopedProvider provider = BuildServiceProvider(lifetimeSwitch);
+        ITieredServiceProvider provider = BuildServiceProvider(lifetimeSwitch);
 
         // Act
         var instance = ActivatorHelper.CreateInstance<CustomClass>(provider);
@@ -48,7 +48,7 @@ public class ActivatorHelperTests {
     [Arguments(LifetimeSwitch.Scoped)]
     public async Task CreateInstance_ShouldReturnInstance_DoubleDependencyDepth(LifetimeSwitch lifetimeSwitch) {
         // Arrange
-        IScopedProvider provider = BuildServiceProvider(lifetimeSwitch);
+        ITieredServiceProvider provider = BuildServiceProvider(lifetimeSwitch);
 
         // Act
         var instance = ActivatorHelper.CreateInstance<CustomClass2>(provider);

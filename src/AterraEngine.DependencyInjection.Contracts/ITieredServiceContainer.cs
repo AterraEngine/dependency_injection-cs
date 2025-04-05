@@ -1,12 +1,12 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+using AterraEngine.DependencyInjection.ServiceRecords;
+
 namespace AterraEngine.DependencyInjection;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-[AttributeUsage(AttributeTargets.Class)]
-public class TransientServiceAttribute(Type serviceType) : ServiceAttribute(serviceType, (int)DefaultServiceDepth.Transient);
-
-[AttributeUsage(AttributeTargets.Class)]
-public class TransientServiceAttribute<TService>() : TransientServiceAttribute(typeof(TService));
+public interface ITieredServiceContainer : IReadOnlyCollection<FrozenServiceRecord> {
+    ITieredServiceProvider GetRootProvider();
+}

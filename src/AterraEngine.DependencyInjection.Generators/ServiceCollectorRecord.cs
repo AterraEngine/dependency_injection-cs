@@ -11,5 +11,5 @@ public record ServiceCollectorRecord(
     INamedTypeSymbol classSymbol,
     INamedTypeSymbol attributeSymbol,
     INamedTypeSymbol serviceTypeSymbol,
-    int scopeLevel
+    int ServiceDepth
 ) {}

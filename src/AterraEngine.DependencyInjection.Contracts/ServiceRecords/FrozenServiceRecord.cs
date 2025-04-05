@@ -1,9 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using System.Security.Cryptography;
-using System.Text;
-
 namespace AterraEngine.DependencyInjection.ServiceRecords;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
@@ -12,8 +9,8 @@ public record FrozenServiceRecord(
     Type ServiceType,
     Type ImplementationType,
     Delegate ImplementationFactory,
-    int ScopeDepth,
-    FrozenServiceRecord.KnownScopeDepth Depth,
+    int ServiceDepth,
+    FrozenServiceRecord.KnownServiceDepth Depth,
     FrozenServiceRecord.DisposalType Disposal,
     FrozenServiceRecord.GenericServiceState GenericService
 ) {
@@ -32,12 +29,12 @@ public record FrozenServiceRecord(
         ClosedGeneric
     }
 
-    public enum KnownScopeDepth : byte {
+    public enum KnownServiceDepth : byte {
         Transient,
         Singleton,
         ProviderScoped,
-        CustomScoped
+        CustomTier
     }
 
-    public Func<IScopedProvider, T> GetFactory<T>() => (Func<IScopedProvider, T>)ImplementationFactory;
+    public Func<ITieredServiceProvider, T> GetFactory<T>() => (Func<ITieredServiceProvider, T>)ImplementationFactory;
 }

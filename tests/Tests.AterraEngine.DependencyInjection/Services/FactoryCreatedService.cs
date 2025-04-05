@@ -32,7 +32,7 @@ public class ExampleFactoryService : IExampleFactoryService {
         "c501072e-1c9a-4166-a538-b08bfe9c4933".ToGuid()
     ];
 
-    public IFactoryCreatedService Create(IScopedProvider scopedProvider) {
+    public IFactoryCreatedService Create(ITieredServiceProvider TieredServiceProvider) {
         Guid id = SpecificIds[_index++ % SpecificIds.Length];
         return new FactoryCreatedService(id);
     }

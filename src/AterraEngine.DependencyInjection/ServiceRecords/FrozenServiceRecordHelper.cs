@@ -20,7 +20,7 @@ public static class FrozenServiceRecordHelper {
             closedType,
             closedImplementationType,// Pass the fully closed implementation type
             ConstructorReflectionFactory.CreateFunc<object>(closedImplementationType),// Factory for the closed generic
-            openRecord.ScopeDepth,
+            openRecord.ServiceDepth,
             openRecord.Depth,
             openRecord.Disposal,
             FrozenServiceRecord.GenericServiceState.ClosedGeneric// It's no longer open, unresolved, generic

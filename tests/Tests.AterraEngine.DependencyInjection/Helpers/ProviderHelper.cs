@@ -8,18 +8,18 @@ namespace Tests.AterraEngine.DependencyInjection.Helpers;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public static class ProviderHelper {
-    public static IScopedProvider CreateEmptyServiceProvider() {
+    public static ITieredServiceProvider CreateEmptyServiceProvider() {
         // Populate collection
-        var collection = new ServiceCollection();
+        var collection = new TieredServiceCollection();
 
         // Create provider
-        IScopedProvider provider = collection.Build();
+        ITieredServiceProvider provider = collection.Build();
         return provider;
     }
 
-    public static IScopedProvider CreateServiceProviderWithGeneratedServices(int count = 100, Action<IServiceCollection>? configureServices = null) {
+    public static ITieredServiceProvider CreateServiceProviderWithGeneratedServices(int count = 100, Action<ITieredServiceCollection>? configureServices = null) {
         // Populate collection
-        var collection = new ServiceCollection();
+        var collection = new TieredServiceCollection();
 
         foreach ((Type? serviceType, Type? implementationType) in ServiceHelper.GenerateServices(count)) {
             collection.AddSingleton(serviceType, implementationType);
@@ -28,7 +28,7 @@ public static class ProviderHelper {
         configureServices?.Invoke(collection);
 
         // Create provider
-        IScopedProvider provider = collection.Build();
+        ITieredServiceProvider provider = collection.Build();
         return provider;
     }
 }

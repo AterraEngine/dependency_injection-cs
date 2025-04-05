@@ -34,11 +34,11 @@ public class RepeatedServiceCollectionBenchmarks {
 
     [Benchmark]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency_Transient() {
-        var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
+        var collection = new global::AterraEngine.DependencyInjection.TieredServiceCollection();
 
         collection.AddTransient<IService, Service>();
 
-        IScopedProvider provider = collection.Build();
+        ITieredServiceProvider provider = collection.Build();
 
         var list = new List<IService>(Count);
         for (int i = 0; i < Count; i++) {
@@ -66,11 +66,11 @@ public class RepeatedServiceCollectionBenchmarks {
 
     [Benchmark]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency_Singleton() {
-        var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
+        var collection = new global::AterraEngine.DependencyInjection.TieredServiceCollection();
 
         collection.AddSingleton<IService, Service>();
 
-        IScopedProvider provider = collection.Build();
+        ITieredServiceProvider provider = collection.Build();
 
         var list = new List<IService>(Count);
         for (int i = Count - 1; i >= 0; i--) {
@@ -98,11 +98,11 @@ public class RepeatedServiceCollectionBenchmarks {
 
     [Benchmark]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency_Scoped() {
-        var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
+        var collection = new global::AterraEngine.DependencyInjection.TieredServiceCollection();
 
         collection.AddScoped<IService, Service>();
 
-        IScopedProvider provider = collection.Build();
+        ITieredServiceProvider provider = collection.Build();
 
         var list = new List<IService>(Count);
         for (int i = Count - 1; i >= 0; i--) {

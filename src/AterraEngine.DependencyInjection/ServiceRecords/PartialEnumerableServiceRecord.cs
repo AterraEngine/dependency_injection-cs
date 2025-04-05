@@ -6,11 +6,11 @@ namespace AterraEngine.DependencyInjection.ServiceRecords;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public record PartialEnumerableServiceRecord<TImplementation> (
-    Func<IScopedProvider, TImplementation> ImplementationFactory,
-    int ScopeDepth
+    Func<ITieredServiceProvider, TImplementation> ImplementationFactory,
+    int ServiceDepth
 ) : ServiceRecord<TImplementation> (
     typeof(TImplementation),
     typeof(TImplementation),
     ImplementationFactory,
-    ScopeDepth
+    ServiceDepth
 ) where TImplementation : class ;

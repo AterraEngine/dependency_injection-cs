@@ -34,7 +34,7 @@ public class LargeServiceCollectionBenchmarks {
 
     [Benchmark]
     public object AterraEngine_AddBuildAndRetrieve_SingleDependency() {
-        var collection = new global::AterraEngine.DependencyInjection.ServiceCollection();
+        var collection = new global::AterraEngine.DependencyInjection.TieredServiceCollection();
         const int serviceCount = 1_000;// Number of services to generate
         Dictionary<Type, Type> generatedServices = GenerateServices(serviceCount);
 
@@ -43,7 +43,7 @@ public class LargeServiceCollectionBenchmarks {
             collection.AddSingleton(serviceType, implementationType);
         }
 
-        IScopedProvider provider = collection.Build();
+        ITieredServiceProvider provider = collection.Build();
 
         return provider;
     }

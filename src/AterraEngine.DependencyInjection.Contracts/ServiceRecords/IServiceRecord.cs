@@ -9,7 +9,7 @@ public interface IServiceRecord {
     Guid Id { get; set; }
     Type ServiceType { get; }
     Type ImplementationType { get; }
-    int ScopeDepth { get; }
+    int ServiceDepth { get; }
 
     bool IsSingleton { get; }
     bool IsTransient { get; }

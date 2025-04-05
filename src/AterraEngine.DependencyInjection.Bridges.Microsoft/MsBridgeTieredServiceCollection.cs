@@ -1,16 +1,18 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
-using AterraEngine.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Tests.AterraEngine.DependencyInjection.Services;
+namespace AterraEngine.DependencyInjection.Bridges.Microsoft;
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-public class TieredServiceProviderRequiredService(ITieredServiceProvider serviceProvider) : ITieredServiceProviderRequiredService {
-    public ITieredServiceProvider TieredServiceProvider { get; set; } = serviceProvider;
-}
+public class MsBridgeTieredServiceCollection: TieredServiceCollection {
+    public ServiceCollection MsServiceCollection { get; } = new();
 
-public interface ITieredServiceProviderRequiredService {
-    public ITieredServiceProvider TieredServiceProvider { get; }
+    public override ITieredServiceProvider Build() {
+        var container = (TieredServiceContainer)TieredServiceContainer.FromCollection(this);
+        return new MsBridgeTieredServiceProvider(container, MsServiceCollection.BuildServiceProvider());
+    }
 }
