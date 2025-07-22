@@ -113,7 +113,7 @@ public class TieredServiceCollectionTests {
         // Arrange
         var collection = new TieredServiceCollection();
         collection.AddSingleton<IEmptyService, EmptyService>();
-        collection.AddService<IIdService, IdService>(ServiceDepth: 1);
+        collection.AddService<IIdService, IdService>(serviceDepth: 1);
         ITieredServiceProvider globalProvider = collection.Build();
 
         // Act

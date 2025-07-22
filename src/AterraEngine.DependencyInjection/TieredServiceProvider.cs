@@ -96,20 +96,20 @@ public class TieredServiceProvider(TieredServiceContainer serviceContainer) : IT
 
     #region Scope Creation
     public ITieredServiceProvider CreateNewScope() {
-        ITieredServiceProvider TieredServiceProvider = NewProvider(ServiceDepth);
-        ChildScopes.Add(TieredServiceProvider);
-        return TieredServiceProvider;
+        ITieredServiceProvider tieredServiceProvider = NewProvider(ServiceDepth);
+        ChildScopes.Add(tieredServiceProvider);
+        return tieredServiceProvider;
     }
 
     public ITieredServiceProvider CreateNewTier() {
-        ITieredServiceProvider TieredServiceProvider = NewProvider(ServiceDepth + 1);
-        ChildScopes.Add(TieredServiceProvider);
-        return TieredServiceProvider;
+        ITieredServiceProvider tieredServiceProvider = NewProvider(ServiceDepth + 1);
+        ChildScopes.Add(tieredServiceProvider);
+        return tieredServiceProvider;
     }
 
-    protected virtual ITieredServiceProvider NewProvider(int ServiceDepth) => new TieredServiceProvider(ServiceContainer) {
+    protected virtual ITieredServiceProvider NewProvider(int serviceDepth) => new TieredServiceProvider(ServiceContainer) {
         ParentScope = this,
-        ServiceDepth = ServiceDepth
+        ServiceDepth = serviceDepth
     };
     #endregion
 

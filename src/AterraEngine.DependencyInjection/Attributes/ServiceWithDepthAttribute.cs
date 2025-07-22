@@ -6,7 +6,7 @@ namespace AterraEngine.DependencyInjection;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 [AttributeUsage(AttributeTargets.Class)]
-public class ServiceWithDepthAttribute(Type serviceType, int ServiceDepth) : ServiceAttribute(serviceType, ServiceDepth);
+public class ServiceWithDepthAttribute(Type serviceType, int serviceDepth) : ServiceAttribute(serviceType, serviceDepth);
 
 [AttributeUsage(AttributeTargets.Class)]
-public class ServiceWithDepthAttribute<TService>(int ServiceDepth) : ServiceWithDepthAttribute(typeof(TService), ServiceDepth);
+public class ServiceWithDepthAttribute<TService>(int serviceDepth) : ServiceWithDepthAttribute(typeof(TService), serviceDepth);

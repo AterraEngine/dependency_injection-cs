@@ -14,21 +14,21 @@ public interface ITieredServiceCollection : ICollection<IServiceRecord> {
     #region AddService
     ITieredServiceCollection AddService(IServiceRecord record);
 
-    ITieredServiceCollection AddService<TImplementation>(int ServiceDepth) where TImplementation : class;
+    ITieredServiceCollection AddService<TImplementation>(int serviceDepth) where TImplementation : class;
 
-    ITieredServiceCollection AddService<TService, TImplementation>(int ServiceDepth) where TImplementation : class, TService;
-
-    [RequiresDynamicCode("This method uses reflection to create a service record.")]
-    ITieredServiceCollection AddService(Type implementation, int ServiceDepth);
+    ITieredServiceCollection AddService<TService, TImplementation>(int serviceDepth) where TImplementation : class, TService;
 
     [RequiresDynamicCode("This method uses reflection to create a service record.")]
-    ITieredServiceCollection AddService(Type service, Type implementation, int ServiceDepth);
+    ITieredServiceCollection AddService(Type implementation, int serviceDepth);
 
-    ITieredServiceCollection AddServiceFromFactory<TService>(Func<ITieredServiceProvider, TService> factory, int ServiceDepth) where TService : class;
+    [RequiresDynamicCode("This method uses reflection to create a service record.")]
+    ITieredServiceCollection AddService(Type service, Type implementation, int serviceDepth);
 
-    ITieredServiceCollection AddServiceFromFactory<TService, TFactory>(int ServiceDepth) where TFactory : class, IFactoryService<TService> where TService : class;
+    ITieredServiceCollection AddServiceFromFactory<TService>(Func<ITieredServiceProvider, TService> factory, int serviceDepth) where TService : class;
 
-    ITieredServiceCollection AddService<TService>(TService instance, int ServiceDepth) where TService : class;
+    ITieredServiceCollection AddServiceFromFactory<TService, TFactory>(int serviceDepth) where TFactory : class, IFactoryService<TService> where TService : class;
+
+    ITieredServiceCollection AddService<TService>(TService instance, int serviceDepth) where TService : class;
     #endregion
 
     #region AddSingleton
@@ -44,7 +44,7 @@ public interface ITieredServiceCollection : ICollection<IServiceRecord> {
 
     ITieredServiceCollection AddSingletonFromFactory<TService>(Func<ITieredServiceProvider, TService> factory) where TService : class;
 
-    ITieredServiceCollection AddSingletonFromFactory<TService, TFactory>(int? ServiceDepthFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
+    ITieredServiceCollection AddSingletonFromFactory<TService, TFactory>(int? serviceDepthFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
 
     ITieredServiceCollection AddSingleton<TService>(TService instance) where TService : class;
     #endregion
@@ -62,7 +62,7 @@ public interface ITieredServiceCollection : ICollection<IServiceRecord> {
 
     ITieredServiceCollection AddTransientFromFactory<TService>(Func<ITieredServiceProvider, TService> factory) where TService : class;
 
-    ITieredServiceCollection AddTransientFromFactory<TService, TFactory>(int? ServiceDepthFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
+    ITieredServiceCollection AddTransientFromFactory<TService, TFactory>(int? serviceDepthFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
     #endregion
 
     #region AddScoped
@@ -78,13 +78,13 @@ public interface ITieredServiceCollection : ICollection<IServiceRecord> {
 
     ITieredServiceCollection AddScopedFromFactory<TService>(Func<ITieredServiceProvider, TService> factory) where TService : class;
 
-    ITieredServiceCollection AddScopedFromFactory<TService, TFactory>(int? ServiceDepthFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
+    ITieredServiceCollection AddScopedFromFactory<TService, TFactory>(int? serviceDepthFactory = null) where TFactory : class, IFactoryService<TService> where TService : class;
     #endregion
     
     #region AddEnumerableService
-    ITieredServiceCollection AddEnumerableService<TService, TImplementation>(int ServiceDepth) where TImplementation : class, TService;
+    ITieredServiceCollection AddEnumerableService<TService, TImplementation>(int serviceDepth) where TImplementation : class, TService;
 
-    ITieredServiceCollection AddEnumerableService<TService, TImplementation>(TImplementation instance, int ServiceDepth) where TImplementation : class, TService;
+    ITieredServiceCollection AddEnumerableService<TService, TImplementation>(TImplementation instance, int serviceDepth) where TImplementation : class, TService;
     
     ITieredServiceCollection AddEnumerableSingleton<TService, TImplementation>() where TImplementation : class, TService;
     

@@ -17,12 +17,12 @@ public class MsBridgeTieredServiceProvider(TieredServiceContainer serviceContain
         //      The Required needs to fail at some point to resolve an incorrect service, and this way we are not making multiple try catch blocks.
         => msServiceProvider.GetService<TService>() ?? base.GetRequiredService<TService>();
 
-    protected override ITieredServiceProvider NewProvider(int ServiceDepth) {
+    protected override ITieredServiceProvider NewProvider(int serviceDepth) {
         IServiceProvider serviceProvider = msServiceProvider.CreateScope().ServiceProvider;
         
         return new MsBridgeTieredServiceProvider(ServiceContainer, serviceProvider) {
             ParentScope = this,
-            ServiceDepth = ServiceDepth
+            ServiceDepth = serviceDepth
         };
     }
 }

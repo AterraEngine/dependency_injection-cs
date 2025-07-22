@@ -8,8 +8,8 @@ namespace AterraEngine.DependencyInjection.Generators;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 public record ServiceCollectorRecord(
-    INamedTypeSymbol classSymbol,
-    INamedTypeSymbol attributeSymbol,
-    INamedTypeSymbol serviceTypeSymbol,
+    INamedTypeSymbol ClassSymbol,
+    INamedTypeSymbol AttributeSymbol,
+    INamedTypeSymbol ServiceTypeSymbol,
     int ServiceDepth
 ) {}

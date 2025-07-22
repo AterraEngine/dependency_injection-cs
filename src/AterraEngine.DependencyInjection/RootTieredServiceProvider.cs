@@ -18,5 +18,5 @@ public class RootTieredServiceProvider(TieredServiceContainer serviceContainer) 
         return base.ResolveServiceByScope<TService>(record);
     }
 
-    protected override ITieredServiceProvider NewProvider(int ServiceDepth) =>  throw new InvalidOperationException("Cannot create a new scope from the container root scope.");
+    protected override ITieredServiceProvider NewProvider(int serviceDepth) =>  throw new InvalidOperationException("Cannot create a new scope from the container root scope.");
 }

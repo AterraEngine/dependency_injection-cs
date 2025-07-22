@@ -50,13 +50,13 @@ public class TieredServiceCollection : ITieredServiceCollection {
     }
 
     #region AddService
-    public ITieredServiceCollection AddService<TImplementation>(int ServiceDepth) where TImplementation : class => AddService<TImplementation, TImplementation>(ServiceDepth);
-    public ITieredServiceCollection AddService<TService, TImplementation>(int ServiceDepth) where TImplementation : class, TService {
+    public ITieredServiceCollection AddService<TImplementation>(int serviceDepth) where TImplementation : class => AddService<TImplementation, TImplementation>(serviceDepth);
+    public ITieredServiceCollection AddService<TService, TImplementation>(int serviceDepth) where TImplementation : class, TService {
         Add(new ServiceRecord<TService>(
             typeof(TService),
             typeof(TImplementation),
             ConstructorReflectionFactory.CreateFunc<TService>(typeof(TImplementation)),
-            ServiceDepth
+            serviceDepth
         ));
 
         return this;
@@ -67,39 +67,39 @@ public class TieredServiceCollection : ITieredServiceCollection {
         return this;
     }
 
-    public ITieredServiceCollection AddServiceFromFactory<TService>(Func<ITieredServiceProvider, TService> factory, int ServiceDepth) where TService : class
-        => AddService(new ServiceRecord<TService>(typeof(TService), typeof(TService), factory, ServiceDepth));
+    public ITieredServiceCollection AddServiceFromFactory<TService>(Func<ITieredServiceProvider, TService> factory, int serviceDepth) where TService : class
+        => AddService(new ServiceRecord<TService>(typeof(TService), typeof(TService), factory, serviceDepth));
 
-    public ITieredServiceCollection AddServiceFromFactory<TService, TFactory>(int ServiceDepth) where TService : class where TFactory : class, IFactoryService<TService>
+    public ITieredServiceCollection AddServiceFromFactory<TService, TFactory>(int serviceDepth) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService>(
             factory: static provider => provider.GetRequiredService<TFactory>().Create(provider),
-            ServiceDepth
+            serviceDepth
         );
 
-    public ITieredServiceCollection AddService<TService>(TService instance, int ServiceDepth) where TService : class {
-        if (ServiceDepth is not (int)DefaultServiceDepth.Singleton) throw new InvalidOperationException("Scope level must be Singleton for it to be registered from an object instance.");
-        return AddService(new InstanceServiceRecord<TService>(instance, ServiceDepth));
+    public ITieredServiceCollection AddService<TService>(TService instance, int serviceDepth) where TService : class {
+        if (serviceDepth is not (int)DefaultServiceDepth.Singleton) throw new InvalidOperationException("Scope level must be Singleton for it to be registered from an object instance.");
+        return AddService(new InstanceServiceRecord<TService>(instance, serviceDepth));
     }
 
     #region AddService by Type argument
     [RequiresDynamicCode("This method uses reflection to create a service record.")]
-    public ITieredServiceCollection AddService(Type implementation, int ServiceDepth) {
+    public ITieredServiceCollection AddService(Type implementation, int serviceDepth) {
         // Handle open generic type registration
         if (implementation.IsGenericTypeDefinition) {
-            Add(new GenericServiceRecord(implementation, implementation, ServiceDepth));
+            Add(new GenericServiceRecord(implementation, implementation, serviceDepth));
             return this;
         }
         
         // Handle normal registration for closed types
         var result = _addServiceMethodByServiceAndImplementationTypes.Value
             .MakeGenericMethod(implementation)
-            .Invoke(this, [ServiceDepth]) as ITieredServiceCollection;
+            .Invoke(this, [serviceDepth]) as ITieredServiceCollection;
 
         return result ?? throw new InvalidOperationException();
     }
 
     [RequiresDynamicCode("This method uses reflection to create a service record.")]
-    public ITieredServiceCollection AddService(Type service, Type implementation, int ServiceDepth) {
+    public ITieredServiceCollection AddService(Type service, Type implementation, int serviceDepth) {
         ThrowIfReadOnly();
 
         // Verify the type arguments are either both open or closed
@@ -112,14 +112,14 @@ public class TieredServiceCollection : ITieredServiceCollection {
         // Handle open generic type registration
         if (service.IsGenericTypeDefinition && implementation.IsGenericTypeDefinition) {
             if (!service.IsInterface) throw new InvalidOperationException($"Open generic service type '{service}' must be an interface.");
-            Add(new GenericServiceRecord(service, implementation, ServiceDepth));
+            Add(new GenericServiceRecord(service, implementation, serviceDepth));
             return this;
         }
 
         // Handle normal registration for closed types
         var result = _addServiceMethodByServiceAndImplementationTypes.Value
             .MakeGenericMethod(service, implementation)
-            .Invoke(this, [ServiceDepth]) as ITieredServiceCollection;
+            .Invoke(this, [serviceDepth]) as ITieredServiceCollection;
 
         return result ?? throw new InvalidOperationException();
     }
@@ -144,7 +144,7 @@ public class TieredServiceCollection : ITieredServiceCollection {
     public ITieredServiceCollection AddSingletonFromFactory<TService>(Func<ITieredServiceProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultServiceDepth.Singleton);
 
-    public ITieredServiceCollection AddSingletonFromFactory<TService, TFactory>(int? ServiceDepthFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
+    public ITieredServiceCollection AddSingletonFromFactory<TService, TFactory>(int? serviceDepthFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactory>((int)DefaultServiceDepth.Singleton);
     
     public ITieredServiceCollection AddSingleton<TService>(TService instance) where TService : class 
@@ -169,7 +169,7 @@ public class TieredServiceCollection : ITieredServiceCollection {
     public ITieredServiceCollection AddTransientFromFactory<TService>(Func<ITieredServiceProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultServiceDepth.Transient);
 
-    public ITieredServiceCollection AddTransientFromFactory<TService, TFactory>(int? ServiceDepthFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
+    public ITieredServiceCollection AddTransientFromFactory<TService, TFactory>(int? serviceDepthFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactory>((int)DefaultServiceDepth.Transient);
     #endregion
 
@@ -191,17 +191,17 @@ public class TieredServiceCollection : ITieredServiceCollection {
     public ITieredServiceCollection AddScopedFromFactory<TService>(Func<ITieredServiceProvider, TService> factory) where TService : class
         => AddServiceFromFactory(factory, (int)DefaultServiceDepth.ProviderScoped);
 
-    public ITieredServiceCollection AddScopedFromFactory<TService, TFactory>(int? ServiceDepthFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
+    public ITieredServiceCollection AddScopedFromFactory<TService, TFactory>(int? serviceDepthFactory = null) where TService : class where TFactory : class, IFactoryService<TService>
         => AddServiceFromFactory<TService, TFactory>((int)DefaultServiceDepth.ProviderScoped);
     #endregion
 
     #region AddEnumerableService
-    private void AddOrUpdateEnumerableServiceRecord<TService, TImplementation>(int ServiceDepth) where TImplementation : class, TService {
+    private void AddOrUpdateEnumerableServiceRecord<TService, TImplementation>(int serviceDepth) where TImplementation : class, TService {
         Records.AddOrUpdate(
             typeof(IEnumerable<TService>),
             // Add case: when the key does not exist, insert the new item
             _ => {
-                var record = new EnumerableServiceRecord<TService>(ServiceDepth);
+                var record = new EnumerableServiceRecord<TService>(serviceDepth);
                 record.AddService<TImplementation>();
                 return record;
             },
@@ -209,31 +209,31 @@ public class TieredServiceCollection : ITieredServiceCollection {
             // Update case: when the key already exists, handle the old value
             (_, record) => {
                 if (record is not EnumerableServiceRecord<TService> enumerableRecord) throw new InvalidOperationException("The record is not an enumerable record.");
-                if (record.ServiceDepth != ServiceDepth) throw new InvalidOperationException("The record's scope depth does not match the partial record's scope depth.");
+                if (record.ServiceDepth != serviceDepth) throw new InvalidOperationException("The record's scope depth does not match the partial record's scope depth.");
                 enumerableRecord.AddService<TImplementation>();
                 return record;
             }
         );
     }
     
-    public ITieredServiceCollection AddEnumerableService<TService, TImplementation>(int ServiceDepth) where TImplementation : class, TService {
+    public ITieredServiceCollection AddEnumerableService<TService, TImplementation>(int serviceDepth) where TImplementation : class, TService {
         // The partial record can be added directly
         Add(new PartialEnumerableServiceRecord<TImplementation>(
             ConstructorReflectionFactory.CreateFunc<TImplementation>(typeof(TImplementation)),
-            ServiceDepth
+            serviceDepth
         ));
         
         // The actual enumerable service is a little bit more complicated
         //      Instead of relying on Add() method, this implements its own
-        AddOrUpdateEnumerableServiceRecord<TService, TImplementation>(ServiceDepth);
+        AddOrUpdateEnumerableServiceRecord<TService, TImplementation>(serviceDepth);
 
         return this;
     }
     
-    public ITieredServiceCollection AddEnumerableService<TService, TImplementation>(TImplementation instance, int ServiceDepth) where TImplementation : class, TService {
+    public ITieredServiceCollection AddEnumerableService<TService, TImplementation>(TImplementation instance, int serviceDepth) where TImplementation : class, TService {
         // Register the service as an instance
-        AddService(instance, ServiceDepth);
-        AddOrUpdateEnumerableServiceRecord<TService, TImplementation>(ServiceDepth);
+        AddService(instance, serviceDepth);
+        AddOrUpdateEnumerableServiceRecord<TService, TImplementation>(serviceDepth);
         return this;
     }
 
